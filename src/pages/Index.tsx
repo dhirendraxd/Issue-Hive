@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
 import IssueList from "@/components/IssueList";
 import FilterBar from "@/components/FilterBar";
+import CommunityCTA from "@/components/CommunityCTA";
+import SiteFooter from "@/components/SiteFooter";
 
 function Hero() {
   return (
@@ -133,17 +135,9 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-10">
-        <div className="mx-auto max-w-6xl px-4 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <div>© {new Date().getFullYear()} IssueHive. All rights reserved.</div>
-          <div className="flex gap-4">
-            <a href="#about">About</a>
-            <a href="#how">How it works</a>
-            <a href="#issues">Issues</a>
-          </div>
-        </div>
-      </footer>
+      {/* Community + Footer */}
+      <CommunityCTA />
+      <SiteFooter />
     </div>
   );
 };
