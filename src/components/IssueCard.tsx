@@ -28,7 +28,7 @@ export default function IssueCard({
           {new Date(issue.createdAt).toLocaleDateString()} • {issue.category}
         </div>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground flex-1">
+      <CardContent className="text-sm text-muted-foreground flex-1 break-words">
         {issue.description}
       </CardContent>
       <Separator className="my-2" />

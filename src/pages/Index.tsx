@@ -31,8 +31,8 @@ function Hero() {
 
           <div className="mt-2 md:mt-4 flex gap-3">
             <a href="#issues">
-              <Button size="lg" className="rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide">
-                Get Started <ArrowRight className="ml-2 h-4 w-4" />
+              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide transition-colors border border-transparent hover:border-orange-500 motion-reduce:transition-none">
+                Get Started <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
               </Button>
             </a>
            
@@ -88,13 +88,15 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 relative">
+      <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
       <Navbar />
 
-      {/* Hero */}
-      <div className="relative min-h-[100svh]">
-        <HeroRings />
-        <Hero />
-      </div>
+      <main id="main">
+        {/* Hero */}
+        <div className="relative min-h-[100svh]">
+          <HeroRings />
+          <Hero />
+        </div>
 
       {/* Stats */}
       <div className="py-4">
@@ -110,7 +112,7 @@ const Index = () => {
           </p>
           <div className="mt-6 flex justify-center">
             <a href="#issues">
-              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide">
+              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide border border-transparent hover:border-orange-500">
                 Start Now
                 <ArrowRight className="ml-2 h-4 w-4 text-orange-500" />
               </Button>
@@ -138,9 +140,12 @@ const Index = () => {
           />
         </div>
       </section>
+      
+        {/* Community */}
+        <CommunityCTA />
+      </main>
 
-      {/* Community + Footer */}
-      <CommunityCTA />
+      {/* Footer */}
       <SiteFooter />
     </div>
   );

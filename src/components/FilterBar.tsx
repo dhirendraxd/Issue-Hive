@@ -21,7 +21,7 @@ export default function FilterBar({
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-6 justify-between">
       <Tabs value={active} onValueChange={(v) => onActiveChange(v as IssueStatus | "all") }>
-        <TabsList className="grid grid-cols-4">
+        <TabsList className="grid grid-cols-4 max-w-full overflow-x-auto">
           <TabsTrigger value="all">All</TabsTrigger>
           {ISSUE_STATUSES.map((s) => (
             <TabsTrigger key={s.value} value={s.value}>{s.label}</TabsTrigger>

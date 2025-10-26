@@ -14,7 +14,11 @@ export function loadIssues(): Issue[] {
 
 export function saveIssues(issues: Issue[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(issues));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(issues));
+  } catch {
+    // Silently ignore storage failures (quota, privacy mode)
+  }
 }
 
 export function seedIfEmpty(seed: Issue[]) {

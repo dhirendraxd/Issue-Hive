@@ -20,11 +20,15 @@ export default function CommunityCTA() {
           </h3>
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-5 gap-4">
             {items.map(({ icon: Icon, label, href }) => (
-              <a key={label} href={href} className="block">
-                <div className="rounded-xl border bg-muted/30 p-6 text-center hover:bg-muted/50 transition">
+              <a
+                key={label}
+                href={href}
+                aria-label={label}
+                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+              >
+                <div className="rounded-xl border bg-muted/30 p-6 text-center hover:bg-muted/50 transition-colors">
                   <Icon className="mx-auto h-6 w-6" />
                 </div>
-                <span className="sr-only">{label}</span>
               </a>
             ))}
           </div>
