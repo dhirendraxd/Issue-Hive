@@ -14,32 +14,36 @@ import SiteFooter from "@/components/SiteFooter";
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden min-h-[100svh] flex items-center">
       <div className="absolute inset-0 opacity-50 pointer-events-none" aria-hidden>
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] rounded-full bg-gradient-to-br from-orange-500/20 via-red-500/10 to-amber-500/20 blur-3xl" />
       </div>
-      <div className="mx-auto max-w-6xl px-4 py-16 md:py-24">
-        <div className="flex flex-col items-center text-center gap-6">
+      <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8 py-20 md:py-28">
+        <div className="flex flex-col items-center text-center gap-4 md:gap-6">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
-            Unified Campus Issue Platform
-            <br className="hidden md:block" />
-            for Students & Admins
+            Unified Campus Platform for
+            <br />
+            Students & Admins
           </h1>
-          <p className="max-w-2xl text-muted-foreground text-lg">
-            Submit, support, and track campus issues—from Wi‑Fi fixes to cafeteria hours. Transparent status, community support.
+          <p className="text-xs md:text-sm text-muted-foreground/90">
+            Community-driven, student‑first, and privacy‑friendly.
           </p>
-          <div className="flex gap-3">
+
+          <div className="mt-2 md:mt-4 flex gap-3">
             <a href="#issues">
               <Button size="lg" className="rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
-            <a href="#submit">
-              <Button size="lg" variant="outline" className="rounded-full px-6">Submit an Issue</Button>
-            </a>
+           
           </div>
         </div>
       </div>
+      {/* Bottom blend gradient to transition into page background */}
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 md:h-40 bg-gradient-to-b from-transparent via-stone-50/40 to-stone-50"
+        aria-hidden
+      />
     </section>
   );
 }
@@ -87,7 +91,7 @@ const Index = () => {
       <Navbar />
 
       {/* Hero */}
-      <div className="relative">
+      <div className="relative min-h-[100svh]">
         <HeroRings />
         <Hero />
       </div>
