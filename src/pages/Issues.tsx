@@ -52,7 +52,7 @@ export default function Issues() {
             )}
 
             {filteredIssues.map((i) => (
-              <Card key={i.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg hover:shadow-lg transition-shadow flex flex-col h-full">
+              <Card key={i.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg transition-all hover:bg-white/70 hover:shadow-md hover:border-orange-200/60 flex flex-col h-full">
                 <CardContent className="p-5 md:p-6 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
@@ -89,13 +89,13 @@ export default function Issues() {
                   {/* Footer: Votes & Action */}
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <ThumbsUp className="h-4 w-4" />
+                      <ThumbsUp className="h-4 w-4 text-orange-500" />
                       <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
                     </div>
                     <Button
                       onClick={() => upvote.mutate(i.id)}
                       size="sm"
-                      className="rounded-full bg-black text-white hover:bg-orange-500 transition-colors"
+                      className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
                     >
                       Upvote
                     </Button>

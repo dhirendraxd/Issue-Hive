@@ -28,7 +28,7 @@ export default function Navbar() {
           <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
           <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
           <Link to="/issues" className="ml-1">
-            <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-500 transition-colors uppercase font-medium tracking-wide text-[13px]">
+            <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
               Join Now
             </Button>
           </Link>
@@ -37,7 +37,7 @@ export default function Navbar() {
         {/* Mobile quick action */}
         <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
           <Link to="/issues">
-            <Button aria-label="Join Now" className="h-9 rounded-full px-3 bg-black text-white hover:bg-orange-500 transition-colors uppercase font-medium tracking-wide text-[12px]">
+            <Button aria-label="Join Now" className="h-9 rounded-full px-3 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[12px]">
               Join Now
             </Button>
           </Link>
