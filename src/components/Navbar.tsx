@@ -12,7 +12,7 @@ export default function Navbar() {
           <img
             src="/beehive-honey-svgrepo-com.svg"
             alt="IssueHive logo"
-            className="h-8 w-8 md:h-7 md:w-7"
+            className="h-9 w-9 md:h-10 md:w-10"
             loading="eager"
             decoding="async"
           />
@@ -27,7 +27,7 @@ export default function Navbar() {
           <a href="#docs" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Docs</a>
           <a href="#transparency" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Transparency</a>
           <a href="#news" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">News</a>
-          <a href="#issues" className="ml-1">
+          <a href="#features" className="ml-1">
             <Button aria-label="Launch App" className="group h-9 rounded-full px-5 bg-black text-white hover:bg-orange-500 transition-colors uppercase font-medium tracking-wide text-[13px]">
               Launch App
             </Button>
@@ -36,7 +36,7 @@ export default function Navbar() {
 
         {/* Mobile quick action */}
         <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2">
-          <a href="#issues">
+          <a href="#features">
             <Button aria-label="Launch App" className="h-9 rounded-full px-5 bg-black text-white hover:bg-orange-500 transition-colors uppercase font-medium tracking-wide text-[13px]">
               Launch App
             </Button>

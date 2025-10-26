@@ -1,14 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import HeroRings from "@/components/HeroRings";
 import { useIssues } from "@/hooks/use-issues";
-import { ISSUE_CATEGORIES, ISSUE_STATUSES, type IssueStatus, type IssueCategory } from "@/types/issue";
-import { cn } from "@/lib/utils";
 import { ArrowRight } from "lucide-react";
-import IssueList from "@/components/IssueList";
-import FilterBar from "@/components/FilterBar";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
 
@@ -30,7 +26,7 @@ function Hero() {
           </p>
 
           <div className="mt-2 md:mt-4 flex gap-3">
-            <a href="#issues">
+            <a href="#submit">
               <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -50,17 +46,50 @@ function Hero() {
 
 function StatCards({ total, open, votes }: { total: number; open: number; votes: number }) {
   const items = [
-    { label: "Total Issues", value: total.toLocaleString() },
-    { label: "Open Issues", value: open.toLocaleString() },
-    { label: "Total Supports", value: votes.toLocaleString() },
+    { label: "Total Issues", value: total },
+    { label: "Open Issues", value: open },
+    { label: "Total Supports", value: votes },
   ];
+
+  // Count-up number that "spins" while animating and then stops at final value
+  function CountUpNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+    const [display, setDisplay] = useState(0);
+    const [spinning, setSpinning] = useState(true);
+
+    useEffect(() => {
+      let raf: number;
+      const start = performance.now();
+      setSpinning(true);
+      const step = (now: number) => {
+        const t = Math.min(1, (now - start) / duration);
+        // ease-out cubic
+        const eased = 1 - Math.pow(1 - t, 3);
+        setDisplay(Math.round(value * eased));
+        if (t < 1) {
+          raf = requestAnimationFrame(step);
+        } else {
+          setSpinning(false);
+        }
+      };
+      raf = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(raf);
+    }, [value, duration]);
+
+    return (
+      <span className={`inline-block ${spinning ? "animate-spin" : ""}`} style={{ animationDuration: "1.1s" }}>
+        {display.toLocaleString()}
+      </span>
+    );
+  }
   return (
-    <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
       {items.map((i) => (
-        <Card key={i.label}>
-          <CardContent className="py-6">
-            <div className="text-2xl font-semibold">{i.value}</div>
-            <div className="text-sm text-muted-foreground">{i.label}</div>
+        <Card key={i.label} className="rounded-2xl border bg-white">
+          <CardContent className="py-8 text-center">
+            <div className="text-3xl md:text-4xl font-semibold text-orange-500">
+              <CountUpNumber value={i.value} />
+            </div>
+            <div className="mt-2 text-sm text-muted-foreground">{i.label}</div>
           </CardContent>
         </Card>
       ))}
@@ -69,22 +98,7 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
 }
 
 const Index = () => {
-  const { data: issues = [], addIssue, upvote, setStatus, stats } = useIssues();
-  const [active, setActive] = useState<IssueStatus | "all">("all");
-  const [category, setCategory] = useState<IssueCategory | "All">("All");
-  const [q, setQ] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
-
-  const filtered = useMemo(() => {
-    return issues
-      .filter((i) => (active === "all" ? true : i.status === active))
-      .filter((i) => (category === "All" ? true : i.category === category))
-      .filter((i) =>
-        q.trim()
-          ? `${i.title} ${i.description}`.toLowerCase().includes(q.toLowerCase())
-          : true
-      );
-  }, [issues, active, category, q]);
+  const { stats } = useIssues();
 
   return (
     <div className="min-h-screen bg-stone-50 relative">
@@ -99,7 +113,7 @@ const Index = () => {
         </div>
 
       {/* Stats */}
-      <div className="py-4">
+      <div className="py-8">
         <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
       </div>
 
@@ -111,7 +125,7 @@ const Index = () => {
             IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
           </p>
           <div className="mt-6 flex justify-center">
-            <a href="#issues">
+            <a href="#submit">
               <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Start Now
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -121,25 +135,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Issues Feed */}
-      <section id="issues" className="mx-auto max-w-6xl px-4 py-10">
-        <FilterBar
-          active={active}
-          onActiveChange={setActive}
-          category={category}
-          onCategoryChange={setCategory}
-          q={q}
-          onQChange={setQ}
-        />
-
-        <div className="mt-6">
-          <IssueList
-            issues={filtered}
-            onUpvote={(id) => upvote.mutate(id)}
-            onStatusChange={(id, status) => setStatus.mutate({ id, status })}
-          />
-        </div>
-      </section>
+      {/* Feature section removed per request */}
       
         {/* Community */}
         <CommunityCTA />

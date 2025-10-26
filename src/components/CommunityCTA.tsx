@@ -24,10 +24,13 @@ export default function CommunityCTA() {
                 key={label}
                 href={href}
                 aria-label={label}
-                className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+                className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
               >
                 <div className="rounded-xl border bg-muted/30 p-6 text-center hover:bg-muted/50 transition-colors">
-                  <Icon className="mx-auto h-6 w-6" />
+                  <Icon className="mx-auto h-6 w-6 transition-colors group-hover:text-orange-500" />
+                </div>
+                <div className="mt-2 text-center text-xs text-muted-foreground transition-colors group-hover:text-orange-500">
+                  {label}
                 </div>
               </a>
             ))}
