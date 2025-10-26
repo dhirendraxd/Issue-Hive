@@ -32,7 +32,7 @@ Examples
   - `import { cn } from "@/lib/utils"`
 
 Small warnings
-- The `lovable-tagger` plugin is enabled in dev mode in `vite.config.ts` — avoid changing component tagger setup unless debugging dev-only features.
+- Dev-only component tagger plugins are not used. Keep `vite.config.ts` lean with just React and the `@` alias.
 
 If you modify build or dev behaviour
 - Update `package.json` scripts accordingly and ensure the `vite.config.ts` alias and `tsconfig.json` paths stay aligned.
