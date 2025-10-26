@@ -1,5 +1,7 @@
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
+import HiveHexParticles from "@/components/HiveHexParticles";
+import CommunityNodes from "@/components/CommunityNodes";
 import { useIssues } from "@/hooks/use-issues";
 import { ISSUE_STATUSES } from "@/types/issue";
 import { Button } from "@/components/ui/button";
@@ -37,7 +39,10 @@ export default function Issues() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <main className="px-4 md:px-6 pt-32 pb-24">
+      <main className="relative px-4 md:px-6 pt-32 pb-24">
+        {/* Background decorative layers for Issues page */}
+        <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
+        <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
         <section className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Campus Issues</h1>
@@ -80,11 +85,37 @@ export default function Issues() {
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusColor(i.status)}`}>
                       {ISSUE_STATUSES.find((s) => s.value === i.status)?.label ?? i.status}
+                    import { useMemo, useState } from "react";
+                    import { ISSUE_CATEGORIES, type IssueCategory } from "@/types/issue";
+                    import { Input } from "@/components/ui/input";
+                    import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+                    import { ChevronDown } from "lucide-react";
                     </span>
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
+
+                      // Filters
+                      const [q, setQ] = useState("");
+                      const [categories, setCategories] = useState<IssueCategory[]>([]);
                       {i.category}
                     </span>
-                  </div>
+                      const baseIssues = issues.filter((i) => i.status === "in_progress" || i.status === "resolved");
+
+                      const visibleIssues = useMemo(() => {
+                        let arr = baseIssues;
+                        if (categories.length > 0) {
+                          arr = arr.filter((i) => categories.includes(i.category));
+                        }
+                        if (q.trim()) {
+                          const n = q.trim().toLowerCase();
+                          arr = arr.filter((i) => {
+                            const title = i.title.toLowerCase();
+                            const desc = i.description.toLowerCase();
+                            const name = (i.user?.name || "").toLowerCase();
+                            return title.includes(n) || desc.includes(n) || name.includes(n);
+                          });
+                        }
+                        return arr;
+                      }, [baseIssues, categories, q]);
 
                   {/* Footer: Votes & Action */}
                   <div className="flex items-center justify-between pt-4 border-t">
@@ -95,14 +126,62 @@ export default function Issues() {
                     <Button
                       onClick={() => upvote.mutate(i.id)}
                       size="sm"
-                      className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
-                    >
-                      Upvote
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                              {/* Filters: search by title/description/name + multi-category */}
+                              <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 justify-between relative z-10">
+                                <Input
+                                  value={q}
+                                  onChange={(e) => setQ(e.target.value)}
+                                  placeholder="Search by title, description, or name..."
+                                  className="w-full md:w-80"
+                                />
+                                <div className="flex items-center gap-3">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="outline" className="rounded-full">
+                                        {categories.length === 0 ? "All Categories" : `${categories.length} selected`} <ChevronDown className="ml-2 h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                      <DropdownMenuLabel>Categories</DropdownMenuLabel>
+                                      <DropdownMenuSeparator />
+                                      {ISSUE_CATEGORIES.map((c) => {
+                                        const checked = categories.includes(c);
+                                        return (
+                                          <DropdownMenuCheckboxItem
+                                            key={c}
+                                            checked={checked}
+                                            onCheckedChange={(v) => {
+                                              setCategories((prev) => {
+                                                if (v && !prev.includes(c)) return [...prev, c];
+                                                if (!v) return prev.filter((x) => x !== c);
+                                                return prev;
+                                              });
+                                            }}
+                                          >
+                                            {c}
+                                          </DropdownMenuCheckboxItem>
+                                        );
+                                      })}
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuCheckboxItem
+                                        checked={categories.length === 0}
+                                        onCheckedChange={() => setCategories([])}
+                                      >
+                                        Clear selection
+                                      </DropdownMenuCheckboxItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              </div>
+                              <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                                {visibleIssues.length === 0 && (
+                                  <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center text-muted-foreground">
+                                    No matching issues.
+                                  </div>
+                                )}
+
+                                {visibleIssues.map((i) => (
           </div>
         </section>
       </main>

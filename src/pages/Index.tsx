@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import HeroRings from "@/components/HeroRings";
+import HiveHexParticles from "@/components/HiveHexParticles";
+import CommunityNodes from "@/components/CommunityNodes";
+import AmbientDust from "@/components/AmbientDust";
+import BubbleParticles from "@/components/BubbleParticles";
 import { useIssues } from "@/hooks/use-issues";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
@@ -119,39 +123,48 @@ const Index = () => {
       <main id="main">
         {/* Hero */}
         <div className="relative min-h-[100svh]">
+          {/* Background decorative layers */}
+          <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
           <HeroRings />
+          <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
+          <AmbientDust className="absolute inset-0 z-0 pointer-events-none" />
+          <BubbleParticles className="absolute inset-0 z-0 pointer-events-none" />
           <Hero />
         </div>
 
-      {/* Stats */}
-      <div className="py-8">
-        <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
-      </div>
+      {/* Below-hero content with subtle background layers */}
+      <div className="relative">
+        <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
+        <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
 
-    
-
-      {/* Mid CTA (replaces form section) */}
-  <section id="submit" className="px-4 py-16">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
-          <p className="mt-2 text-muted-foreground">
-            IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link to="/issues">
-              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
-                Start Now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
+        {/* Stats */}
+        <div className="py-8 relative z-10">
+          <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
         </div>
-      </section>
 
-      {/* Feature section removed per request */}
-      
+        {/* Mid CTA (replaces form section) */}
+        <section id="submit" className="px-4 py-16 relative z-10">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
+            <p className="mt-2 text-muted-foreground">
+              IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Link to="/issues">
+                <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+                  Start Now
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
         {/* Community */}
-        <CommunityCTA />
+        <div className="relative z-10">
+          <CommunityCTA />
+        </div>
+      </div>
       </main>
 
       {/* Footer */}

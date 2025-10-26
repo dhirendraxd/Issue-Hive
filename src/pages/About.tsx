@@ -1,12 +1,17 @@
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
+import HiveHexParticles from "@/components/HiveHexParticles";
+import CommunityNodes from "@/components/CommunityNodes";
 import { Megaphone, ThumbsUp, CheckCircle2 } from "lucide-react";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <main className="px-4 md:px-6 pt-32 pb-24">
+      <main className="relative px-4 md:px-6 pt-32 pb-24">
+        {/* Background decorative layers for About page */}
+        <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
+        <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
         <section className="mx-auto max-w-4xl text-center">
           <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">About IssueHive</h1>
           <p className="mt-4 text-muted-foreground">
