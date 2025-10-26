@@ -31,8 +31,8 @@ function Hero() {
 
           <div className="mt-2 md:mt-4 flex gap-3">
             <a href="#issues">
-              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide transition-colors border border-transparent hover:border-orange-500 motion-reduce:transition-none">
-                Get Started <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transform-none" />
+              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
+                Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
            
@@ -112,9 +112,9 @@ const Index = () => {
           </p>
           <div className="mt-6 flex justify-center">
             <a href="#issues">
-              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-black/90 tracking-wide border border-transparent hover:border-orange-500">
+              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Start Now
-                <ArrowRight className="ml-2 h-4 w-4 text-orange-500" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </a>
           </div>
