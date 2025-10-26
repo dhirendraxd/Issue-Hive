@@ -1,23 +1,14 @@
 import { useMemo, useState } from "react";
-  import { Input } from "@/components/ui/input";
-  import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu";
-  import { ChevronDown, ThumbsUp } from "lucide-react";
+import { ThumbsUp, RotateCcw } from "lucide-react";
   import Navbar from "@/components/Navbar";
-  import SiteFooter from "@/components/SiteFooter";
   import HiveHexParticles from "@/components/HiveHexParticles";
   import CommunityNodes from "@/components/CommunityNodes";
   import { useIssues } from "@/hooks/use-issues";
-  import { ISSUE_STATUSES, ISSUE_CATEGORIES, type IssueCategory } from "@/types/issue";
+  import { ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
   import { Button } from "@/components/ui/button";
   import { Card, CardContent } from "@/components/ui/card";
   import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+  import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 
   export default function Issues() {
     const { data: issues = [], upvote } = useIssues();
@@ -25,12 +16,14 @@ import { useMemo, useState } from "react";
     // Filters
     const [q, setQ] = useState("");
     const [categories, setCategories] = useState<IssueCategory[]>([]);
-
-    // Base filter to show only 'in_progress' and 'resolved' issues
-    const baseIssues = issues.filter((i) => i.status === "in_progress" || i.status === "resolved");
-
+    const [statuses, setStatuses] = useState<IssueStatus[]>(["in_progress", "resolved"]);
+    const [sort, setSort] = useState<SortKey>("new");
     const visibleIssues = useMemo(() => {
-      let arr = baseIssues;
+      let arr = issues;
+      // status filter (default in_progress + resolved)
+      if (statuses.length > 0) {
+        arr = arr.filter((i) => (statuses as IssueStatus[]).includes(i.status));
+      }
       if (categories.length > 0) {
         arr = arr.filter((i) => categories.includes(i.category));
       }
@@ -43,8 +36,13 @@ import { useMemo, useState } from "react";
           return title.includes(n) || desc.includes(n) || name.includes(n);
         });
       }
+      // sorting
+      const byDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
+      if (sort === "new") arr = [...arr].sort((a, b) => byDate(b.createdAt, a.createdAt));
+      else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
+      else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
       return arr;
-    }, [baseIssues, categories, q]);
+    }, [issues, categories, q, statuses, sort]);
 
     const getInitials = (name: string) => {
       return name
@@ -80,58 +78,36 @@ import { useMemo, useState } from "react";
               <p className="mt-3 text-muted-foreground">Browse top issues and show support by upvoting.</p>
             </div>
 
-            {/* Filters: search by title/description/name + multi-category */}
-            <div className="mb-6 flex flex-col md:flex-row md:items-center gap-3 md:gap-4 justify-between relative z-10">
-              <Input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by title, description, or name..."
-                className="w-full md:w-80"
+            {/* Filters: improved UX and UI */}
+            <div className="mb-6 relative z-10">
+              <IssuesFilterBar
+                q={q}
+                onQChange={setQ}
+                categories={categories}
+                onCategoriesChange={setCategories}
+                statuses={statuses}
+                onStatusesChange={setStatuses}
+                sort={sort}
+                onSortChange={setSort}
               />
-              <div className="flex items-center gap-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="rounded-full">
-                      {categories.length === 0 ? "All Categories" : `${categories.length} selected`} <ChevronDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Categories</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {ISSUE_CATEGORIES.map((c) => {
-                      const checked = categories.includes(c);
-                      return (
-                        <DropdownMenuCheckboxItem
-                          key={c}
-                          checked={checked}
-                          onCheckedChange={(v) => {
-                            setCategories((prev) => {
-                              if (v && !prev.includes(c)) return [...prev, c];
-                              if (!v) return prev.filter((x) => x !== c);
-                              return prev;
-                            });
-                          }}
-                        >
-                          {c}
-                        </DropdownMenuCheckboxItem>
-                      );
-                    })}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuCheckboxItem
-                      checked={categories.length === 0}
-                      onCheckedChange={() => setCategories([])}
-                    >
-                      Clear selection
-                    </DropdownMenuCheckboxItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </div>
 
             <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
               {visibleIssues.length === 0 && (
-                <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center text-muted-foreground">
-                  No matching issues.
+                <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center">
+                  <p className="text-muted-foreground">No matching issues.</p>
+                  <Button
+                    variant="ghost"
+                    className="mt-3 rounded-full"
+                    onClick={() => {
+                      setQ("");
+                      setCategories([]);
+                      setStatuses(["in_progress", "resolved"]);
+                      setSort("new");
+                    }}
+                  >
+                    <RotateCcw className="h-4 w-4 mr-2" /> Reset filters
+                  </Button>
                 </div>
               )}
 
@@ -190,7 +166,6 @@ import { useMemo, useState } from "react";
             </div>
           </section>
         </main>
-        <SiteFooter />
       </div>
     );
   }
