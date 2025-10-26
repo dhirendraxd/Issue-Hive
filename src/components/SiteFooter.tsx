@@ -12,17 +12,7 @@ export default function SiteFooter() {
             <div className="font-medium mb-2">Company</div>
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li><a href="#about">About</a></li>
-              <li><a href="#news">News</a></li>
-              <li><a href="#careers">Careers</a></li>
-              <li><a href="#contact">Contact Us</a></li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-medium mb-2">Resources</div>
-            <ul className="space-y-1 text-sm text-muted-foreground">
-              <li><a href="#docs">Docs</a></li>
-              <li><a href="#transparency">Transparency</a></li>
-              <li><a href="#guides">Guides</a></li>
+              <li><a href="#careers">Report</a></li>
             </ul>
           </div>
           <div>

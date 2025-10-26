@@ -12,16 +12,6 @@ const rid = () =>
 const seed: Issue[] = [
   {
     id: rid(),
-    title: "Wi‑Fi is unreliable in Library 2nd Floor",
-    description:
-      "Connectivity drops frequently during peak hours making it hard to access online resources.",
-    category: "Facilities",
-    status: "received",
-    createdAt: new Date().toISOString(),
-    votes: 12,
-  },
-  {
-    id: rid(),
     title: "Extend cafeteria hours during exams",
     description:
       "Many students study late; having warm food options until 11 PM would help.",
@@ -29,6 +19,10 @@ const seed: Issue[] = [
     status: "in_progress",
     createdAt: new Date().toISOString(),
     votes: 34,
+    user: {
+      name: "Jordan Smith",
+      avatar: "https://i.pravatar.cc/150?img=2&u=jordan",
+    },
   },
   {
     id: rid(),
@@ -39,6 +33,38 @@ const seed: Issue[] = [
     status: "resolved",
     createdAt: new Date().toISOString(),
     votes: 21,
+    user: {
+      name: "Sam Taylor",
+      avatar: "https://i.pravatar.cc/150?img=3&u=sam",
+    },
+  },
+  {
+    id: rid(),
+    title: "Improve lighting in parking lot",
+    description:
+      "The parking lot is very dark at night, making students feel unsafe. Better lighting would help.",
+    category: "Facilities",
+    status: "in_progress",
+    createdAt: new Date().toISOString(),
+    votes: 28,
+    user: {
+      name: "Casey Morgan",
+      avatar: "https://i.pravatar.cc/150?img=4&u=casey",
+    },
+  },
+  {
+    id: rid(),
+    title: "Fix broken AC in Study Hall",
+    description:
+      "The air conditioning in Study Hall Building A stopped working; it's too hot to study.",
+    category: "Facilities",
+    status: "resolved",
+    createdAt: new Date().toISOString(),
+    votes: 19,
+    user: {
+      name: "Riley Park",
+      avatar: "https://i.pravatar.cc/150?img=5&u=riley",
+    },
   },
 ];
 

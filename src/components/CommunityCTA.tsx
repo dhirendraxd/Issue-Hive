@@ -13,7 +13,7 @@ export default function CommunityCTA() {
 
   return (
     <section className="px-4 py-12">
-      <Card className="mx-auto max-w-5xl bg-white/90">
+      <Card className="mx-auto max-w-5xl bg-white/60 backdrop-blur-lg border border-white/40">
         <div className="px-6 py-8 text-center">
           <h3 className="text-xl md:text-2xl font-semibold">
             Join the <span className="text-orange-600">IssueHive</span> Community
@@ -26,7 +26,7 @@ export default function CommunityCTA() {
                 aria-label={label}
                 className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
               >
-                <div className="rounded-xl border bg-muted/30 p-6 text-center hover:bg-muted/50 transition-colors">
+                <div className="rounded-xl border border-white/30 bg-white/40 backdrop-blur-md p-6 text-center hover:bg-white/60 transition-colors">
                   <Icon className="mx-auto h-6 w-6 transition-colors group-hover:text-orange-500" />
                 </div>
                 <div className="mt-2 text-center text-xs text-muted-foreground transition-colors group-hover:text-orange-500">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
@@ -26,12 +27,11 @@ function Hero() {
           </p>
 
           <div className="mt-2 md:mt-4 flex gap-3">
-            <a href="#submit">
+            <Link to="/issues">
               <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </a>
-           
+            </Link>
           </div>
         </div>
       </div>
@@ -51,40 +51,51 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
     { label: "Total Supports", value: votes },
   ];
 
-  // Count-up number that "spins" while animating and then stops at final value
-  function CountUpNumber({ value, duration = 1200 }: { value: number; duration?: number }) {
+  // Count animation: quickly 1 -> 100, then settle to actual value (up or down)
+  function CountUpNumber({ value, upDuration = 700, settleDuration = 500 }: { value: number; upDuration?: number; settleDuration?: number }) {
     const [display, setDisplay] = useState(0);
-    const [spinning, setSpinning] = useState(true);
 
     useEffect(() => {
       let raf: number;
-      const start = performance.now();
-      setSpinning(true);
-      const step = (now: number) => {
-        const t = Math.min(1, (now - start) / duration);
-        // ease-out cubic
-        const eased = 1 - Math.pow(1 - t, 3);
-        setDisplay(Math.round(value * eased));
+      const maxPhase = 100;
+
+      // Phase 1: 1 -> 100 fast
+      const start1 = performance.now();
+      const step1 = (now: number) => {
+        const t = Math.min(1, (now - start1) / upDuration);
+        const eased = 1 - Math.pow(1 - t, 3); // ease-out
+        const current = Math.max(1, Math.round(eased * maxPhase));
+        setDisplay(current);
         if (t < 1) {
-          raf = requestAnimationFrame(step);
+          raf = requestAnimationFrame(step1);
         } else {
-          setSpinning(false);
+          // Phase 2: 100 -> value
+          const start2 = performance.now();
+          const from = maxPhase;
+          const to = value;
+          const delta = to - from;
+          const step2 = (now2: number) => {
+            const t2 = Math.min(1, (now2 - start2) / settleDuration);
+            const eased2 = 1 - Math.pow(1 - t2, 3);
+            const current2 = Math.round(from + delta * eased2);
+            setDisplay(current2);
+            if (t2 < 1) {
+              raf = requestAnimationFrame(step2);
+            }
+          };
+          raf = requestAnimationFrame(step2);
         }
       };
-      raf = requestAnimationFrame(step);
+      raf = requestAnimationFrame(step1);
       return () => cancelAnimationFrame(raf);
-    }, [value, duration]);
+    }, [value, upDuration, settleDuration]);
 
-    return (
-      <span className={`inline-block ${spinning ? "animate-spin" : ""}`} style={{ animationDuration: "1.1s" }}>
-        {display.toLocaleString()}
-      </span>
-    );
+    return <span className="inline-block">{display.toLocaleString()}</span>;
   }
   return (
     <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
       {items.map((i) => (
-        <Card key={i.label} className="rounded-2xl border bg-white">
+        <Card key={i.label} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
           <CardContent className="py-8 text-center">
             <div className="text-3xl md:text-4xl font-semibold text-orange-500">
               <CountUpNumber value={i.value} />
@@ -117,20 +128,22 @@ const Index = () => {
         <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
       </div>
 
+    
+
       {/* Mid CTA (replaces form section) */}
-      <section id="submit" className="px-4 py-16">
+  <section id="submit" className="px-4 py-16">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
           <p className="mt-2 text-muted-foreground">
             IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
           </p>
           <div className="mt-6 flex justify-center">
-            <a href="#submit">
+            <Link to="/issues">
               <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-500 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Start Now
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </section>

@@ -16,6 +16,10 @@ export interface Issue {
   createdAt: string; // ISO date
   votes: number;
   attachments?: string[]; // store URLs for now
+  user?: {
+    name: string;
+    avatar: string;
+  };
 }
 
 export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [
