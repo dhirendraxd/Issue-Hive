@@ -37,14 +37,14 @@ export default function Issues() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <main className="px-4 pt-28 pb-16">
-        <section className="mx-auto max-w-6xl">
-          <div className="text-center mb-8">
+      <main className="px-4 md:px-6 pt-32 pb-24">
+        <section className="mx-auto max-w-7xl">
+          <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Campus Issues</h1>
             <p className="mt-3 text-muted-foreground">Browse top issues and show support by upvoting.</p>
           </div>
 
-          <div className="mt-8 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {filteredIssues.length === 0 && (
               <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center text-muted-foreground">
                 No active issues. All resolved!
@@ -53,7 +53,7 @@ export default function Issues() {
 
             {filteredIssues.map((i) => (
               <Card key={i.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg transition-all hover:bg-white/70 hover:shadow-md hover:border-orange-200/60 flex flex-col h-full">
-                <CardContent className="p-5 md:p-6 flex flex-col h-full">
+                <CardContent className="p-6 md:p-7 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-10 w-10 flex-shrink-0">

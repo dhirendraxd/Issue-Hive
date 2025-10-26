@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function Navbar() {
+  const location = useLocation();
+  const isHome = location.pathname === "/";
   return (
     <header className="absolute inset-x-0 top-4 z-30">
       <div className="mx-auto max-w-6xl px-4 h-20 relative">
@@ -24,7 +26,9 @@ export default function Navbar() {
 
         {/* Center floating pill nav */}
         <nav aria-label="Primary" className="hidden md:flex items-center gap-8 text-sm bg-white/60 backdrop-blur-xl border border-white/40 shadow-lg rounded-full px-6 py-2.5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <Link to="/" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Home</Link>
+          {!isHome && (
+            <Link to="/" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Home</Link>
+          )}
           <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
           <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
           <Link to="/issues" className="ml-1">
