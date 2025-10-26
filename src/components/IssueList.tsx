@@ -1,3 +1,8 @@
+/**
+ * DEPRECATED/UNUSED: Not referenced by current pages.
+ * Prefer custom grid in `src/pages/Issues.tsx`.
+ * Safe to remove or move to an `_legacy/` folder if not needed.
+ */
 import { Card, CardContent } from "@/components/ui/card";
 import IssueCard from "@/components/IssueCard";
 import type { Issue, IssueStatus } from "@/types/issue";

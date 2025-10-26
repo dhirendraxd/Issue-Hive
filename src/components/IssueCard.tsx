@@ -1,3 +1,8 @@
+/**
+ * DEPRECATED/UNUSED: This component is not referenced by current pages.
+ * Prefer the inline card layout in `src/pages/Issues.tsx`.
+ * Safe to remove or move to an `_legacy/` folder if not needed.
+ */
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import StatusBadge from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";

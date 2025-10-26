@@ -1,3 +1,8 @@
+/**
+ * DEPRECATED: This component was an early pass at issue filtering and is not used anymore.
+ * Please use `IssuesFilterBar` in `src/components/IssuesFilterBar.tsx` instead.
+ * Safe to delete when convenient.
+ */
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";

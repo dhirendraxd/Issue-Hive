@@ -1,3 +1,7 @@
+/**
+ * DEPRECATED/UNUSED: Not referenced in current flows (no new-issue form in UI).
+ * Keep for future reuse or remove if out of scope.
+ */
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
