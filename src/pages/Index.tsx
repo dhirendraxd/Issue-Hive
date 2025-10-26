@@ -12,6 +12,7 @@ import { useIssues } from "@/hooks/use-issues";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
+import ParticlesBackground from "@/components/ParticlesBackground";
 
 function Hero() {
   return (
@@ -133,17 +134,14 @@ const Index = () => {
         </div>
 
       {/* Below-hero content with subtle background layers */}
-      <div className="relative">
-        <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
-        <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
-
+      <ParticlesBackground>
         {/* Stats */}
-        <div className="py-8 relative z-10">
+        <div className="py-8">
           <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
         </div>
 
         {/* Mid CTA (replaces form section) */}
-        <section id="submit" className="px-4 py-16 relative z-10">
+        <section id="submit" className="px-4 py-16">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
             <p className="mt-2 text-muted-foreground">
@@ -161,10 +159,8 @@ const Index = () => {
         </section>
 
         {/* Community */}
-        <div className="relative z-10">
-          <CommunityCTA />
-        </div>
-      </div>
+        <CommunityCTA />
+      </ParticlesBackground>
       </main>
 
       {/* Footer */}
