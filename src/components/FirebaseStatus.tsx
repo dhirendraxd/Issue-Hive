@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { auth, db, storage, analytics } from '@/integrations/firebase/config';
+import { auth, db, realtimeDb, storage, analytics } from '@/integrations/firebase/config';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,7 @@ export function FirebaseStatus() {
   const services = [
     { name: 'Authentication', instance: auth, status: !!auth },
     { name: 'Firestore', instance: db, status: !!db },
+    { name: 'Realtime DB', instance: realtimeDb, status: !!realtimeDb },
     { name: 'Storage', instance: storage, status: !!storage },
     { name: 'Analytics', instance: analytics, status: !!analytics },
   ];

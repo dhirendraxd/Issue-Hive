@@ -1,0 +1,97 @@
+{
+  "rules": {
+    "issues": {
+      "$issueId": {
+        ".read": true,
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['title', 'description', 'category', 'status', 'votes', 'createdBy', 'createdByName', 'createdAt', 'updatedAt'])",
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+        },
+        "description": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000"
+        },
+        "category": {
+          ".validate": "newData.isString() && (newData.val() === 'bug' || newData.val() === 'feature' || newData.val() === 'question' || newData.val() === 'improvement' || newData.val() === 'other')"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'open' || newData.val() === 'in_progress' || newData.val() === 'resolved' || newData.val() === 'closed')"
+        },
+        "votes": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "createdByName": {
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : true)"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "comments": {
+      "$issueId": {
+        "$commentId": {
+          ".read": true,
+          ".write": "auth != null",
+          ".validate": "newData.hasChildren(['issueId', 'userId', 'userName', 'message', 'createdAt'])",
+          "issueId": {
+            ".validate": "newData.isString()"
+          },
+          "userId": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "userName": {
+            ".validate": "newData.isString()"
+          },
+          "message": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 1000"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber()"
+          }
+        }
+      }
+    },
+    "notifications": {
+      "$notificationId": {
+        ".read": "auth != null && data.child('userId').val() === auth.uid",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['userId', 'message', 'type', 'read', 'createdAt'])",
+        "userId": {
+          ".validate": "newData.isString()"
+        },
+        "message": {
+          ".validate": "newData.isString()"
+        },
+        "type": {
+          ".validate": "newData.isString() && (newData.val() === 'info' || newData.val() === 'success' || newData.val() === 'warning' || newData.val() === 'error')"
+        },
+        "read": {
+          ".validate": "newData.isBoolean()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
+    "status": {
+      "$userId": {
+        ".read": true,
+        ".write": "auth != null && auth.uid === $userId",
+        ".validate": "newData.hasChildren(['online', 'lastSeen'])",
+        "online": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    }
+  }
+}

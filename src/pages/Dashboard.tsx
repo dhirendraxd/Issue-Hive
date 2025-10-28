@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import IssueForm from '@/components/IssueForm';
+import { FirebaseStatus } from '@/components/FirebaseStatus';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -322,6 +323,9 @@ export default function Dashboard() {
                 </Link>
               </CardContent>
             </Card>
+
+            {/* Firebase Connection Status */}
+            <FirebaseStatus />
           </div>
         </div>
       </main>
