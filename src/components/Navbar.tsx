@@ -1,9 +1,24 @@
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/hooks/use-auth";
+import { LogOut, User } from "lucide-react";
+import { signOut } from "@/integrations/firebase";
+import { toast } from "sonner";
 
 export default function Navbar() {
   const location = useLocation();
   const isHome = location.pathname === "/";
+  const { user } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      toast.error("Failed to sign out");
+    }
+  };
+
   return (
     <header className="absolute inset-x-0 top-4 z-30">
       <div className="mx-auto max-w-6xl px-4 h-20 relative">
@@ -31,20 +46,58 @@ export default function Navbar() {
           )}
           <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
           <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
-          <Link to="/issues" className="ml-1">
-            <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
-              Join Now
-            </Button>
-          </Link>
+          
+          {user ? (
+            <div className="flex items-center gap-2 ml-1">
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm" className="h-9 rounded-full px-4">
+                  <User className="h-4 w-4 mr-1" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Button 
+                onClick={handleSignOut}
+                variant="ghost" 
+                size="sm" 
+                className="h-9 rounded-full px-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <Link to="/auth" className="ml-1">
+              <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
+                Join Now
+              </Button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile quick action */}
-        <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 flex items-center">
-          <Link to="/issues">
-            <Button aria-label="Join Now" className="h-9 rounded-full px-3 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[12px]">
-              Join Now
-            </Button>
-          </Link>
+        <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+          {user ? (
+            <>
+              <Link to="/dashboard">
+                <Button variant="outline" size="sm" className="h-9 rounded-full px-3">
+                  <User className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Button 
+                onClick={handleSignOut}
+                variant="ghost" 
+                size="sm" 
+                className="h-9 rounded-full px-2 text-red-600"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Link to="/auth">
+              <Button aria-label="Join Now" className="h-9 rounded-full px-3 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[12px]">
+                Join Now
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
     </header>

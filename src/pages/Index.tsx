@@ -32,7 +32,7 @@ function Hero() {
           </p>
 
           <div className="mt-2 md:mt-4 flex gap-3">
-            <Link to="/issues">
+            <Link to="/auth">
               <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
