@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import Navbar from '@/components/Navbar';
 
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
@@ -102,6 +103,9 @@ export default function RaiseIssuePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden">
+      {/* Navbar */}
+      <Navbar />
+
       {/* Background Effects */}
       <ParticlesBackground>
         <div />

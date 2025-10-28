@@ -10,11 +10,11 @@ export default function Navbar() {
 
   return (
     <header className="absolute inset-x-0 top-4 z-30">
-      <div className="mx-auto max-w-6xl px-4 h-20 relative">
+      <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between">
         {/* Logo left */}
         <Link
           to="/"
-          className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 font-semibold text-xl tracking-tight select-none transition-opacity hover:opacity-90"
+          className="flex items-center gap-2 font-semibold text-xl tracking-tight select-none transition-opacity hover:opacity-90"
         >
           <img
             src="/beehive-honey-svgrepo-com.svg"
@@ -28,8 +28,8 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Center floating pill nav */}
-        <nav aria-label="Primary" className="hidden md:flex items-center gap-8 text-sm bg-white/60 backdrop-blur-xl border border-white/40 shadow-lg rounded-full px-6 py-2.5 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+        {/* Right side nav */}
+        <nav aria-label="Primary" className="hidden md:flex items-center gap-8 text-sm">
           {!isHome && (
             <Link to="/" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Home</Link>
           )}
@@ -38,7 +38,7 @@ export default function Navbar() {
           <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
           
           {user ? (
-            <Link to="/dashboard" className="ml-1">
+            <Link to="/dashboard">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
                 <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
@@ -47,7 +47,7 @@ export default function Navbar() {
               </Avatar>
             </Link>
           ) : (
-            <Link to="/auth" className="ml-1">
+            <Link to="/auth">
               <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
                 Join Now
               </Button>
@@ -56,7 +56,7 @@ export default function Navbar() {
         </nav>
 
         {/* Mobile quick action */}
-        <div className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+        <div className="md:hidden flex items-center gap-2">
           {user ? (
             <Link to="/dashboard">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">

@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { signOut } from '@/integrations/firebase';
-import type { IssueCategory } from '@/types/issue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
 import { 
   LogOut, 
-  Plus, 
+  Plus,
   TrendingUp, 
   CheckCircle2, 
   Clock, 
@@ -21,12 +20,10 @@ import {
   Calendar
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
-import IssueForm from '@/components/IssueForm';
-import { FirebaseStatus } from '@/components/FirebaseStatus';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { data: issues, isLoading: issuesLoading, stats, addIssue } = useIssuesFirebase();
+  const { data: issues, isLoading: issuesLoading, stats } = useIssuesFirebase();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -42,23 +39,6 @@ export default function Dashboard() {
       navigate('/');
     } catch (error) {
       toast.error('Failed to sign out');
-    }
-  };
-
-  const handleIssueSubmit = async (data: { title: string; description: string; category: string }) => {
-    try {
-      await addIssue.mutateAsync({
-        title: data.title,
-        description: data.description,
-        category: data.category as IssueCategory,
-        user: {
-          name: user?.displayName || user?.email?.split('@')[0] || 'Anonymous',
-          avatar: user?.photoURL,
-        },
-      });
-      toast.success('Issue reported successfully!');
-    } catch (error) {
-      toast.error('Failed to submit issue');
     }
   };
 
@@ -191,29 +171,9 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Report New Issue */}
+          {/* Your Recent Issues */}
           <div className="lg:col-span-2">
             <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Plus className="h-5 w-5 text-orange-500" />
-                      Report New Issue
-                    </CardTitle>
-                    <CardDescription className="mt-1">
-                      Help improve our campus by reporting issues
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <IssueForm onSubmit={handleIssueSubmit} />
-              </CardContent>
-            </Card>
-
-            {/* Your Recent Issues */}
-            <Card className="border-white/40 bg-white/80 backdrop-blur-xl mt-6">
               <CardHeader>
                 <CardTitle>Your Recent Issues</CardTitle>
                 <CardDescription>
@@ -222,10 +182,16 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 {userIssues.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                    <p>You haven't reported any issues yet</p>
-                    <p className="text-sm mt-1">Use the form above to get started</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <AlertCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium">You haven't reported any issues yet</p>
+                    <p className="text-sm mt-2">Click "Raise Issue" in the navigation to get started</p>
+                    <Link to="/raise-issue" className="mt-4 inline-block">
+                      <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Raise Your First Issue
+                      </Button>
+                    </Link>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -309,6 +275,12 @@ export default function Dashboard() {
                 <CardTitle className="text-lg">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                <Link to="/raise-issue" className="block">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Raise New Issue
+                  </Button>
+                </Link>
                 <Link to="/issues" className="block">
                   <Button variant="outline" className="w-full justify-start" size="sm">
                     <AlertCircle className="h-4 w-4 mr-2" />
@@ -323,9 +295,6 @@ export default function Dashboard() {
                 </Link>
               </CardContent>
             </Card>
-
-            {/* Firebase Connection Status */}
-            <FirebaseStatus />
           </div>
         </div>
       </main>
