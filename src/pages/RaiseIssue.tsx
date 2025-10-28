@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
@@ -19,6 +20,7 @@ export default function RaiseIssuePage() {
   const { addIssue } = useIssuesFirebase();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -28,7 +30,7 @@ export default function RaiseIssuePage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      toast.error('Please sign in to raise an issue');
+      toast.error('Please sign in to report campus issues');
       navigate('/auth');
     }
   }, [user, authLoading, navigate]);
@@ -58,13 +60,16 @@ export default function RaiseIssuePage() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category as IssueCategory,
-        user: {
-          name: user?.displayName || user?.email || 'Anonymous',
-          avatar: user?.photoURL || undefined,
-        },
+        userId: user?.uid, // Always store the user ID for tracking
+        user: isAnonymous 
+          ? { name: 'Anonymous' }  // Anonymous posting - no avatar
+          : {
+              name: user?.displayName || user?.email || 'Anonymous',
+              avatar: user?.photoURL || undefined,
+            },
       });
 
-      toast.success('Issue raised successfully!');
+      toast.success('Campus issue reported successfully!');
       
       // Reset form
       setFormData({
@@ -72,14 +77,15 @@ export default function RaiseIssuePage() {
         description: '',
         category: '',
       });
+      setIsAnonymous(false);
 
       // Navigate to issues page after a short delay
       setTimeout(() => {
         navigate('/issues');
       }, 1500);
     } catch (error) {
-      console.error('Error raising issue:', error);
-      toast.error('Failed to raise issue. Please try again.');
+      console.error('Error reporting campus issue:', error);
+      toast.error('Failed to report issue. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,10 +128,10 @@ export default function RaiseIssuePage() {
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
-              Raise an <span className="text-orange-500">Issue</span>
+              Report a <span className="text-orange-500">Campus Issue</span>
             </h1>
             <p className="text-lg text-gray-600">
-              Help improve our campus by reporting issues or suggesting improvements
+              Help improve our campus by reporting problems with facilities, infrastructure, or services
             </p>
           </div>
 
@@ -134,10 +140,10 @@ export default function RaiseIssuePage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-2xl">
                 <AlertCircle className="h-6 w-6 text-orange-500" />
-                Issue Details
+                Campus Issue Details
               </CardTitle>
               <CardDescription>
-                Provide clear information to help us understand and address your concern
+                Provide clear information about the campus problem you've encountered
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -150,7 +156,7 @@ export default function RaiseIssuePage() {
                   <Input
                     id="title"
                     type="text"
-                    placeholder="Brief description of the issue"
+                    placeholder="e.g., Broken water fountain in Building A"
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
                     maxLength={200}
@@ -176,11 +182,11 @@ export default function RaiseIssuePage() {
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bug">🐛 Bug - Something isn't working</SelectItem>
-                      <SelectItem value="feature">✨ Feature - New feature request</SelectItem>
-                      <SelectItem value="improvement">🚀 Improvement - Enhancement to existing feature</SelectItem>
-                      <SelectItem value="question">❓ Question - Need clarification</SelectItem>
-                      <SelectItem value="other">📝 Other - General feedback</SelectItem>
+                      <SelectItem value="bug">� Infrastructure - Water, electricity, plumbing issues</SelectItem>
+                      <SelectItem value="feature">🏢 Facilities - Classrooms, labs, restrooms</SelectItem>
+                      <SelectItem value="improvement">🧹 Maintenance - Cleaning, repairs needed</SelectItem>
+                      <SelectItem value="question">🌳 Campus Grounds - Gardens, parking, outdoor areas</SelectItem>
+                      <SelectItem value="other">📝 Other - General campus concerns</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -192,7 +198,7 @@ export default function RaiseIssuePage() {
                   </Label>
                   <Textarea
                     id="description"
-                    placeholder="Provide detailed information about the issue..."
+                    placeholder="Describe the campus issue in detail: location, what's broken/needed, when you noticed it, etc."
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
                     maxLength={2000}
@@ -205,17 +211,39 @@ export default function RaiseIssuePage() {
                   </p>
                 </div>
 
+                {/* Anonymous Posting Option */}
+                <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <Checkbox
+                    id="anonymous"
+                    checked={isAnonymous}
+                    onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
+                    disabled={isSubmitting}
+                    className="mt-1"
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor="anonymous"
+                      className="text-base font-semibold cursor-pointer"
+                    >
+                      Post Anonymously
+                    </Label>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Your identity will be hidden. Only "Anonymous" will be shown on this report.
+                    </p>
+                  </div>
+                </div>
+
                 {/* Info Box */}
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                   <div className="flex gap-3">
                     <CheckCircle2 className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
                     <div className="text-sm text-gray-700">
-                      <p className="font-semibold mb-1">Tips for a great issue report:</p>
+                      <p className="font-semibold mb-1">Tips for reporting campus issues:</p>
                       <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        <li>Be specific and clear in your title</li>
-                        <li>Include steps to reproduce (for bugs)</li>
-                        <li>Explain why this matters to you</li>
-                        <li>Add any relevant context or examples</li>
+                        <li>Include the specific location (building, room number, area)</li>
+                        <li>Describe what's broken or what needs attention</li>
+                        <li>Mention if it's urgent or a safety concern</li>
+                        <li>Add any relevant details (when it started, how often, etc.)</li>
                       </ul>
                     </div>
                   </div>
@@ -236,7 +264,7 @@ export default function RaiseIssuePage() {
                     ) : (
                       <>
                         <CheckCircle2 className="mr-2 h-5 w-5" />
-                        Raise Issue
+                        Report Campus Issue
                       </>
                     )}
                   </Button>

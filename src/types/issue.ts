@@ -21,6 +21,7 @@ export interface Issue {
     name: string;
     avatar?: string;
   };
+  userId?: string; // Track the actual user ID even for anonymous posts
 }
 
 export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [

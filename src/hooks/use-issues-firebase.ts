@@ -46,6 +46,7 @@ export function useIssuesFirebase() {
       category: IssueCategory;
       attachments?: string[];
       user?: { name: string; avatar?: string };
+      userId?: string;
     }) => {
       const issueData: Omit<Issue, "id" | "createdAt" | "updatedAt"> = {
         title: data.title,
@@ -55,6 +56,7 @@ export function useIssuesFirebase() {
         votes: 0,
         attachments: data.attachments,
         user: data.user,
+        userId: data.userId,
       };
       const newIssueId = await createIssue(issueData);
       return { id: newIssueId, ...issueData, createdAt: new Date().toISOString() };

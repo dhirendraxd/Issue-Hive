@@ -54,6 +54,7 @@ export default function Dashboard() {
   }
 
   const userIssues = issues?.filter(issue => 
+    issue.userId === user.uid || 
     issue.user?.name === (user.displayName || user.email?.split('@')[0])
   ) || [];
 
