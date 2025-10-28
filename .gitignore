@@ -24,3 +24,13 @@ dist-ssr
 *.sw?
 docs/DEV-NOTES.md
 docs
+.vscode
+.cache
+.next
+.out
+.build
+coverage
+.env
+.env.local
+
+# Mac system files

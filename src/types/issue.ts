@@ -14,11 +14,12 @@ export interface Issue {
   category: IssueCategory;
   status: IssueStatus;
   createdAt: string; // ISO date
+  updatedAt?: string; // ISO date (for Firebase)
   votes: number;
   attachments?: string[]; // store URLs for now
   user?: {
     name: string;
-    avatar: string;
+    avatar?: string;
   };
 }
 

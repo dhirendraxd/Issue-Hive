@@ -8,7 +8,15 @@ IssueHive is a simple, mobile‑friendly app where students can:
 - Support issues with upvotes
 - Track status from Received → In Progress → Resolved
 
-This repository currently uses localStorage for persistence and React Query for client data flows. No backend is configured.
+This repository supports both **localStorage** (default) and **Firebase** (cloud backend) for data persistence.
+
+🔥 **NEW: Firebase Backend Available!**
+- Cloud-based data storage with Firestore
+- User authentication (Email/Password + Google OAuth)
+- File uploads with Firebase Storage
+- Real-time capabilities ready to use
+
+See [`docs/FIREBASE-README.md`](docs/FIREBASE-README.md) for setup instructions.
 
 Run locally
 -----------
@@ -27,4 +35,5 @@ Tech stack
 - Tailwind + shadcn‑style components
 - React Router
 - React Query (client‑side cache)
+- Firebase (optional backend - Auth, Firestore, Storage)
 

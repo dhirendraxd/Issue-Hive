@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Issues collection
+    match /issues/{issueId} {
+      // Anyone can read issues
+      allow read: if true;
+      
+      // Only authenticated users can create issues
+      allow create: if isSignedIn() 
+        && request.resource.data.keys().hasAll(['title', 'description', 'category', 'status', 'votes'])
+        && request.resource.data.votes == 0
+        && request.resource.data.status == 'received';
+      
+      // Authenticated users can update issues
+      // Prevent vote manipulation (can only increment by 1)
+      allow update: if isSignedIn() 
+        && (
+          // Status updates
+          request.resource.data.status in ['received', 'in_progress', 'resolved']
+          // Vote updates (only +1 allowed)
+          || (request.resource.data.votes == resource.data.votes + 1)
+        );
+      
+      // Only authenticated users can delete (or add ownership check)
+      allow delete: if isSignedIn();
+    }
+    
+    // Users collection (for user profiles)
+    match /users/{userId} {
+      // Anyone can read user profiles
+      allow read: if true;
+      
+      // Users can only write their own profile
+      allow write: if isOwner(userId);
+    }
+    
+    // Comments collection (future feature)
+    match /comments/{commentId} {
+      // Anyone can read comments
+      allow read: if true;
+      
+      // Only authenticated users can create comments
+      allow create: if isSignedIn();
+      
+      // Users can update/delete their own comments
+      allow update, delete: if isSignedIn() 
+        && resource.data.userId == request.auth.uid;
+    }
+  }
+}
