@@ -12,16 +12,15 @@ export interface Issue {
   title: string;
   description: string;
   category: IssueCategory;
-  status: IssueStatus;
-  createdAt: string; // ISO date
-  updatedAt?: string; // ISO date (for Firebase)
+  urgency?: "low" | "medium" | "high";
   votes: number;
+  status: "open" | "in_progress" | "resolved" | "closed";
+  createdBy: string;
+  createdByName: string;
+  anonymous?: boolean;
+  createdAt: number;
+  updatedAt: number;
   attachments?: string[]; // store URLs for now
-  user?: {
-    name: string;
-    avatar?: string;
-  };
-  userId?: string; // Track the actual user ID even for anonymous posts
 }
 
 export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [

@@ -44,24 +44,35 @@ export function useIssuesFirebase() {
       title: string;
       description: string;
       category: IssueCategory;
+      status: string;
+      votes: number;
+      createdBy: string;
+      createdByName: string;
+      createdAt: number;
+      updatedAt: number;
+      urgency?: 'low' | 'medium' | 'high';
+      anonymous?: boolean;
       attachments?: string[];
-      user?: { name: string; avatar?: string };
-      userId?: string;
     }) => {
-      const issueData: Omit<Issue, "id" | "createdAt" | "updatedAt"> = {
+      // Only send fields required by Firestore rules, plus optional UI fields
+      const issueData = {
         title: data.title,
         description: data.description,
         category: data.category,
-        status: "received" as IssueStatus,
-        votes: 0,
+          status: data.status as IssueStatus,
+        votes: data.votes,
+        createdBy: data.createdBy,
+        createdByName: data.createdByName,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
+        urgency: data.urgency,
+        anonymous: data.anonymous,
         attachments: data.attachments,
-        user: data.user,
-        userId: data.userId,
       };
       const newIssueId = await createIssue(issueData);
-      return { id: newIssueId, ...issueData, createdAt: new Date().toISOString() };
+      return { id: newIssueId, ...issueData };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+      onSuccess: () => qc.invalidateQueries(["issues"]),
   });
 
   const upvote = useMutation({
@@ -73,7 +84,23 @@ export function useIssuesFirebase() {
       await updateIssue(id, { votes: issue.votes + 1 });
       return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+      onSuccess: () => qc.invalidateQueries(["issues"]),
+  });
+
+  const upvoteIssue = useMutation({
+    mutationFn: async (id: string) => {
+      // Implement upvote logic (Firestore/Realtime DB)
+      // Example: fetch issue, increment votes, update in DB
+    },
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+  });
+
+  const downvoteIssue = useMutation({
+    mutationFn: async (id: string) => {
+      // Implement downvote logic (Firestore/Realtime DB)
+      // Example: fetch issue, decrement votes, update in DB
+    },
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
   });
 
   const setStatus = useMutation({
@@ -92,7 +119,15 @@ export function useIssuesFirebase() {
     return { total, open, votes };
   }, [issuesQuery.data]);
 
-  return { ...issuesQuery, addIssue, upvote, setStatus, stats };
+  return { 
+    ...issuesQuery, 
+    addIssue, 
+    upvote, 
+    upvoteIssue,
+    downvoteIssue,
+    setStatus, 
+    stats 
+  };
 }
 
 /**

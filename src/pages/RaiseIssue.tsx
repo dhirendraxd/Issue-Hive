@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
+import { cn } from '@/lib/utils';
 
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
@@ -26,6 +27,7 @@ export default function RaiseIssuePage() {
     title: '',
     description: '',
     category: '' as IssueCategory | '',
+    urgency: 'low' as 'low' | 'medium' | 'high',
   });
 
   useEffect(() => {
@@ -60,49 +62,62 @@ export default function RaiseIssuePage() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category as IssueCategory,
-        userId: user?.uid, // Always store the user ID for tracking
-        user: isAnonymous 
-          ? { name: 'Anonymous' }  // Anonymous posting - no avatar
-          : {
-              name: user?.displayName || user?.email || 'Anonymous',
-              avatar: user?.photoURL || undefined,
-            },
+        urgency: formData.urgency,
+        votes: 0,
+        userId: user?.uid ?? '',
+        userName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
+        anonymous: isAnonymous,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       });
 
       toast.success('Campus issue reported successfully!');
       
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        category: '',
-      });
-      setIsAnonymous(false);
+      try {
+        // Map campus categories to allowed Firestore values
+        const allowedCategories = {
+          bug: 'bug',
+          feature: 'feature',
+          improvement: 'improvement',
+          question: 'question',
+          other: 'other',
+        };
+        // If your UI uses custom campus categories, map them here
+        const category = allowedCategories[formData.category] || 'other';
 
-      // Navigate to issues page after a short delay
-      setTimeout(() => {
-        navigate('/issues');
-      }, 1500);
-    } catch (error) {
-      console.error('Error reporting campus issue:', error);
-      toast.error('Failed to report issue. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+        await addIssue.mutateAsync({
+          title: formData.title.trim(),
+          description: formData.description.trim(),
+          category,
+          status: 'open',
+          votes: 0,
+          createdBy: user?.uid ?? '',
+          createdByName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          // You can still send urgency/anonymous for UI, but rules ignore them
+          urgency: formData.urgency,
+          anonymous: isAnonymous,
+        });
 
-  const handleChange = (field: keyof typeof formData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
-      </div>
-    );
-  }
-
+        toast.success('Campus issue reported successfully!');
+        // Reset form
+        setFormData({
+          title: '',
+          description: '',
+          category: '',
+          urgency: 'low',
+        });
+        setIsAnonymous(false);
+        setTimeout(() => {
+          navigate('/issues');
+        }, 1500);
+      } catch (error) {
+        console.error('Error reporting campus issue:', error);
+        toast.error('Failed to report issue. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
   if (!user) {
     return null;
   }
@@ -209,6 +224,30 @@ export default function RaiseIssuePage() {
                   <p className="text-sm text-gray-500">
                     {formData.description.length}/2000 characters
                   </p>
+                </div>
+
+                {/* Urgency Level */}
+                <div className="mb-4">
+                  <Label className="block font-medium mb-1">
+                    Urgency Level
+                  </Label>
+                  <div className="flex gap-4">
+                    {['low', 'medium', 'high'].map((level) => (
+                      <Button
+                        key={level}
+                        variant={formData.urgency === level ? 'default' : 'outline'}
+                        onClick={(e) => { e.preventDefault(); handleChange('urgency', level as 'low' | 'medium' | 'high'); }}
+                        className={cn(
+                          'capitalize',
+                          formData.urgency === level && {
+                            'bg-orange-500 text-white border-orange-500': true,
+                          }
+                        )}
+                      >
+                        {level}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Anonymous Posting Option */}
