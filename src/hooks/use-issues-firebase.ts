@@ -21,18 +21,16 @@ export function useIssuesFirebase() {
     queryKey: ["issues"],
     queryFn: async () => {
       const issues = await getIssues([orderBy("createdAt", "desc")]);
-      // Convert Firestore Timestamps to ISO strings for consistency
+      // Convert Firestore Timestamps to numbers for consistency
       return issues.map(issue => {
         const issueData: Issue = {
           ...issue,
-          createdAt: typeof issue.createdAt === 'string' 
+          createdAt: typeof issue.createdAt === 'number' 
             ? issue.createdAt 
-            : new Date().toISOString(),
-          updatedAt: issue.updatedAt 
-            ? (typeof issue.updatedAt === 'string' 
-                ? issue.updatedAt 
-                : new Date().toISOString())
-            : undefined,
+            : Date.now(),
+          updatedAt: typeof issue.updatedAt === 'number' 
+            ? issue.updatedAt 
+            : Date.now(),
         };
         return issueData;
       });
@@ -72,7 +70,7 @@ export function useIssuesFirebase() {
       const newIssueId = await createIssue(issueData);
       return { id: newIssueId, ...issueData };
     },
-      onSuccess: () => qc.invalidateQueries(["issues"]),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
   });
 
   const upvote = useMutation({
@@ -84,7 +82,7 @@ export function useIssuesFirebase() {
       await updateIssue(id, { votes: issue.votes + 1 });
       return id;
     },
-      onSuccess: () => qc.invalidateQueries(["issues"]),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
   });
 
   const upvoteIssue = useMutation({

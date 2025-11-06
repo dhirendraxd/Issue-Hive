@@ -14,7 +14,7 @@ export interface Issue {
   category: IssueCategory;
   urgency?: "low" | "medium" | "high";
   votes: number;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  status: IssueStatus;
   createdBy: string;
   createdByName: string;
   anonymous?: boolean;

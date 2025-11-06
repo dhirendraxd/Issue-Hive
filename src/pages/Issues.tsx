@@ -34,12 +34,12 @@ export default function Issues() {
       arr = arr.filter((i) => {
         const title = i.title.toLowerCase();
         const desc = i.description.toLowerCase();
-        const name = (i.user?.name || "").toLowerCase();
+        const name = (i.createdByName || "").toLowerCase();
         return title.includes(n) || desc.includes(n) || name.includes(n);
       });
     }
     // sorting
-    const byDate = (a: string, b: string) => new Date(a).getTime() - new Date(b).getTime();
+    const byDate = (a: number, b: number) => a - b;
     if (sort === "new") arr = [...arr].sort((a, b) => byDate(b.createdAt, a.createdAt));
     else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
     else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
@@ -119,13 +119,12 @@ export default function Issues() {
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={i.user?.avatar} alt={i.user?.name} />
                       <AvatarFallback className="bg-orange-500 text-white text-xs">
-                        {getInitials(i.user?.name ?? "User")}
+                        {getInitials(i.createdByName ?? "User")}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{i.user?.name ?? "Anonymous"}</p>
+                      <p className="text-sm font-medium truncate">{i.createdByName ?? "Anonymous"}</p>
                       <p className="text-xs text-muted-foreground">
                         {new Date(i.createdAt).toLocaleDateString()}
                       </p>
@@ -156,18 +155,11 @@ export default function Issues() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
-                        onClick={() => upvoteIssue(i.id)}
+                        onClick={() => upvote.mutate(i.id)}
                         size="sm"
                         className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
                       >
                         Upvote
-                      </Button>
-                      <Button
-                        onClick={() => downvoteIssue(i.id)}
-                        size="sm"
-                        className="rounded-full bg-red-500 text-white hover:bg-red-400/90 transition-colors"
-                      >
-                        Downvote
                       </Button>
                     </div>
                   </div>
