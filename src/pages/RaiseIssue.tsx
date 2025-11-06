@@ -68,6 +68,7 @@ export default function RaiseIssuePage() {
     setIsSubmitting(true);
 
     try {
+      const now = Date.now();
       // Submit to Firebase using the expected shape
       await addIssue.mutateAsync({
         title: formData.title.trim(),
@@ -77,10 +78,12 @@ export default function RaiseIssuePage() {
         votes: 0,
         createdBy: user?.uid ?? '',
         createdByName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
-        // Optional UI-only fields
+        createdAt: now,
+        updatedAt: now,
         urgency: formData.urgency,
         anonymous: isAnonymous,
-      } as any);
+        attachments: [],
+      });
 
       toast.success('Campus issue reported successfully!');
 
@@ -101,8 +104,9 @@ export default function RaiseIssuePage() {
     } finally {
       setIsSubmitting(false);
     }
-
   };
+
+  return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden">
       {/* Navbar */}
       <Navbar />
