@@ -37,6 +37,16 @@ export default function RaiseIssuePage() {
     }
   }, [user, authLoading, navigate]);
 
+  // Simple field updater
+  const handleChange = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
+    setFormData((prev) => ({ ...prev, [key]: value }));
+  };
+
+  // Guard render until auth known; optional early return for unauthenticated
+  if (!authLoading && !user) {
+    return null;
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -58,71 +68,41 @@ export default function RaiseIssuePage() {
     setIsSubmitting(true);
 
     try {
+      // Submit to Firebase using the expected shape
       await addIssue.mutateAsync({
         title: formData.title.trim(),
         description: formData.description.trim(),
         category: formData.category as IssueCategory,
-        urgency: formData.urgency,
+        status: 'received',
         votes: 0,
-        userId: user?.uid ?? '',
-        userName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
+        createdBy: user?.uid ?? '',
+        createdByName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
+        // Optional UI-only fields
+        urgency: formData.urgency,
         anonymous: isAnonymous,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      });
+      } as any);
 
       toast.success('Campus issue reported successfully!');
-      
-      try {
-        // Map campus categories to allowed Firestore values
-        const allowedCategories = {
-          bug: 'bug',
-          feature: 'feature',
-          improvement: 'improvement',
-          question: 'question',
-          other: 'other',
-        };
-        // If your UI uses custom campus categories, map them here
-        const category = allowedCategories[formData.category] || 'other';
 
-        await addIssue.mutateAsync({
-          title: formData.title.trim(),
-          description: formData.description.trim(),
-          category,
-          status: 'open',
-          votes: 0,
-          createdBy: user?.uid ?? '',
-          createdByName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          // You can still send urgency/anonymous for UI, but rules ignore them
-          urgency: formData.urgency,
-          anonymous: isAnonymous,
-        });
+      // Reset form and navigate
+      setFormData({
+        title: '',
+        description: '',
+        category: '',
+        urgency: 'low',
+      });
+      setIsAnonymous(false);
+      setTimeout(() => {
+        navigate('/issues');
+      }, 1000);
+    } catch (error) {
+      console.error('Error reporting campus issue:', error);
+      toast.error('Failed to report issue. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
 
-        toast.success('Campus issue reported successfully!');
-        // Reset form
-        setFormData({
-          title: '',
-          description: '',
-          category: '',
-          urgency: 'low',
-        });
-        setIsAnonymous(false);
-        setTimeout(() => {
-          navigate('/issues');
-        }, 1500);
-      } catch (error) {
-        console.error('Error reporting campus issue:', error);
-        toast.error('Failed to report issue. Please try again.');
-      } finally {
-        setIsSubmitting(false);
-      }
-  if (!user) {
-    return null;
-  }
-
-  return (
+  };
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden">
       {/* Navbar */}
       <Navbar />
@@ -190,18 +170,18 @@ export default function RaiseIssuePage() {
                   </Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => handleChange('category', value)}
+                    onValueChange={(value) => handleChange('category', value as IssueCategory)}
                     disabled={isSubmitting}
                   >
                     <SelectTrigger id="category" className="h-12 text-base border-gray-300 focus:border-orange-500 focus:ring-orange-500">
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="bug">� Infrastructure - Water, electricity, plumbing issues</SelectItem>
-                      <SelectItem value="feature">🏢 Facilities - Classrooms, labs, restrooms</SelectItem>
-                      <SelectItem value="improvement">🧹 Maintenance - Cleaning, repairs needed</SelectItem>
-                      <SelectItem value="question">🌳 Campus Grounds - Gardens, parking, outdoor areas</SelectItem>
-                      <SelectItem value="other">📝 Other - General campus concerns</SelectItem>
+                      <SelectItem value="Facilities">🏢 Facilities - Classrooms, labs, restrooms</SelectItem>
+                      <SelectItem value="Academics">📚 Academics - Courses, schedules, exams</SelectItem>
+                      <SelectItem value="Administration">� Administration - Offices, services, processes</SelectItem>
+                      <SelectItem value="Events">� Events - Activities, announcements</SelectItem>
+                      <SelectItem value="Other">📝 Other - General campus concerns</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
