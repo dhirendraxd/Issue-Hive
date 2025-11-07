@@ -7,12 +7,12 @@ import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
-import { ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
+import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
-import IssueComments from "@/components/IssueComments";
+import IssueDetailDialog from "@/components/IssueDetailDialog";
 
 export default function Issues() {
   const { user } = useAuth();
@@ -23,6 +23,23 @@ export default function Issues() {
 
   const upvote = useCloud ? cloud.upvote : local.upvote;
   const downvote = useCloud ? cloud.downvoteIssue : local.downvote;
+
+  // Modal state
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleCardClick = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = (open: boolean) => {
+    setDialogOpen(open);
+    if (!open) {
+      // Small delay to allow dialog close animation
+      setTimeout(() => setSelectedIssue(null), 150);
+    }
+  };
 
   // Filters
   const [q, setQ] = useState("");
@@ -131,7 +148,11 @@ export default function Issues() {
             )}
 
             {visibleIssues.map((i) => (
-              <Card key={i.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg transition-all hover:bg-white/70 hover:shadow-md hover:border-orange-200/60 flex flex-col h-full">
+              <Card 
+                key={i.id} 
+                className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg transition-all hover:bg-white/70 hover:shadow-md hover:border-orange-200/60 flex flex-col h-full cursor-pointer"
+                onClick={() => handleCardClick(i)}
+              >
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
@@ -170,35 +191,18 @@ export default function Issues() {
                       <ThumbsUp className="h-4 w-4 text-orange-500" />
                       <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => downvote.mutate(i.id)}
-                        size="sm"
-                        variant="outline"
-                        className="rounded-full"
-                        disabled={user?.uid === i.createdBy}
-                        title={user?.uid === i.createdBy ? 'You cannot vote on your own issue' : 'Downvote this issue'}
-                      >
-                        Downvote
-                      </Button>
-                      <Button
-                        onClick={() => upvote.mutate(i.id)}
-                        size="sm"
-                        className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
-                        disabled={user?.uid === i.createdBy}
-                        title={user?.uid === i.createdBy ? 'You cannot vote on your own issue' : 'Upvote this issue'}
-                      >
-                        Upvote
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(i);
+                      }}
+                    >
+                      View Details →
+                    </Button>
                   </div>
-
-                  {/* Comments */}
-                  {useCloud && (
-                    <div className="pt-4 mt-4 border-t">
-                      <IssueComments issueId={i.id} disabled={user?.uid === i.createdBy} />
-                    </div>
-                  )}
 
                   {/* Urgency & Anonymous Status */}
                   <div className="mt-2 text-xs text-gray-500">
@@ -216,6 +220,17 @@ export default function Issues() {
           </div>
         </section>
       </main>
+
+      {/* Issue Detail Dialog */}
+      <IssueDetailDialog
+        issue={selectedIssue}
+        open={dialogOpen}
+        onOpenChange={handleDialogClose}
+        onUpvote={(id) => upvote.mutate(id)}
+        onDownvote={(id) => downvote.mutate(id)}
+        isUpvoting={upvote.isPending}
+        isDownvoting={downvote.isPending}
+      />
     </div>
   );
 }

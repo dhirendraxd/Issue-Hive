@@ -46,7 +46,7 @@ export default function Auth() {
         await signUp(email, password);
         toast.success('Account created successfully!');
       }
-      navigate('/dashboard');
+      navigate('/raise-issue');
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const errorMessage = firebaseError.code === 'auth/not-configured'
@@ -70,7 +70,7 @@ export default function Auth() {
     try {
       await signInWithGoogle();
       toast.success('Welcome!');
-      navigate('/dashboard');
+      navigate('/raise-issue');
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const msg = firebaseError.code === 'auth/not-configured'

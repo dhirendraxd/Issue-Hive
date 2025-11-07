@@ -11,12 +11,15 @@ import BubbleParticles from "@/components/BubbleParticles";
 import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
+import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 function Hero() {
+  const { user } = useAuth();
+  
   return (
     <section className="relative overflow-hidden min-h-[100svh] flex items-center">
       <div className="absolute inset-0 opacity-50 pointer-events-none" aria-hidden>
@@ -34,7 +37,7 @@ function Hero() {
           </p>
 
           <div className="mt-2 md:mt-4 flex gap-3">
-            <Link to="/auth">
+            <Link to={user ? "/raise-issue" : "/auth"}>
               <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
@@ -152,7 +155,7 @@ const Index = () => {
               IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
             </p>
             <div className="mt-6 flex justify-center">
-              <Link to="/issues">
+              <Link to="/raise-issue">
                 <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
                   Start Now
                   <ArrowRight className="ml-2 h-4 w-4" />
