@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Issue, IssueCategory, IssueStatus, IssueVisibility } from "@/types/issue";
 import { 
-  getIssues, 
+  getIssues,
+  getIssue,
   createIssue, 
   updateIssue,
   getUserVote,
@@ -133,6 +134,56 @@ export function useIssuesFirebase() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
+  const resolveIssue = useMutation({
+    mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
+      if (!user) throw new Error('Must be signed in');
+      
+      await updateIssue(params.id, {
+        status: 'resolved' as IssueStatus,
+        resolution: {
+          message: params.message,
+          photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+          resolvedAt: Date.now(),
+          resolvedBy: user.uid,
+        },
+      });
+      return params.id;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
+      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
+    },
+  });
+
+  const addProgress = useMutation({
+    mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
+      if (!user) throw new Error('Must be signed in');
+      
+      // Get current issue to append to existing progressUpdates
+      const issueDoc = await getIssue(params.id);
+      if (!issueDoc) throw new Error('Issue not found');
+      
+      const existingUpdates = issueDoc.progressUpdates || [];
+      const newUpdate = {
+        message: params.message,
+        photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+        updatedAt: Date.now(),
+        updatedBy: user.uid,
+      };
+      
+      await updateIssue(params.id, {
+        progressUpdates: [...existingUpdates, newUpdate],
+        hasRecentProgress: true,
+        updatedAt: Date.now(),
+      });
+      return params.id;
+    },
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
+      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
+    },
+  });
+
   const stats = useMemo(() => {
     const list = issuesQuery.data ?? [];
     const total = list.length;
@@ -149,6 +200,8 @@ export function useIssuesFirebase() {
     downvoteIssue,
     setStatus,
     setVisibility,
+    resolveIssue,
+    addProgress,
     stats,
   };
 }

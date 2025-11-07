@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { toast } from 'sonner';
+import ResolveIssueDialog from '@/components/ResolveIssueDialog';
+import AddProgressDialog from '@/components/AddProgressDialog';
 import { 
   LogOut, 
   Plus,
@@ -25,8 +27,11 @@ import ParticlesBackground from '@/components/ParticlesBackground';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { data: issues, isLoading: issuesLoading, stats, setVisibility } = useIssuesFirebase();
+  const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const navigate = useNavigate();
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -65,6 +70,52 @@ export default function Dashboard() {
     received: 'bg-blue-500',
     in_progress: 'bg-yellow-500',
     resolved: 'bg-green-500',
+  };
+
+  const handleOpenResolveDialog = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setResolveDialogOpen(true);
+  };
+
+  const handleOpenProgressDialog = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setProgressDialogOpen(true);
+  };
+
+  const handleResolve = async ({ message, photos }: { message: string; photos?: string[] }) => {
+    if (!selectedIssue) return;
+    
+    try {
+      await resolveIssue.mutateAsync({
+        id: selectedIssue.id,
+        message,
+        photos,
+      });
+      toast.success('Issue marked as resolved!');
+      setResolveDialogOpen(false);
+      setSelectedIssue(null);
+    } catch (error) {
+      toast.error('Failed to resolve issue');
+      console.error('Resolve error:', error);
+    }
+  };
+
+  const handleAddProgress = async ({ message, photos }: { message: string; photos?: string[] }) => {
+    if (!selectedIssue) return;
+    
+    try {
+      await addProgress.mutateAsync({
+        id: selectedIssue.id,
+        message,
+        photos,
+      });
+      toast.success('Progress update added!');
+      setProgressDialogOpen(false);
+      setSelectedIssue(null);
+    } catch (error) {
+      toast.error('Failed to add progress update');
+      console.error('Progress error:', error);
+    }
   };
 
   return (
@@ -232,7 +283,7 @@ export default function Dashboard() {
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <label htmlFor={`vis-${issue.id}`} className="text-[11px] uppercase tracking-wide text-muted-foreground">Visibility</label>
                           <select
                             id={`vis-${issue.id}`}
@@ -247,6 +298,30 @@ export default function Dashboard() {
                               <option key={v.value} value={v.value}>{v.label}</option>
                             ))}
                           </select>
+                          <div className="ml-auto flex items-center gap-2">
+                            {issue.status !== 'resolved' && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenProgressDialog(issue)}
+                                  className="text-xs h-7"
+                                >
+                                  <TrendingUp className="h-3 w-3 mr-1" />
+                                  Add Progress
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleOpenResolveDialog(issue)}
+                                  className="text-xs h-7"
+                                >
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Mark Resolved
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -328,6 +403,24 @@ export default function Dashboard() {
           </div>
         </div>
       </main>
+
+      {/* Resolution Dialog */}
+      <ResolveIssueDialog
+        open={resolveDialogOpen}
+        onOpenChange={setResolveDialogOpen}
+        issueTitle={selectedIssue?.title || ''}
+        onResolve={handleResolve}
+        isResolving={resolveIssue.isPending}
+      />
+
+      {/* Progress Dialog */}
+      <AddProgressDialog
+        open={progressDialogOpen}
+        onOpenChange={setProgressDialogOpen}
+        issueTitle={selectedIssue?.title || ''}
+        onAddProgress={handleAddProgress}
+        isAdding={addProgress.isPending}
+      />
     </div>
   );
 }

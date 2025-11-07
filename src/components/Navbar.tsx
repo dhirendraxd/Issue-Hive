@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function Navbar() {
   const location = useLocation();
-  const isHome = location.pathname === "/";
+  const currentPath = location.pathname;
   const { user } = useAuth();
 
   return (
@@ -30,12 +30,18 @@ export default function Navbar() {
 
         {/* Right side nav */}
         <nav aria-label="Primary" className="hidden md:flex items-center gap-8 text-sm">
-          {!isHome && (
+          {currentPath !== "/" && (
             <Link to="/" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Home</Link>
           )}
-          <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
-          <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
-          <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
+          {currentPath !== "/about" && (
+            <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
+          )}
+          {currentPath !== "/issues" && (
+            <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
+          )}
+          {currentPath !== "/raise-issue" && (
+            <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
+          )}
           
           {user ? (
             <Link to="/dashboard">

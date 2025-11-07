@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -219,6 +219,106 @@ export default function IssueDetailDialog({
                 </div>
               </div>
             </div>
+
+            {/* Resolution Section */}
+            {issue.resolution && (
+              <>
+                <Separator />
+                <div className="rounded-lg bg-green-50 border border-green-200 p-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center">
+                      <CheckCircle2 className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-green-900">Issue Resolved</div>
+                      <div className="text-xs text-green-700">
+                        {new Date(issue.resolution.resolvedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-green-900">Resolution Message:</div>
+                    <p className="text-sm text-green-800 whitespace-pre-wrap break-words bg-white rounded p-3 border border-green-200">
+                      {issue.resolution.message}
+                    </p>
+                  </div>
+
+                  {issue.resolution.photos && issue.resolution.photos.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-green-900">Resolution Photos:</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {issue.resolution.photos.map((photo, idx) => (
+                          <img
+                            key={idx}
+                            src={photo}
+                            alt={`Resolution ${idx + 1}`}
+                            className="rounded border border-green-200 w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(photo, '_blank')}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Progress Updates Section */}
+            {issue.progressUpdates && issue.progressUpdates.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-orange-500" />
+                    <h3 className="text-base font-semibold">Progress Updates</h3>
+                    <Badge variant="secondary" className="ml-auto">
+                      {issue.progressUpdates.length} {issue.progressUpdates.length === 1 ? 'update' : 'updates'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {issue.progressUpdates.slice().reverse().map((update, idx) => (
+                      <div 
+                        key={idx} 
+                        className="rounded-lg bg-orange-50 border border-orange-200 p-4 space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-xs text-orange-700">
+                          <span className="font-medium">
+                            Update {issue.progressUpdates!.length - idx}
+                          </span>
+                          <span>
+                            {new Date(update.updatedAt).toLocaleDateString()} at{' '}
+                            {new Date(update.updatedAt).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm text-orange-900 whitespace-pre-wrap break-words bg-white rounded p-3 border border-orange-200">
+                          {update.message}
+                        </p>
+
+                        {update.photos && update.photos.length > 0 && (
+                          <div className="grid grid-cols-2 gap-2 pt-2">
+                            {update.photos.map((photo, photoIdx) => (
+                              <img
+                                key={photoIdx}
+                                src={photo}
+                                alt={`Progress ${photoIdx + 1}`}
+                                className="rounded border border-orange-200 w-full h-24 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => window.open(photo, '_blank')}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             <Separator />
 

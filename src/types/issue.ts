@@ -23,6 +23,22 @@ export interface Issue {
   createdAt: number;
   updatedAt: number;
   attachments?: string[]; // store URLs for now
+  /** Resolution details when issue is marked as resolved by owner */
+  resolution?: {
+    message: string;
+    photos?: string[];
+    resolvedAt: number;
+    resolvedBy: string;
+  };
+  /** Progress updates - array of updates added by the issue owner */
+  progressUpdates?: Array<{
+    message: string;
+    photos?: string[];
+    updatedAt: number;
+    updatedBy: string;
+  }>;
+  /** Flag to indicate if issue has recent progress updates (for badge display) */
+  hasRecentProgress?: boolean;
 }
 
 export const ISSUE_STATUSES: { value: IssueStatus; label: string }[] = [

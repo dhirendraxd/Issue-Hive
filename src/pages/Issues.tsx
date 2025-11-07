@@ -183,6 +183,11 @@ export default function Issues() {
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
                       {i.category}
                     </span>
+                    {i.hasRecentProgress && i.progressUpdates && i.progressUpdates.length > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
+                        🔄 {i.progressUpdates.length} Progress Update{i.progressUpdates.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
                   </div>
 
                   {/* Footer: Votes & Action */}
