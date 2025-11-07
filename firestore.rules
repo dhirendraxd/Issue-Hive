@@ -50,10 +50,12 @@ service cloud.firestore {
         // Anyone can read votes to see who voted
         allow read: if true;
         
-        // Users can only create/update their own vote on issues they don't own
+        // Users can only create/update their own vote
+        // Can vote on issues they don't own, OR on anonymous issues (even if they own it)
         allow create, update: if isSignedIn() 
           && request.auth.uid == userId
-          && get(/databases/$(database)/documents/issues/$(issueId)).data.createdBy != request.auth.uid
+          && (get(/databases/$(database)/documents/issues/$(issueId)).data.anonymous == true
+              || get(/databases/$(database)/documents/issues/$(issueId)).data.createdBy != request.auth.uid)
           && request.resource.data.vote in [-1, 1];
         
         // Users can delete their own vote
@@ -75,13 +77,19 @@ service cloud.firestore {
       // Anyone can read comments
       allow read: if true;
       
-      // Only authenticated users can create comments on issues they do not own
+      // Only authenticated users can create comments
       // Limit to 2 top-level comments per user per issue (no parentId field)
       // Unlimited replies allowed (has parentId field)
+      // Allow commenting on anonymous issues (including by creator)
       allow create: if isSignedIn()
         && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt','likes'])
         && request.resource.data.likes == 0
-        && get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid
+        && (
+          // If issue is anonymous, anyone can comment
+          get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.anonymous == true
+          // If not anonymous, only non-owners can comment
+          || get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid
+        )
         && (
           // If it's a reply (has parentId), allow unlimited
           ('parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
@@ -89,8 +97,14 @@ service cloud.firestore {
           || !('parentId' in request.resource.data) || request.resource.data.parentId == null || request.resource.data.parentId == ''
         );
       
-      // Users can update/delete their own comments
-      allow update, delete: if isSignedIn() 
+      // Users can update their own comments (for likes count updates)
+      allow update: if isSignedIn() 
+        && (resource.data.userId == request.auth.uid
+            // Allow system to update likes count
+            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])));
+      
+      // Users can delete their own comments
+      allow delete: if isSignedIn() 
         && resource.data.userId == request.auth.uid;
       
       // Comment likes subcollection - tracks individual user likes

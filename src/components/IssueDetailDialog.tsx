@@ -38,6 +38,9 @@ export default function IssueDetailDialog({
   if (!issue) return null;
 
   const isOwner = user?.uid === issue.createdBy;
+  const isAnonymous = issue.anonymous === true;
+  // Allow comments on anonymous issues even if owner
+  const disableComments = isOwner && !isAnonymous;
   const hasUpvoted = userVote?.vote === 1;
   const hasDownvoted = userVote?.vote === -1;
 
@@ -196,8 +199,8 @@ export default function IssueDetailDialog({
                       hasDownvoted && "bg-orange-500 text-white hover:bg-orange-600"
                     )}
                     onClick={() => onDownvote?.(issue.id)}
-                    disabled={isOwner || isDownvoting || !onDownvote}
-                    title={isOwner ? 'You cannot vote on your own issue' : hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
+                    disabled={(isOwner && !isAnonymous) || isDownvoting || !onDownvote}
+                    title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
                   >
                     <ThumbsDown className="h-4 w-4 mr-1" />
                     {hasDownvoted ? 'Downvoted' : 'Downvote'}
@@ -210,8 +213,8 @@ export default function IssueDetailDialog({
                       hasUpvoted ? "bg-orange-500 text-white hover:bg-orange-600" : "bg-black text-white hover:bg-orange-400/90"
                     )}
                     onClick={() => onUpvote?.(issue.id)}
-                    disabled={isOwner || isUpvoting || !onUpvote}
-                    title={isOwner ? 'You cannot vote on your own issue' : hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
+                    disabled={(isOwner && !isAnonymous) || isUpvoting || !onUpvote}
+                    title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
                   >
                     <ThumbsUp className="h-4 w-4 mr-1" />
                     {hasUpvoted ? 'Upvoted' : 'Upvote'}
@@ -325,7 +328,7 @@ export default function IssueDetailDialog({
             {/* Comments Section */}
             {isFirebaseConfigured && (
               <div className="space-y-3">
-                <IssueComments issueId={issue.id} disabled={isOwner} />
+                <IssueComments issueId={issue.id} disabled={disableComments} />
               </div>
             )}
           </div>
