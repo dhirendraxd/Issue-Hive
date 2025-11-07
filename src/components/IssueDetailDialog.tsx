@@ -9,6 +9,7 @@ import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserVote } from "@/hooks/use-user-vote";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +33,13 @@ export default function IssueDetailDialog({
   isDownvoting,
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
+  const { data: userVote } = useUserVote(issue?.id);
 
   if (!issue) return null;
+
+  const isOwner = user?.uid === issue.createdBy;
+  const hasUpvoted = userVote?.vote === 1;
+  const hasDownvoted = userVote?.vote === -1;
 
   const getInitials = (name: string) => {
     return name
@@ -68,8 +74,6 @@ export default function IssueDetailDialog({
         return "text-gray-600 bg-gray-50";
     }
   };
-
-  const isOwner = user?.uid === issue.createdBy;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -186,24 +190,31 @@ export default function IssueDetailDialog({
                 <div className="flex items-center gap-2">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="rounded-full"
+                    variant={hasDownvoted ? "default" : "outline"}
+                    className={cn(
+                      "rounded-full",
+                      hasDownvoted && "bg-orange-500 text-white hover:bg-orange-600"
+                    )}
                     onClick={() => onDownvote?.(issue.id)}
                     disabled={isOwner || isDownvoting || !onDownvote}
-                    title={isOwner ? 'You cannot vote on your own issue' : 'Downvote this issue'}
+                    title={isOwner ? 'You cannot vote on your own issue' : hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
                   >
                     <ThumbsDown className="h-4 w-4 mr-1" />
-                    Downvote
+                    {hasDownvoted ? 'Downvoted' : 'Downvote'}
                   </Button>
                   <Button
                     size="sm"
-                    className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
+                    variant={hasUpvoted ? "default" : "outline"}
+                    className={cn(
+                      "rounded-full",
+                      hasUpvoted ? "bg-orange-500 text-white hover:bg-orange-600" : "bg-black text-white hover:bg-orange-400/90"
+                    )}
                     onClick={() => onUpvote?.(issue.id)}
                     disabled={isOwner || isUpvoting || !onUpvote}
-                    title={isOwner ? 'You cannot vote on your own issue' : 'Upvote this issue'}
+                    title={isOwner ? 'You cannot vote on your own issue' : hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
                   >
                     <ThumbsUp className="h-4 w-4 mr-1" />
-                    Upvote
+                    {hasUpvoted ? 'Upvoted' : 'Upvote'}
                   </Button>
                 </div>
               </div>

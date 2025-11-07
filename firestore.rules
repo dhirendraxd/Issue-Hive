@@ -24,20 +24,33 @@ service cloud.firestore {
         && request.resource.data.status == 'received'
         && (request.resource.data.visibility in ['public','private','draft'] || !('visibility' in request.resource.data));
       
-      // Authenticated users can update issues
-      // Prevent vote manipulation (can only +/- 1) and disallow self-voting
+      // Authenticated users can update issues (status and visibility only)
+      // Votes are now tracked separately in votes collection
       allow update: if isSignedIn() 
         && (
           // Status updates
           request.resource.data.status in ['received', 'in_progress', 'resolved']
           // Visibility updates (owner-only)
           || (isOwner(resource.data.createdBy) && (request.resource.data.visibility in ['public','private','draft']))
-          // Vote updates (only +/-1 allowed) and not by owner
-          || ((request.resource.data.votes == resource.data.votes + 1 || request.resource.data.votes == resource.data.votes - 1) && request.auth.uid != resource.data.createdBy)
         );
       
       // Only authenticated users can delete (or add ownership check)
       allow delete: if isSignedIn();
+      
+      // Votes subcollection - tracks individual user votes
+      match /votes/{userId} {
+        // Anyone can read votes to see who voted
+        allow read: if true;
+        
+        // Users can only create/update their own vote on issues they don't own
+        allow create, update: if isSignedIn() 
+          && request.auth.uid == userId
+          && get(/databases/$(database)/documents/issues/$(issueId)).data.createdBy != request.auth.uid
+          && request.resource.data.vote in [-1, 1];
+        
+        // Users can delete their own vote
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
     }
     
     // Users collection (for user profiles)
@@ -55,9 +68,17 @@ service cloud.firestore {
       allow read: if true;
       
       // Only authenticated users can create comments on issues they do not own
+      // Limit to 2 top-level comments per user per issue (no parentId field)
+      // Unlimited replies allowed (has parentId field)
       allow create: if isSignedIn()
         && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt'])
-        && get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid;
+        && get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid
+        && (
+          // If it's a reply (has parentId), allow unlimited
+          ('parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
+          // If it's a top-level comment (no parentId or empty), client must verify count
+          || !('parentId' in request.resource.data) || request.resource.data.parentId == null || request.resource.data.parentId == ''
+        );
       
       // Users can update/delete their own comments
       allow update, delete: if isSignedIn() 

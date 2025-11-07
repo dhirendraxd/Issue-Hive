@@ -5,10 +5,13 @@ import {
   getIssues, 
   createIssue, 
   updateIssue,
+  getUserVote,
+  setVote,
   where,
   orderBy,
   Timestamp,
 } from "@/integrations/firebase";
+import { useAuth } from "./use-auth";
 
 /**
  * Firebase-enabled version of useIssues hook
@@ -16,6 +19,7 @@ import {
  */
 export function useIssuesFirebase() {
   const qc = useQueryClient();
+  const { user } = useAuth();
 
   const issuesQuery = useQuery({
     queryKey: ["issues-firebase"],
@@ -76,36 +80,41 @@ export function useIssuesFirebase() {
 
   const upvote = useMutation({
     mutationFn: async (id: string) => {
-      const issues = issuesQuery.data ?? [];
-      const issue = issues.find(i => i.id === id);
-      if (!issue) throw new Error("Issue not found");
-      
-      await updateIssue(id, { votes: issue.votes + 1 });
+      if (!user) throw new Error('Must be signed in');
+      await setVote(id, user.uid, 1);
       return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
+      await qc.invalidateQueries({ queryKey: ["user-vote"] });
+      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
+    },
   });
 
   const upvoteIssue = useMutation({
     mutationFn: async (id: string) => {
-      const issues = issuesQuery.data ?? [];
-      const issue = issues.find(i => i.id === id);
-      if (!issue) throw new Error('Issue not found');
-      await updateIssue(id, { votes: issue.votes + 1 });
+      if (!user) throw new Error('Must be signed in');
+      await setVote(id, user.uid, 1);
       return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
+      await qc.invalidateQueries({ queryKey: ["user-vote"] });
+      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
+    },
   });
 
   const downvoteIssue = useMutation({
     mutationFn: async (id: string) => {
-      const issues = issuesQuery.data ?? [];
-      const issue = issues.find(i => i.id === id);
-      if (!issue) throw new Error('Issue not found');
-      await updateIssue(id, { votes: Math.max(0, issue.votes - 1) });
+      if (!user) throw new Error('Must be signed in');
+      await setVote(id, user.uid, -1);
       return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
+      await qc.invalidateQueries({ queryKey: ["user-vote"] });
+      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
+    },
   });
 
   const setStatus = useMutation({
