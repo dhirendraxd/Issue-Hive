@@ -1,9 +1,9 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import { getAnalytics, Analytics } from 'firebase/analytics';
-import { getDatabase } from 'firebase/database';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getAnalytics, type Analytics } from 'firebase/analytics';
+import { getDatabase, type Database } from 'firebase/database';
 
 // Firebase configuration
 // Get these values from Firebase Console > Project Settings > General
@@ -18,20 +18,38 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
+// Determine if Firebase is configured (prevent runtime crashes when env vars are missing)
+const isConfigured = Boolean(
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId
+);
 
-// Initialize Firebase services
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const realtimeDb = getDatabase(app);
-export const storage = getStorage(app);
-
-// Initialize Analytics (only in browser environment)
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let realtimeDb: Database | null = null;
+let storage: FirebaseStorage | null = null;
 let analytics: Analytics | null = null;
-if (typeof window !== 'undefined') {
-  analytics = getAnalytics(app);
-}
-export { analytics };
 
+try {
+  if (isConfigured) {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    realtimeDb = getDatabase(app);
+    storage = getStorage(app);
+    if (typeof window !== 'undefined') {
+      analytics = getAnalytics(app);
+    }
+  } else {
+    console.warn('[Issue-Hive] Firebase not configured. Set VITE_FIREBASE_* env vars to enable auth and database.');
+  }
+} catch (e) {
+  console.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
+}
+
+export { app, auth, db, realtimeDb, storage, analytics };
+export const isFirebaseConfigured = isConfigured;
 export default app;

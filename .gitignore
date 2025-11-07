@@ -22,6 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.env.example
 
 # Documentation (keep only README.md)
 docs/
@@ -38,6 +39,7 @@ coverage
 
 # Environment variables (CRITICAL - DO NOT PUSH)
 .env
+.env.example
 .env.local
 .env.development
 .env.production

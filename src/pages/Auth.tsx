@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { signIn, signInWithGoogle, signUp } from '@/integrations/firebase';
+import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
 import { Loader2, Mail } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
@@ -48,7 +49,9 @@ export default function Auth() {
       navigate('/dashboard');
     } catch (error) {
       const firebaseError = error as FirebaseError;
-      const errorMessage = firebaseError.code === 'auth/email-already-in-use'
+      const errorMessage = firebaseError.code === 'auth/not-configured'
+        ? 'Authentication is disabled: Firebase is not configured.'
+        : firebaseError.code === 'auth/email-already-in-use'
         ? 'Email already in use. Try logging in instead.'
         : firebaseError.code === 'auth/invalid-credential'
         ? 'Invalid email or password'
@@ -70,7 +73,10 @@ export default function Auth() {
       navigate('/dashboard');
     } catch (error) {
       const firebaseError = error as FirebaseError;
-      toast.error(firebaseError.message || 'Google sign-in failed');
+      const msg = firebaseError.code === 'auth/not-configured'
+        ? 'Authentication is disabled: Firebase is not configured.'
+        : firebaseError.message || 'Google sign-in failed';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -116,7 +122,7 @@ export default function Auth() {
               variant="outline"
               className="w-full h-11 border-gray-300 hover:bg-gray-50"
               onClick={handleGoogleAuth}
-              disabled={loading}
+              disabled={loading || !isFirebaseConfigured}
             >
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -148,7 +154,7 @@ export default function Auth() {
             <div className="relative">
               <Separator />
               <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-xs text-muted-foreground">
-                or continue with email
+                {isFirebaseConfigured ? 'or continue with email' : 'Firebase not configured'}
               </span>
             </div>
 

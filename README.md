@@ -11,12 +11,38 @@ IssueHive is a simple, mobile‑friendly app where students can:
 This repository supports both **localStorage** (default) and **Firebase** (cloud backend) for data persistence.
 
 🔥 **NEW: Firebase Backend Available!**
+
 - Cloud-based data storage with Firestore
 - User authentication (Email/Password + Google OAuth)
 - File uploads with Firebase Storage
 - Real-time capabilities ready to use
 
-See [`docs/FIREBASE-README.md`](docs/FIREBASE-README.md) for setup instructions.
+Firebase setup (dev)
+--------------------
+
+1. Enable providers
+
+- Firebase Console → Build → Authentication → Sign-in method
+	- Enable Email/Password
+	- Enable Google
+
+1. Authorized domains (fixes `auth/unauthorized-domain`)
+
+- Firebase Console → Authentication → Settings → Authorized domains → Add:
+	- `localhost`
+	- `127.0.0.1`
+	- Your LAN IP if you open the Network URL from Vite (e.g. `192.168.x.x`)
+	- Any deployed domains (e.g. `your-app.vercel.app`)
+	- Note: Ports don’t matter; only hostnames are checked.
+
+1. Add env vars
+
+- Copy `.env.example` to `.env.local` and fill with your Firebase Web App config.
+- Restart `npm run dev` after editing.
+
+1. Optional: use localhost only
+
+- If you don’t want to add your LAN IP, open the Local URL (<http://localhost:8080> or <http://localhost:8081>) instead of the Network URL.
 
 Run locally
 -----------
