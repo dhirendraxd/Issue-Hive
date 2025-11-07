@@ -10,6 +10,7 @@ import Issues from "./pages/Issues";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import RaiseIssue from "./pages/RaiseIssue";
+import UserProfile from "./pages/UserProfile";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/raise-issue" element={<RaiseIssue />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/u/:uid" element={<UserProfile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
