@@ -78,16 +78,18 @@ export interface CommentDoc {
   userName: string;
   content: string;
   parentId?: string; // undefined for top-level, commentId for replies
+  likes: number; // count of likes
   createdAt: Timestamp;
 }
 
-export const createComment = async (data: Omit<CommentDoc, 'id' | 'createdAt'>) => {
+export const createComment = async (data: Omit<CommentDoc, 'id' | 'createdAt' | 'likes'>) => {
   const now = Timestamp.now();
   const commentData: Record<string, unknown> = {
     issueId: data.issueId,
     userId: data.userId,
     userName: data.userName,
     content: data.content,
+    likes: 0,
     createdAt: now,
   };
   
@@ -205,6 +207,56 @@ export const countUserTopLevelComments = async (issueId: string, userId: string)
   }).length;
   
   return topLevelCount;
+};
+
+// Comment Likes - similar to issue votes
+export interface CommentLikeDoc {
+  userId: string;
+  likedAt: Timestamp;
+}
+
+export const getUserCommentLike = async (commentId: string, userId: string): Promise<CommentLikeDoc | null> => {
+  const likeRef = doc(db, COLLECTIONS.COMMENTS, commentId, 'likes', userId);
+  const likeSnap = await getDoc(likeRef);
+  
+  if (likeSnap.exists()) {
+    return likeSnap.data() as CommentLikeDoc;
+  }
+  return null;
+};
+
+export const toggleCommentLike = async (commentId: string, userId: string): Promise<'liked' | 'unliked'> => {
+  const batch = writeBatch(db);
+  const likeRef = doc(db, COLLECTIONS.COMMENTS, commentId, 'likes', userId);
+  const commentRef = doc(db, COLLECTIONS.COMMENTS, commentId);
+  
+  // Check if already liked
+  const existingLike = await getUserCommentLike(commentId, userId);
+  
+  // Get current comment like count
+  const commentSnap = await getDoc(commentRef);
+  if (!commentSnap.exists()) throw new Error('Comment not found');
+  
+  const currentLikes = (commentSnap.data() as CommentDoc).likes || 0;
+  
+  if (existingLike) {
+    // Unlike
+    const newLikes = Math.max(0, currentLikes - 1);
+    batch.delete(likeRef);
+    batch.update(commentRef, { likes: newLikes });
+    await batch.commit();
+    return 'unliked';
+  } else {
+    // Like
+    const newLikes = currentLikes + 1;
+    batch.set(likeRef, {
+      userId,
+      likedAt: Timestamp.now(),
+    });
+    batch.update(commentRef, { likes: newLikes });
+    await batch.commit();
+    return 'liked';
+  }
 };
 
 // Export Firestore utilities for custom queries

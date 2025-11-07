@@ -49,12 +49,17 @@ export default function Issues() {
   const [sort, setSort] = useState<SortKey>("new");
   const visibleIssues = useMemo(() => {
     const base = (useCloud ? cloud.data : local.data) ?? [];
-    // Hide private/draft issues unless owned by current user
+    // Hide draft issues completely; hide private issues unless owned by current user
     type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
     let arr = base.filter((i) => {
       const vis = (i as unknown as WithVisibility).visibility;
+      // Exclude all draft issues from public listing
+      if (vis === 'draft') return false;
+      // Show public issues to everyone
       if (!vis || vis === 'public') return true;
-      return i.createdBy === user?.uid; // owner can see theirs
+      // Show private issues only to the owner
+      if (vis === 'private') return i.createdBy === user?.uid;
+      return true;
     });
     // status filter (default in_progress + resolved)
     if (statuses.length > 0) {
@@ -183,6 +188,11 @@ export default function Issues() {
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
                       {i.category}
                     </span>
+                    {'visibility' in i && i.visibility === 'private' && (
+                      <span className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                        🔒 Private
+                      </span>
+                    )}
                     {i.hasRecentProgress && i.progressUpdates && i.progressUpdates.length > 0 && (
                       <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
                         🔄 {i.progressUpdates.length} Progress Update{i.progressUpdates.length !== 1 ? 's' : ''}

@@ -85,6 +85,49 @@ export function useIssuesFirebase() {
       await setVote(id, user.uid, 1);
       return id;
     },
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
+      
+      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
+      
+      if (previousIssues) {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map(issue => {
+            if (issue.id === id) {
+              const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+              let voteChange = 1;
+              if (currentVote?.vote === 1) voteChange = -1;
+              else if (currentVote?.vote === -1) voteChange = 2;
+              return { ...issue, votes: Math.max(0, issue.votes + voteChange) };
+            }
+            return issue;
+          });
+        });
+      }
+      
+      // Update user vote cache
+      const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+      if (currentVote?.vote === 1) {
+        // Removing upvote
+        qc.setQueryData(["user-vote", id, user?.uid], null);
+      } else {
+        // Adding or switching to upvote
+        qc.setQueryData(["user-vote", id, user?.uid], { vote: 1 });
+      }
+      
+      return { previousIssues, previousVote };
+    },
+    onError: (err, id, context) => {
+      if (context?.previousIssues) {
+        qc.setQueryData(["issues-firebase"], context.previousIssues);
+      }
+      if (context?.previousVote !== undefined) {
+        qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
+      }
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
       await qc.invalidateQueries({ queryKey: ["user-vote"] });
@@ -98,6 +141,55 @@ export function useIssuesFirebase() {
       await setVote(id, user.uid, 1);
       return id;
     },
+    onMutate: async (id: string) => {
+      // Cancel outgoing refetches
+      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
+      
+      // Snapshot previous value
+      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
+      
+      // Optimistically update the cache
+      if (previousIssues) {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map(issue => {
+            if (issue.id === id) {
+              // Get current user vote to determine increment
+              const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+              let voteChange = 1;
+              if (currentVote?.vote === 1) voteChange = -1; // removing upvote
+              else if (currentVote?.vote === -1) voteChange = 2; // switching from downvote
+              
+              return { ...issue, votes: Math.max(0, issue.votes + voteChange) };
+            }
+            return issue;
+          });
+        });
+      }
+      
+      // Update user vote cache
+      const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+      if (currentVote?.vote === 1) {
+        // Removing upvote
+        qc.setQueryData(["user-vote", id, user?.uid], null);
+      } else {
+        // Adding or switching to upvote
+        qc.setQueryData(["user-vote", id, user?.uid], { vote: 1 });
+      }
+      
+      return { previousIssues, previousVote };
+    },
+    onError: (err, id, context) => {
+      // Rollback on error
+      if (context?.previousIssues) {
+        qc.setQueryData(["issues-firebase"], context.previousIssues);
+      }
+      if (context?.previousVote !== undefined) {
+        qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
+      }
+    },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
       await qc.invalidateQueries({ queryKey: ["user-vote"] });
@@ -110,6 +202,55 @@ export function useIssuesFirebase() {
       if (!user) throw new Error('Must be signed in');
       await setVote(id, user.uid, -1);
       return id;
+    },
+    onMutate: async (id: string) => {
+      // Cancel outgoing refetches
+      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
+      
+      // Snapshot previous value
+      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
+      
+      // Optimistically update the cache
+      if (previousIssues) {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map(issue => {
+            if (issue.id === id) {
+              // Get current user vote to determine decrement
+              const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+              let voteChange = -1;
+              if (currentVote?.vote === -1) voteChange = 1; // removing downvote
+              else if (currentVote?.vote === 1) voteChange = -2; // switching from upvote
+              
+              return { ...issue, votes: Math.max(0, issue.votes + voteChange) };
+            }
+            return issue;
+          });
+        });
+      }
+      
+      // Update user vote cache
+      const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+      if (currentVote?.vote === -1) {
+        // Removing downvote
+        qc.setQueryData(["user-vote", id, user?.uid], null);
+      } else {
+        // Adding or switching to downvote
+        qc.setQueryData(["user-vote", id, user?.uid], { vote: -1 });
+      }
+      
+      return { previousIssues, previousVote };
+    },
+    onError: (err, id, context) => {
+      // Rollback on error
+      if (context?.previousIssues) {
+        qc.setQueryData(["issues-firebase"], context.previousIssues);
+      }
+      if (context?.previousVote !== undefined) {
+        qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
+      }
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ["issues-firebase"] });

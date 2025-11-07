@@ -79,7 +79,8 @@ service cloud.firestore {
       // Limit to 2 top-level comments per user per issue (no parentId field)
       // Unlimited replies allowed (has parentId field)
       allow create: if isSignedIn()
-        && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt'])
+        && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt','likes'])
+        && request.resource.data.likes == 0
         && get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid
         && (
           // If it's a reply (has parentId), allow unlimited
@@ -91,6 +92,16 @@ service cloud.firestore {
       // Users can update/delete their own comments
       allow update, delete: if isSignedIn() 
         && resource.data.userId == request.auth.uid;
+      
+      // Comment likes subcollection - tracks individual user likes
+      match /likes/{userId} {
+        // Anyone can read likes to see who liked
+        allow read: if true;
+        
+        // Users can only create/update/delete their own like
+        allow create, update: if isSignedIn() && request.auth.uid == userId;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
     }
   }
 }
