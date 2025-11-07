@@ -1,10 +1,31 @@
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createComment, getCommentsForIssue, countUserTopLevelComments, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
+import { createComment, getCommentsForIssue, subscribeToComments, countUserTopLevelComments, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
 
 export function useComments(issueId: string | undefined) {
   const qc = useQueryClient();
   const { user } = useAuth();
+
+  // Set up real-time subscription for comments
+  useEffect(() => {
+    if (!issueId) return;
+
+    const unsubscribe = subscribeToComments(
+      issueId,
+      (comments) => {
+        // Update React Query cache with real-time data
+        qc.setQueryData(['comments', issueId], comments);
+      },
+      (error) => {
+        console.error('Real-time comments subscription error:', error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [issueId, qc]);
 
   const commentsQuery = useQuery({
     enabled: !!issueId,
@@ -12,7 +33,9 @@ export function useComments(issueId: string | undefined) {
     queryFn: async () => {
       if (!issueId) return [] as CommentDoc[];
       return await getCommentsForIssue(issueId);
-    }
+    },
+    staleTime: Infinity, // Real-time updates handle freshness
+    gcTime: Infinity, // Keep data in cache
   });
 
   // Query to get user's top-level comment count for this issue
@@ -59,8 +82,9 @@ export function useComments(issueId: string | undefined) {
       const id = await createComment(commentData);
       return id;
     },
+    // No need to invalidate - real-time subscription handles updates
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['comments', issueId] });
+      // Still invalidate comment count since it's not real-time
       qc.invalidateQueries({ queryKey: ['user-comment-count', issueId, user?.uid] });
     }
   });

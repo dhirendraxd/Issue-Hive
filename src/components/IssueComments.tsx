@@ -17,7 +17,7 @@ interface IssueCommentsProps {
 export default function IssueComments({ issueId, disabled, className }: IssueCommentsProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { data: comments, isLoading, addComment, userCommentCount, canAddTopLevel } = useComments(issueId);
+  const { data: comments, isLoading, error: commentsError, addComment, userCommentCount, canAddTopLevel } = useComments(issueId);
   const [value, setValue] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +31,7 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
       return await toggleCommentLike(commentId, user.uid);
     },
     onMutate: async (commentId: string) => {
-      // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: ['comments', issueId] });
+      // Cancel outgoing refetches for this specific comment's like status
       await qc.cancelQueries({ queryKey: ['comment-like', commentId, user?.uid] });
       
       // Snapshot previous values
@@ -61,20 +60,20 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
         qc.setQueryData(['comment-like', commentId, user?.uid], { userId: user?.uid, likedAt: new Date() });
       }
       
-      return { previousComments, previousLike };
+      return { previousComments, previousLike, commentId };
     },
     onError: (err, commentId, context) => {
       // Rollback on error
       if (context?.previousComments) {
         qc.setQueryData(['comments', issueId], context.previousComments);
       }
-      if (context?.previousLike !== undefined) {
-        qc.setQueryData(['comment-like', commentId, user?.uid], context.previousLike);
+      if (context?.previousLike !== undefined && context?.commentId) {
+        qc.setQueryData(['comment-like', context.commentId, user?.uid], context.previousLike);
       }
     },
-    onSettled: () => {
-      // Refetch to ensure sync with server
-      qc.invalidateQueries({ queryKey: ['comments', issueId] });
+    onSettled: (data, error, commentId) => {
+      // Only refetch the specific comment's like status, not all comments
+      qc.invalidateQueries({ queryKey: ['comment-like', commentId, user?.uid] });
     }
   });
 
@@ -125,7 +124,13 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
       
       {isLoading && <p className="text-xs text-muted-foreground">Loading comments...</p>}
       
-      {!isLoading && topLevelComments.length === 0 && (
+      {commentsError && (
+        <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
+          Error loading comments: {(commentsError as Error).message}
+        </div>
+      )}
+      
+      {!isLoading && !commentsError && topLevelComments.length === 0 && (
         <p className="text-xs text-muted-foreground">No comments yet. Be the first!</p>
       )}
       

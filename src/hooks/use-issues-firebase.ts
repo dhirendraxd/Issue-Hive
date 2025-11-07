@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Issue, IssueCategory, IssueStatus, IssueVisibility } from "@/types/issue";
 import { 
@@ -8,6 +8,7 @@ import {
   updateIssue,
   getUserVote,
   setVote,
+  subscribeToIssues,
   where,
   orderBy,
   Timestamp,
@@ -17,10 +18,43 @@ import { useAuth } from "./use-auth";
 /**
  * Firebase-enabled version of useIssues hook
  * This replaces local storage with Firestore for persistent cloud storage
+ * Now with REAL-TIME updates using onSnapshot
  */
 export function useIssuesFirebase() {
   const qc = useQueryClient();
   const { user } = useAuth();
+
+  // Use real-time subscription for issues
+  useEffect(() => {
+    const unsubscribe = subscribeToIssues(
+      (issues) => {
+        // Convert Firestore Timestamps to numbers for consistency
+        const isTimestamp = (v: unknown): v is Timestamp =>
+          typeof v === 'object' && v !== null && 'toMillis' in (v as Record<string, unknown>);
+        const toMillis = (v: unknown): number => {
+          if (typeof v === 'number') return v;
+          if (isTimestamp(v)) return v.toMillis();
+          return Date.now();
+        };
+        const normalizedIssues = issues.map((issue) => ({
+          ...issue,
+          createdAt: toMillis((issue as unknown as { createdAt?: unknown }).createdAt),
+          updatedAt: toMillis((issue as unknown as { updatedAt?: unknown }).updatedAt),
+        } as Issue));
+        
+        // Update React Query cache with real-time data
+        qc.setQueryData(["issues-firebase"], normalizedIssues);
+      },
+      (error) => {
+        console.error('Real-time issues subscription error:', error);
+      },
+      [orderBy("createdAt", "desc")]
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [qc]);
 
   const issuesQuery = useQuery({
     queryKey: ["issues-firebase"],
@@ -40,6 +74,8 @@ export function useIssuesFirebase() {
         updatedAt: toMillis((issue as unknown as { updatedAt?: unknown }).updatedAt),
       } as Issue));
     },
+    staleTime: Infinity, // Real-time updates handle freshness
+    gcTime: Infinity, // Keep data in cache
   });
 
   const addIssue = useMutation({
@@ -76,7 +112,7 @@ export function useIssuesFirebase() {
       const newIssueId = await createIssue(issueData);
       return { id: newIssueId, ...issueData };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    // No need to invalidate - real-time subscription handles updates
   });
 
   const upvote = useMutation({
@@ -128,11 +164,7 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
-      await qc.invalidateQueries({ queryKey: ["user-vote"] });
-      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
-    },
+    // No onSuccess invalidation needed - real-time subscription handles it
   });
 
   const upvoteIssue = useMutation({
@@ -190,11 +222,7 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
-      await qc.invalidateQueries({ queryKey: ["user-vote"] });
-      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
-    },
+    // No onSuccess invalidation needed - real-time subscription handles it
   });
 
   const downvoteIssue = useMutation({
@@ -252,11 +280,7 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
-      await qc.invalidateQueries({ queryKey: ["user-vote"] });
-      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
-    },
+    // No onSuccess invalidation needed - real-time subscription handles it
   });
 
   const setStatus = useMutation({
@@ -264,7 +288,7 @@ export function useIssuesFirebase() {
       await updateIssue(params.id, { status: params.status });
       return params.id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    // No invalidation needed - real-time subscription handles it
   });
 
   const setVisibility = useMutation({
@@ -272,7 +296,7 @@ export function useIssuesFirebase() {
       await updateIssue(params.id, { visibility: params.visibility });
       return params.id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+    // No invalidation needed - real-time subscription handles it
   });
 
   const resolveIssue = useMutation({
@@ -290,10 +314,7 @@ export function useIssuesFirebase() {
       });
       return params.id;
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
-      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
-    },
+    // No invalidation needed - real-time subscription handles it
   });
 
   const addProgress = useMutation({
@@ -319,10 +340,7 @@ export function useIssuesFirebase() {
       });
       return params.id;
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["issues-firebase"] });
-      await qc.refetchQueries({ queryKey: ["issues-firebase"] });
-    },
+    // No invalidation needed - real-time subscription handles it
   });
 
   const stats = useMemo(() => {

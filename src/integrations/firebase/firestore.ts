@@ -15,6 +15,8 @@ import {
   DocumentData,
   QueryConstraint,
   writeBatch,
+  onSnapshot,
+  type Unsubscribe,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { Issue } from '@/types/issue';
@@ -55,6 +57,54 @@ export const getIssues = async (constraints: QueryConstraint[] = []): Promise<Is
     id: doc.id,
     ...doc.data(),
   })) as Issue[];
+};
+
+// Real-time subscription for issues
+export const subscribeToIssues = (
+  onUpdate: (issues: Issue[]) => void,
+  onError?: (error: Error) => void,
+  constraints: QueryConstraint[] = []
+): Unsubscribe => {
+  const q = query(collection(db, COLLECTIONS.ISSUES), ...constraints);
+  
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const issues = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Issue[];
+      onUpdate(issues);
+    },
+    (error) => {
+      console.error('Error in issues subscription:', error);
+      if (onError) onError(error);
+    }
+  );
+};
+
+// Real-time subscription for a single issue
+export const subscribeToIssue = (
+  issueId: string,
+  onUpdate: (issue: Issue | null) => void,
+  onError?: (error: Error) => void
+): Unsubscribe => {
+  const docRef = doc(db, COLLECTIONS.ISSUES, issueId);
+  
+  return onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        onUpdate({ id: snapshot.id, ...snapshot.data() } as Issue);
+      } else {
+        onUpdate(null);
+      }
+    },
+    (error) => {
+      console.error('Error in issue subscription:', error);
+      if (onError) onError(error);
+    }
+  );
 };
 
 export const updateIssue = async (id: string, data: Partial<Issue>) => {
@@ -111,6 +161,36 @@ export const getCommentsForIssue = async (issueId: string, constraints: QueryCon
   );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CommentDoc[];
+};
+
+// Real-time subscription for comments
+export const subscribeToComments = (
+  issueId: string,
+  onUpdate: (comments: CommentDoc[]) => void,
+  onError?: (error: Error) => void,
+  constraints: QueryConstraint[] = []
+): Unsubscribe => {
+  const q = query(
+    collection(db, COLLECTIONS.COMMENTS),
+    where('issueId', '==', issueId),
+    orderBy('createdAt', 'asc'),
+    ...constraints
+  );
+  
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const comments = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as CommentDoc[];
+      onUpdate(comments);
+    },
+    (error) => {
+      console.error('Error in comments subscription:', error);
+      if (onError) onError(error);
+    }
+  );
 };
 
 // Voting system
@@ -259,6 +339,78 @@ export const toggleCommentLike = async (commentId: string, userId: string): Prom
   }
 };
 
+// User Activity Analytics
+export interface UserActivity {
+  votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }>;
+  comments: Array<CommentDoc & { issue?: Issue }>;
+  likedComments: Array<{ commentId: string; comment?: CommentDoc; issue?: Issue }>;
+}
+
+export const getUserActivity = async (userId: string): Promise<UserActivity> => {
+  // Get all issues user has voted on
+  const issuesSnapshot = await getDocs(collection(db, COLLECTIONS.ISSUES));
+  const votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }> = [];
+  
+  for (const issueDoc of issuesSnapshot.docs) {
+    const voteDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, issueDoc.id, 'votes', userId));
+    if (voteDoc.exists()) {
+      const voteData = voteDoc.data() as VoteDoc;
+      votedIssues.push({
+        issueId: issueDoc.id,
+        vote: voteData.vote,
+        issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
+      });
+    }
+  }
+
+  // Get all comments by user
+  const commentsQuery = query(
+    collection(db, COLLECTIONS.COMMENTS),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+  const commentsSnapshot = await getDocs(commentsQuery);
+  const comments: Array<CommentDoc & { issue?: Issue }> = [];
+  
+  for (const commentDoc of commentsSnapshot.docs) {
+    const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
+    // Fetch associated issue
+    const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
+    if (issueDoc.exists()) {
+      comments.push({
+        ...commentData,
+        issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
+      });
+    } else {
+      comments.push(commentData);
+    }
+  }
+
+  // Get all comments user has liked
+  const allCommentsSnapshot = await getDocs(collection(db, COLLECTIONS.COMMENTS));
+  const likedComments: Array<{ commentId: string; comment?: CommentDoc; issue?: Issue }> = [];
+  
+  for (const commentDoc of allCommentsSnapshot.docs) {
+    const likeDoc = await getDoc(doc(db, COLLECTIONS.COMMENTS, commentDoc.id, 'likes', userId));
+    if (likeDoc.exists()) {
+      const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
+      // Fetch associated issue
+      const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
+      likedComments.push({
+        commentId: commentDoc.id,
+        comment: commentData,
+        issue: issueDoc.exists() ? { id: issueDoc.id, ...issueDoc.data() } as Issue : undefined,
+      });
+    }
+  }
+
+  return {
+    votedIssues,
+    comments,
+    likedComments,
+  };
+};
+
 // Export Firestore utilities for custom queries
-export { collection, query, where, orderBy, limit, Timestamp, setDoc };
-export type { DocumentData, QueryConstraint };
+export { collection, query, where, orderBy, limit, Timestamp, setDoc, onSnapshot };
+export type { DocumentData, QueryConstraint, Unsubscribe };

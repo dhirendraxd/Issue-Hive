@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
+import { useUserActivity } from '@/hooks/use-user-activity';
 import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
@@ -21,13 +22,18 @@ import {
   AlertCircle,
   User,
   Mail,
-  Calendar
+  Calendar,
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Activity
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const navigate = useNavigate();
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
@@ -398,6 +404,142 @@ export default function Dashboard() {
                     About IssueHive
                   </Button>
                 </Link>
+              </CardContent>
+            </Card>
+
+            {/* User Activity Card */}
+            <Card className="border-stone-200 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-orange-600" />
+                  Your Activity
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Your engagement across the platform
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isActivityLoading ? (
+                  <div className="text-sm text-stone-500">Loading activity...</div>
+                ) : (
+                  <>
+                    {/* Activity Stats */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <ThumbsUp className="h-4 w-4" />
+                          <span>Upvotes Given</span>
+                        </div>
+                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                          {userActivity?.votedIssues.filter(v => v.vote === 1).length || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <ThumbsDown className="h-4 w-4" />
+                          <span>Downvotes Given</span>
+                        </div>
+                        <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                          {userActivity?.votedIssues.filter(v => v.vote === -1).length || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>Comments Made</span>
+                        </div>
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                          {userActivity?.comments.length || 0}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <ThumbsUp className="h-4 w-4" />
+                          <span>Comments Liked</span>
+                        </div>
+                        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+                          {userActivity?.likedComments.length || 0}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Recent Voted Issues */}
+                    {userActivity && userActivity.votedIssues.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-stone-700">Recently Voted</h4>
+                        <div className="space-y-1.5">
+                          {userActivity.votedIssues.slice(0, 3).map((vote) => (
+                            <Link 
+                              key={vote.issueId} 
+                              to="/issues"
+                              className="block p-2 rounded-md hover:bg-stone-50 transition-colors"
+                            >
+                              <div className="flex items-start gap-2">
+                                {vote.vote === 1 ? (
+                                  <ThumbsUp className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+                                ) : (
+                                  <ThumbsDown className="h-3.5 w-3.5 text-red-600 mt-0.5 flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-stone-900 truncate">
+                                    {vote.issue?.title || 'Unknown Issue'}
+                                  </p>
+                                  <p className="text-xs text-stone-500">
+                                    {vote.vote === 1 ? 'Upvoted' : 'Downvoted'}
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Comments */}
+                    {userActivity && userActivity.comments.length > 0 && (
+                      <div className="space-y-2">
+                        <h4 className="text-xs font-medium text-stone-700">Recent Comments</h4>
+                        <div className="space-y-1.5">
+                          {userActivity.comments.slice(0, 3).map((comment) => (
+                            <Link 
+                              key={comment.id} 
+                              to="/issues"
+                              className="block p-2 rounded-md hover:bg-stone-50 transition-colors"
+                            >
+                              <div className="flex items-start gap-2">
+                                <MessageSquare className="h-3.5 w-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs text-stone-600 line-clamp-2">
+                                    {comment.content}
+                                  </p>
+                                  <p className="text-xs text-stone-500 mt-0.5">
+                                    on "{comment.issue?.title || 'Unknown Issue'}"
+                                  </p>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* No Activity Message */}
+                    {userActivity && 
+                     userActivity.votedIssues.length === 0 && 
+                     userActivity.comments.length === 0 && 
+                     userActivity.likedComments.length === 0 && (
+                      <div className="text-center py-4">
+                        <Activity className="h-8 w-8 text-stone-300 mx-auto mb-2" />
+                        <p className="text-sm text-stone-500">No activity yet</p>
+                        <p className="text-xs text-stone-400 mt-1">
+                          Start engaging with issues!
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
