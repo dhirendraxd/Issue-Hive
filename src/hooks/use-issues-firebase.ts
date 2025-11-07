@@ -88,16 +88,22 @@ export function useIssuesFirebase() {
 
   const upvoteIssue = useMutation({
     mutationFn: async (id: string) => {
-      // Implement upvote logic (Firestore/Realtime DB)
-      // Example: fetch issue, increment votes, update in DB
+      const issues = issuesQuery.data ?? [];
+      const issue = issues.find(i => i.id === id);
+      if (!issue) throw new Error('Issue not found');
+      await updateIssue(id, { votes: issue.votes + 1 });
+      return id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const downvoteIssue = useMutation({
     mutationFn: async (id: string) => {
-      // Implement downvote logic (Firestore/Realtime DB)
-      // Example: fetch issue, decrement votes, update in DB
+      const issues = issuesQuery.data ?? [];
+      const issue = issues.find(i => i.id === id);
+      if (!issue) throw new Error('Issue not found');
+      await updateIssue(id, { votes: Math.max(0, issue.votes - 1) });
+      return id;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
@@ -126,15 +132,15 @@ export function useIssuesFirebase() {
     return { total, open, votes };
   }, [issuesQuery.data]);
 
-  return { 
-    ...issuesQuery, 
-    addIssue, 
-    upvote, 
+  return {
+    ...issuesQuery,
+    addIssue,
+    upvote,
     upvoteIssue,
     downvoteIssue,
-    setStatus, 
+    setStatus,
     setVisibility,
-    stats 
+    stats,
   };
 }
 

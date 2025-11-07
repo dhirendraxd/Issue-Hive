@@ -68,6 +68,36 @@ export const deleteIssue = async (id: string) => {
   await deleteDoc(docRef);
 };
 
+// Comments
+export interface CommentDoc {
+  id: string;
+  issueId: string;
+  userId: string;
+  userName: string;
+  content: string;
+  createdAt: Timestamp;
+}
+
+export const createComment = async (data: Omit<CommentDoc, 'id' | 'createdAt'>) => {
+  const now = Timestamp.now();
+  const docRef = await addDoc(collection(db, COLLECTIONS.COMMENTS), {
+    ...data,
+    createdAt: now,
+  });
+  return docRef.id;
+};
+
+export const getCommentsForIssue = async (issueId: string, constraints: QueryConstraint[] = []) => {
+  const q = query(
+    collection(db, COLLECTIONS.COMMENTS),
+    where('issueId', '==', issueId),
+    orderBy('createdAt', 'asc'),
+    ...constraints,
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as CommentDoc[];
+};
+
 // Export Firestore utilities for custom queries
 export { collection, query, where, orderBy, limit, Timestamp };
 export type { DocumentData, QueryConstraint };

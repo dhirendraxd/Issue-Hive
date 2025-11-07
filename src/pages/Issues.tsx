@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
+import IssueComments from "@/components/IssueComments";
 
 export default function Issues() {
   const { user } = useAuth();
@@ -21,6 +22,7 @@ export default function Issues() {
   const useCloud = isFirebaseConfigured;
 
   const upvote = useCloud ? cloud.upvote : local.upvote;
+  const downvote = useCloud ? cloud.downvoteIssue : local.downvote;
 
   // Filters
   const [q, setQ] = useState("");
@@ -170,14 +172,33 @@ export default function Issues() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
+                        onClick={() => downvote.mutate(i.id)}
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        disabled={user?.uid === i.createdBy}
+                        title={user?.uid === i.createdBy ? 'You cannot vote on your own issue' : 'Downvote this issue'}
+                      >
+                        Downvote
+                      </Button>
+                      <Button
                         onClick={() => upvote.mutate(i.id)}
                         size="sm"
                         className="rounded-full bg-black text-white hover:bg-orange-400/90 transition-colors"
+                        disabled={user?.uid === i.createdBy}
+                        title={user?.uid === i.createdBy ? 'You cannot vote on your own issue' : 'Upvote this issue'}
                       >
                         Upvote
                       </Button>
                     </div>
                   </div>
+
+                  {/* Comments */}
+                  {useCloud && (
+                    <div className="pt-4 mt-4 border-t">
+                      <IssueComments issueId={i.id} disabled={user?.uid === i.createdBy} />
+                    </div>
+                  )}
 
                   {/* Urgency & Anonymous Status */}
                   <div className="mt-2 text-xs text-gray-500">

@@ -53,6 +53,18 @@ export function useIssues() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-local"] }),
   });
 
+  const downvote = useMutation({
+    mutationFn: async (id: string) => {
+      const current = loadIssues();
+      const updated = current.map((i) =>
+        i.id === id ? { ...i, votes: Math.max(0, i.votes - 1) } : i
+      );
+      saveIssues(updated);
+      return id;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-local"] }),
+  });
+
   const setStatus = useMutation({
     mutationFn: async (params: { id: string; status: IssueStatus }) => {
       const current = loadIssues();
@@ -73,5 +85,5 @@ export function useIssues() {
     return { total, open, votes };
   }, [issuesQuery.data]);
 
-  return { ...issuesQuery, addIssue, upvote, setStatus, stats };
+  return { ...issuesQuery, addIssue, upvote, downvote, setStatus, stats };
 }
