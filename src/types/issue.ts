@@ -15,6 +15,8 @@ export interface Issue {
   urgency?: "low" | "medium" | "high";
   votes: number;
   status: IssueStatus;
+  /** Visibility of the issue content. 'public' visible to all; 'private' masked for non-owner; 'draft' hidden from listings except owner */
+  visibility?: IssueVisibility;
   createdBy: string;
   createdByName: string;
   anonymous?: boolean;
@@ -35,4 +37,12 @@ export const ISSUE_CATEGORIES: IssueCategory[] = [
   "Administration",
   "Events",
   "Other",
+];
+
+export type IssueVisibility = 'public' | 'private' | 'draft';
+
+export const ISSUE_VISIBILITIES: { value: IssueVisibility; label: string }[] = [
+  { value: 'public', label: 'Public' },
+  { value: 'private', label: 'Private' },
+  { value: 'draft', label: 'Draft' },
 ];

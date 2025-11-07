@@ -5,6 +5,8 @@ import HiveHexParticles from "@/components/HiveHexParticles";
 import CommunityNodes from "@/components/CommunityNodes";
 import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
+import { isFirebaseConfigured } from "@/integrations/firebase/config";
+import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,16 +14,29 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 
 export default function Issues() {
-  const { data: issues = [], upvote } = useIssues();
-  const { upvoteIssue, downvoteIssue } = useIssuesFirebase();
+  const { user } = useAuth();
+  // Choose backend: Firebase when configured, otherwise local storage
+  const local = useIssues();
+  const cloud = useIssuesFirebase();
+  const useCloud = isFirebaseConfigured;
+
+  const upvote = useCloud ? cloud.upvote : local.upvote;
 
   // Filters
   const [q, setQ] = useState("");
   const [categories, setCategories] = useState<IssueCategory[]>([]);
-  const [statuses, setStatuses] = useState<IssueStatus[]>(["in_progress", "resolved"]);
+  // Show all statuses by default (empty means no filter)
+  const [statuses, setStatuses] = useState<IssueStatus[]>([]);
   const [sort, setSort] = useState<SortKey>("new");
   const visibleIssues = useMemo(() => {
-    let arr = issues;
+    const base = (useCloud ? cloud.data : local.data) ?? [];
+    // Hide private/draft issues unless owned by current user
+    type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
+    let arr = base.filter((i) => {
+      const vis = (i as unknown as WithVisibility).visibility;
+      if (!vis || vis === 'public') return true;
+      return i.createdBy === user?.uid; // owner can see theirs
+    });
     // status filter (default in_progress + resolved)
     if (statuses.length > 0) {
       arr = arr.filter((i) => (statuses as IssueStatus[]).includes(i.status));
@@ -44,7 +59,7 @@ export default function Issues() {
     else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
     else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
     return arr;
-  }, [issues, categories, q, statuses, sort]);
+  }, [useCloud, cloud.data, local.data, categories, q, statuses, sort, user?.uid]);
 
   const getInitials = (name: string) => {
     return name
@@ -104,7 +119,7 @@ export default function Issues() {
                   onClick={() => {
                     setQ("");
                     setCategories([]);
-                    setStatuses(["in_progress", "resolved"]);
+                    setStatuses([]);
                     setSort("new");
                   }}
                 >

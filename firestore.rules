@@ -21,7 +21,8 @@ service cloud.firestore {
       allow create: if isSignedIn() 
         && request.resource.data.keys().hasAll(['title', 'description', 'category', 'status', 'votes'])
         && request.resource.data.votes == 0
-        && request.resource.data.status == 'received';
+        && request.resource.data.status == 'received'
+        && (request.resource.data.visibility in ['public','private','draft'] || !('visibility' in request.resource.data));
       
       // Authenticated users can update issues
       // Prevent vote manipulation (can only increment by 1)
@@ -29,6 +30,8 @@ service cloud.firestore {
         && (
           // Status updates
           request.resource.data.status in ['received', 'in_progress', 'resolved']
+          // Visibility updates (owner-only)
+          || (isOwner(resource.data.createdBy) && (request.resource.data.visibility in ['public','private','draft']))
           // Vote updates (only +1 allowed)
           || (request.resource.data.votes == resource.data.votes + 1)
         );

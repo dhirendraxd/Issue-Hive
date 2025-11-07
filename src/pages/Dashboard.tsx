@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
+import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
+import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +25,7 @@ import ParticlesBackground from '@/components/ParticlesBackground';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
-  const { data: issues, isLoading: issuesLoading, stats } = useIssuesFirebase();
+  const { data: issues, isLoading: issuesLoading, stats, setVisibility } = useIssuesFirebase();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,10 +55,11 @@ export default function Dashboard() {
     );
   }
 
-  const userIssues = issues?.filter(issue => 
-    issue.userId === user.uid || 
-    issue.user?.name === (user.displayName || user.email?.split('@')[0])
-  ) || [];
+  const displayNameOrEmail = user.displayName || user.email?.split('@')[0] || '';
+  const list: Issue[] = (issues as Issue[]) || [];
+  const userIssues = list.filter(issue => issue.createdBy === user.uid || (!!issue.createdByName && issue.createdByName === displayNameOrEmail));
+  const privateCount = userIssues.filter(i => i.visibility === 'private').length;
+  const draftCount = userIssues.filter(i => i.visibility === 'draft').length;
 
   const statusColors = {
     received: 'bg-blue-500',
@@ -159,8 +162,11 @@ export default function Dashboard() {
 
           <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 Your Issues
+                {(privateCount > 0 || draftCount > 0) && (
+                  <span className="text-[10px] font-normal text-muted-foreground">{privateCount} private · {draftCount} draft</span>
+                )}
               </CardTitle>
               <User className="h-4 w-4 text-blue-500" />
             </CardHeader>
@@ -197,27 +203,50 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {userIssues.slice(0, 5).map((issue) => (
-                      <div key={issue.id} className="flex items-start gap-4 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${statusColors[issue.status]}`} />
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-sm truncate">{issue.title}</h4>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                            {issue.description}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <Badge variant="outline" className="text-xs">
-                              {issue.category}
-                            </Badge>
-                            <Badge 
-                              variant={issue.status === 'resolved' ? 'default' : 'secondary'}
-                              className="text-xs capitalize"
-                            >
-                              {issue.status.replace('_', ' ')}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
-                            </span>
+                      <div key={issue.id} className="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-1 ${statusColors[issue.status]}`} />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-medium text-sm truncate flex items-center gap-2">
+                              {issue.title}
+                              {issue.visibility && issue.visibility !== 'public' && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">{issue.visibility}</span>
+                              )}
+                            </h4>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {issue.description}
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                              <Badge variant="outline" className="text-xs">
+                                {issue.category}
+                              </Badge>
+                              <Badge 
+                                variant={issue.status === 'resolved' ? 'default' : 'secondary'}
+                                className="text-xs capitalize"
+                              >
+                                {issue.status.replace('_', ' ')}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
+                              </span>
+                            </div>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <label htmlFor={`vis-${issue.id}`} className="text-[11px] uppercase tracking-wide text-muted-foreground">Visibility</label>
+                          <select
+                            id={`vis-${issue.id}`}
+                            defaultValue={issue.visibility || 'public'}
+                            onChange={(e) => {
+                              const value = e.target.value as IssueVisibility;
+                              setVisibility.mutate({ id: issue.id, visibility: value });
+                            }}
+                            className="border rounded px-2 py-1 text-xs bg-white"
+                          >
+                            {ISSUE_VISIBILITIES.map(v => (
+                              <option key={v.value} value={v.value}>{v.label}</option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     ))}

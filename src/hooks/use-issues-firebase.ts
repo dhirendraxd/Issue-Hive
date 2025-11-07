@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Issue, IssueCategory, IssueStatus } from "@/types/issue";
+import type { Issue, IssueCategory, IssueStatus, IssueVisibility } from "@/types/issue";
 import { 
   getIssues, 
   createIssue, 
@@ -18,22 +18,22 @@ export function useIssuesFirebase() {
   const qc = useQueryClient();
 
   const issuesQuery = useQuery({
-    queryKey: ["issues"],
+    queryKey: ["issues-firebase"],
     queryFn: async () => {
       const issues = await getIssues([orderBy("createdAt", "desc")]);
       // Convert Firestore Timestamps to numbers for consistency
-      return issues.map(issue => {
-        const issueData: Issue = {
-          ...issue,
-          createdAt: typeof issue.createdAt === 'number' 
-            ? issue.createdAt 
-            : Date.now(),
-          updatedAt: typeof issue.updatedAt === 'number' 
-            ? issue.updatedAt 
-            : Date.now(),
-        };
-        return issueData;
-      });
+      const isTimestamp = (v: unknown): v is Timestamp =>
+        typeof v === 'object' && v !== null && 'toMillis' in (v as Record<string, unknown>);
+      const toMillis = (v: unknown): number => {
+        if (typeof v === 'number') return v;
+        if (isTimestamp(v)) return v.toMillis();
+        return Date.now();
+      };
+      return issues.map((issue) => ({
+        ...issue,
+        createdAt: toMillis((issue as unknown as { createdAt?: unknown }).createdAt),
+        updatedAt: toMillis((issue as unknown as { updatedAt?: unknown }).updatedAt),
+      } as Issue));
     },
   });
 
@@ -63,6 +63,7 @@ export function useIssuesFirebase() {
         createdByName: data.createdByName,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
+        visibility: 'public' as IssueVisibility,
         urgency: data.urgency,
         anonymous: data.anonymous,
         attachments: data.attachments,
@@ -70,7 +71,7 @@ export function useIssuesFirebase() {
       const newIssueId = await createIssue(issueData);
       return { id: newIssueId, ...issueData };
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const upvote = useMutation({
@@ -82,7 +83,7 @@ export function useIssuesFirebase() {
       await updateIssue(id, { votes: issue.votes + 1 });
       return id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const upvoteIssue = useMutation({
@@ -90,7 +91,7 @@ export function useIssuesFirebase() {
       // Implement upvote logic (Firestore/Realtime DB)
       // Example: fetch issue, increment votes, update in DB
     },
-      onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const downvoteIssue = useMutation({
@@ -98,7 +99,7 @@ export function useIssuesFirebase() {
       // Implement downvote logic (Firestore/Realtime DB)
       // Example: fetch issue, decrement votes, update in DB
     },
-      onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const setStatus = useMutation({
@@ -106,7 +107,15 @@ export function useIssuesFirebase() {
       await updateIssue(params.id, { status: params.status });
       return params.id;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
+  });
+
+  const setVisibility = useMutation({
+    mutationFn: async (params: { id: string; visibility: IssueVisibility }) => {
+      await updateIssue(params.id, { visibility: params.visibility });
+      return params.id;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["issues-firebase"] }),
   });
 
   const stats = useMemo(() => {
@@ -124,6 +133,7 @@ export function useIssuesFirebase() {
     upvoteIssue,
     downvoteIssue,
     setStatus, 
+    setVisibility,
     stats 
   };
 }

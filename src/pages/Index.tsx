@@ -9,6 +9,8 @@ import CommunityNodes from "@/components/CommunityNodes";
 import AmbientDust from "@/components/AmbientDust";
 import BubbleParticles from "@/components/BubbleParticles";
 import { useIssues } from "@/hooks/use-issues";
+import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
+import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
@@ -114,7 +116,9 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
 }
 
 const Index = () => {
-  const { stats } = useIssues();
+  const local = useIssues();
+  const cloud = useIssuesFirebase();
+  const stats = isFirebaseConfigured ? cloud.stats : local.stats;
 
   return (
     <div className="min-h-screen bg-stone-50 relative">

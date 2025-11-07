@@ -34,7 +34,8 @@ export function IssuesFilterBar({
 }) {
   const allSelected = categories.length === 0;
 
-  const statusItems = useMemo(() => ISSUE_STATUSES.filter(s => s.value !== "received"), []);
+  // Include all statuses (users can explicitly include/exclude "Received")
+  const statusItems = useMemo(() => ISSUE_STATUSES, []);
 
   return (
     <div className={cn("rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-4 md:p-5", className)}>
