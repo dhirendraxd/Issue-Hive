@@ -3,6 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createComment, getCommentsForIssue, subscribeToComments, countUserTopLevelComments, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
 
+// Temporary ID generator for optimistic updates
+const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
 export function useComments(issueId: string | undefined) {
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -80,10 +83,51 @@ export function useComments(issueId: string | undefined) {
       }
       
       const id = await createComment(commentData);
-      return id;
+      return { id, commentData };
     },
-    // No need to invalidate - real-time subscription handles updates
-    onSuccess: () => {
+    onMutate: async ({ content, parentId }) => {
+      // Cancel outgoing refetches
+      await qc.cancelQueries({ queryKey: ['comments', issueId] });
+      
+      // Snapshot previous value
+      const previousComments = qc.getQueryData<CommentDoc[]>(['comments', issueId]);
+      
+      // Create optimistic comment
+      const tempId = generateTempId();
+      const optimisticComment: CommentDoc = {
+        id: tempId,
+        issueId: issueId!,
+        userId: user!.uid,
+        userName: user!.displayName || user!.email || 'Anonymous',
+        content,
+        likes: 0,
+        createdAt: Timestamp.now(),
+        ...(parentId && { parentId }), // Only add parentId if it exists
+      };
+      
+      // Optimistically update comments list
+      qc.setQueryData<CommentDoc[]>(['comments', issueId], (old) => {
+        if (!old) return [optimisticComment];
+        return [...old, optimisticComment];
+      });
+      
+      return { previousComments, tempId };
+    },
+    onError: (err, variables, context) => {
+      // Rollback on error
+      if (context?.previousComments) {
+        qc.setQueryData(['comments', issueId], context.previousComments);
+      }
+    },
+    onSuccess: (data, variables, context) => {
+      // Replace temporary comment with real one from server
+      qc.setQueryData<CommentDoc[]>(['comments', issueId], (old) => {
+        if (!old) return old;
+        
+        // Remove the temp comment and let real-time subscription add the real one
+        return old.filter(c => c.id !== context?.tempId);
+      });
+      
       // Still invalidate comment count since it's not real-time
       qc.invalidateQueries({ queryKey: ['user-comment-count', issueId, user?.uid] });
     }

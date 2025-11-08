@@ -99,12 +99,20 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
     const content = value.trim();
     if (!content) return;
     
+    // Clear the input immediately for better UX
+    const submittedContent = content;
+    setValue('');
+    
     try {
-      await addComment.mutateAsync({ content, parentId });
-      setValue('');
-      setReplyTo(null);
+      await addComment.mutateAsync({ content: submittedContent, parentId });
+      // Only close reply form after successful submit
+      if (parentId) {
+        setReplyTo(null);
+      }
     } catch (err) {
       setError((err as Error).message);
+      // Restore content if error occurs
+      setValue(submittedContent);
     }
   };
 
@@ -140,16 +148,25 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
           const CommentItem = ({ c, isReply = false }: { c: typeof comment; isReply?: boolean }) => {
             const { data: likeData } = useCommentLike(c.id);
             const hasLiked = !!likeData;
+            const isOptimistic = c.id.startsWith('temp_');
             
             return (
               <div className={cn(
-                "rounded-md px-3 py-2 border",
-                isReply ? "bg-orange-50/50 backdrop-blur border-orange-100" : "bg-white/70 backdrop-blur"
+                "rounded-md px-3 py-2 border transition-all duration-200",
+                isReply ? "bg-orange-50/50 backdrop-blur border-orange-100" : "bg-white/70 backdrop-blur",
+                isOptimistic && "opacity-70 animate-pulse"
               )}>
                 <div className="flex justify-between items-start mb-1">
-                  <span className={cn("font-medium truncate mr-2", isReply ? "text-[11px]" : "text-xs")}>
-                    {c.userName}
-                  </span>
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className={cn("font-medium truncate", isReply ? "text-[11px]" : "text-xs")}>
+                      {c.userName}
+                    </span>
+                    {isOptimistic && (
+                      <span className="text-[9px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded flex-shrink-0">
+                        Posting...
+                      </span>
+                    )}
+                  </div>
                   <span className={cn("text-gray-500 flex-shrink-0", isReply ? "text-[9px]" : "text-[10px]")}>
                     {(() => { 
                       if (typeof c.createdAt === 'number') return new Date(c.createdAt).toLocaleDateString(); 
