@@ -302,17 +302,78 @@ export function useIssuesFirebase() {
   const resolveIssue = useMutation({
     mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
       if (!user) throw new Error('Must be signed in');
-      
-      await updateIssue(params.id, {
-        status: 'resolved' as IssueStatus,
-        resolution: {
-          message: params.message,
-          photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
-          resolvedAt: Date.now(),
-          resolvedBy: user.uid,
-        },
-      });
-      return params.id;
+      try {
+        // 1) Set status first (widely permitted by rules)
+        await updateIssue(params.id, { status: 'resolved' as IssueStatus });
+        // 2) Then set resolution payload (requires owner and status already resolved)
+        const resolutionPayload = {
+          resolution: {
+            message: params.message,
+            photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+            resolvedAt: Date.now(),
+            resolvedBy: user.uid,
+          },
+        } as const;
+        await updateIssue(params.id, resolutionPayload);
+        return params.id;
+      } catch (err) {
+        const e = err as { code?: string; message?: string };
+        console.error('[resolveIssue] Firestore update failed', {
+          issueId: params.id,
+          code: e.code,
+          message: e.message,
+        });
+        throw new Error(e.message || 'Failed to resolve issue');
+      }
+    },
+    onMutate: async (params) => {
+      // Optimistically mark as resolved in cache
+      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const optimisticAt = Date.now();
+      if (previousIssues) {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map((issue) =>
+            issue.id === params.id
+              ? {
+                  ...issue,
+                  status: 'resolved',
+                  updatedAt: optimisticAt,
+                  resolution: {
+                    message: params.message,
+                    photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+                    resolvedAt: optimisticAt,
+                    resolvedBy: user?.uid || 'me',
+                    __optimistic: true,
+                  },
+                }
+              : issue
+          );
+        });
+      }
+      return { previousIssues };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previousIssues) {
+        qc.setQueryData(["issues-firebase"], ctx.previousIssues);
+      }
+    },
+    onSuccess: (id) => {
+      // Strip __optimistic flag once real-time update arrives (best-effort cleanup after slight delay)
+      setTimeout(() => {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map(issue => {
+            const res = issue.resolution as (Issue['resolution'] & { __optimistic?: boolean }) | undefined;
+            if (issue.id === id && res && res.__optimistic) {
+              const { __optimistic: _omit, ...clean } = res;
+              return { ...issue, resolution: clean } as Issue;
+            }
+            return issue;
+          });
+        });
+      }, 2000);
     },
     // No invalidation needed - real-time subscription handles it
   });
@@ -339,6 +400,39 @@ export function useIssuesFirebase() {
         updatedAt: Date.now(),
       });
       return params.id;
+    },
+    onMutate: async (params) => {
+      // Optimistically append progress update to cache
+      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const optimisticAt = Date.now();
+      const optimisticUpdate = {
+        message: params.message,
+        photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+        updatedAt: optimisticAt,
+        updatedBy: user?.uid || 'me',
+      } as NonNullable<Issue['progressUpdates']>[number];
+      if (previousIssues) {
+        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+          if (!old) return old;
+          return old.map((issue) =>
+            issue.id === params.id
+              ? {
+                  ...issue,
+                  updatedAt: optimisticAt,
+                  hasRecentProgress: true,
+                  progressUpdates: [...(issue.progressUpdates ?? []), optimisticUpdate],
+                }
+              : issue
+          );
+        });
+      }
+      return { previousIssues };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.previousIssues) {
+        qc.setQueryData(["issues-firebase"], ctx.previousIssues);
+      }
     },
     // No invalidation needed - real-time subscription handles it
   });
