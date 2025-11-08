@@ -457,6 +457,15 @@ export default function Dashboard() {
                       </div>
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2 text-stone-600">
+                          <MessageSquare className="h-4 w-4" />
+                          <span>Replies Made</span>
+                        </div>
+                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          {userActivity.comments.filter(c => 'parentId' in c && c.parentId).length}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
                           <ThumbsUp className="h-4 w-4" />
                           <span>Comments Liked</span>
                         </div>

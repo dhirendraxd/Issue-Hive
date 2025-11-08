@@ -18,7 +18,7 @@ import {
   onSnapshot,
   type Unsubscribe,
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, isFirebaseConfigured } from './config';
 import type { Issue } from '@/types/issue';
 
 // Collection names
@@ -348,6 +348,13 @@ export interface UserActivity {
 
 export const getUserActivity = async (userId: string): Promise<UserActivity> => {
   try {
+    if (!isFirebaseConfigured || !db) {
+      return {
+        votedIssues: [],
+        comments: [],
+        likedComments: [],
+      };
+    }
     // Get all issues user has voted on
     const issuesSnapshot = await getDocs(collection(db, COLLECTIONS.ISSUES));
     const votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }> = [];

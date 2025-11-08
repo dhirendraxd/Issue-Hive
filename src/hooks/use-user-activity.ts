@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getUserActivity, type UserActivity } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
+import { isFirebaseConfigured } from '@/integrations/firebase/config';
 
 /**
  * Hook to get the current user's activity (votes, comments, likes)
@@ -8,10 +9,12 @@ import { useAuth } from './use-auth';
 export function useUserActivity() {
   const { user } = useAuth();
 
+  const firebaseEnabled = isFirebaseConfigured;
+
   return useQuery({
     queryKey: ['user-activity', user?.uid],
     queryFn: async () => {
-      if (!user) {
+      if (!user || !firebaseEnabled) {
         return {
           votedIssues: [],
           comments: [],
@@ -33,7 +36,7 @@ export function useUserActivity() {
         } as UserActivity;
       }
     },
-    enabled: !!user,
+    enabled: !!user && firebaseEnabled,
     staleTime: 30000, // Refresh every 30 seconds
     refetchInterval: 60000, // Poll every 60 seconds for fresh data
     retry: 2, // Retry failed requests twice
