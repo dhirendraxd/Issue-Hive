@@ -14,6 +14,7 @@ import {
   Timestamp,
 } from "@/integrations/firebase";
 import { useAuth } from "./use-auth";
+import { isFirebaseConfigured } from "@/integrations/firebase/config";
 
 /**
  * Firebase-enabled version of useIssues hook
@@ -23,9 +24,12 @@ import { useAuth } from "./use-auth";
 export function useIssuesFirebase() {
   const qc = useQueryClient();
   const { user } = useAuth();
+  const firebaseEnabled = isFirebaseConfigured;
 
   // Use real-time subscription for issues
   useEffect(() => {
+    if (!firebaseEnabled) return;
+
     const unsubscribe = subscribeToIssues(
       (issues) => {
         // Convert Firestore Timestamps to numbers for consistency
@@ -54,11 +58,12 @@ export function useIssuesFirebase() {
     return () => {
       unsubscribe();
     };
-  }, [qc]);
+  }, [qc, firebaseEnabled]);
 
   const issuesQuery = useQuery({
     queryKey: ["issues-firebase"],
     queryFn: async () => {
+      if (!firebaseEnabled) return [] as Issue[];
       const issues = await getIssues([orderBy("createdAt", "desc")]);
       // Convert Firestore Timestamps to numbers for consistency
       const isTimestamp = (v: unknown): v is Timestamp =>
@@ -93,6 +98,7 @@ export function useIssuesFirebase() {
       anonymous?: boolean;
       attachments?: string[];
     }) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       // Only send fields required by Firestore rules, plus optional UI fields
       const issueData = {
         title: data.title,
@@ -117,6 +123,7 @@ export function useIssuesFirebase() {
 
   const upvote = useMutation({
     mutationFn: async (id: string) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       await setVote(id, user.uid, 1);
       return id;
@@ -174,6 +181,7 @@ export function useIssuesFirebase() {
 
   const upvoteIssue = useMutation({
     mutationFn: async (id: string) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       await setVote(id, user.uid, 1);
       return id;
@@ -232,6 +240,7 @@ export function useIssuesFirebase() {
 
   const downvoteIssue = useMutation({
     mutationFn: async (id: string) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       await setVote(id, user.uid, -1);
       return id;
@@ -295,6 +304,7 @@ export function useIssuesFirebase() {
 
   const setStatus = useMutation({
     mutationFn: async (params: { id: string; status: IssueStatus }) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       await updateIssue(params.id, { status: params.status });
       return params.id;
     },
@@ -303,6 +313,7 @@ export function useIssuesFirebase() {
 
   const setVisibility = useMutation({
     mutationFn: async (params: { id: string; visibility: IssueVisibility }) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       await updateIssue(params.id, { visibility: params.visibility });
       return params.id;
     },
@@ -311,6 +322,7 @@ export function useIssuesFirebase() {
 
   const resolveIssue = useMutation({
     mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       // 1) Set status first (widely permitted by rules)
       await updateIssue(params.id, { status: 'resolved' as IssueStatus });
@@ -386,6 +398,7 @@ export function useIssuesFirebase() {
 
   const addProgress = useMutation({
     mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
+      if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       
       // Get current issue to append to existing progressUpdates
