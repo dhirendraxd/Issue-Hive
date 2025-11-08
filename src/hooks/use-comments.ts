@@ -130,6 +130,10 @@ export function useComments(issueId: string | undefined) {
       
       // Still invalidate comment count since it's not real-time
       qc.invalidateQueries({ queryKey: ['user-comment-count', issueId, user?.uid] });
+      // Update user activity analytics
+      if (user?.uid) {
+        qc.invalidateQueries({ queryKey: ['user-activity', user.uid] });
+      }
     }
   });
 

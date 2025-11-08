@@ -74,6 +74,9 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
     onSettled: (data, error, commentId) => {
       // Only refetch the specific comment's like status, not all comments
       qc.invalidateQueries({ queryKey: ['comment-like', commentId, user?.uid] });
+      if (user?.uid) {
+        qc.invalidateQueries({ queryKey: ['user-activity', user.uid] });
+      }
     }
   });
 

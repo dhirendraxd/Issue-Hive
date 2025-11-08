@@ -421,6 +421,8 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 {isActivityLoading ? (
                   <div className="text-sm text-stone-500">Loading activity...</div>
+                ) : !userActivity ? (
+                  <div className="text-sm text-stone-500">No activity data.</div>
                 ) : (
                   <>
                     {/* Activity Stats */}
@@ -431,7 +433,7 @@ export default function Dashboard() {
                           <span>Upvotes Given</span>
                         </div>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          {userActivity?.votedIssues.filter(v => v.vote === 1).length || 0}
+                          {userActivity.votedIssues.filter(v => v.vote === 1).length}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -440,7 +442,7 @@ export default function Dashboard() {
                           <span>Downvotes Given</span>
                         </div>
                         <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                          {userActivity?.votedIssues.filter(v => v.vote === -1).length || 0}
+                          {userActivity.votedIssues.filter(v => v.vote === -1).length}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -449,7 +451,7 @@ export default function Dashboard() {
                           <span>Comments Made</span>
                         </div>
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {userActivity?.comments.length || 0}
+                          {userActivity.comments.length}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -458,7 +460,7 @@ export default function Dashboard() {
                           <span>Comments Liked</span>
                         </div>
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                          {userActivity?.likedComments.length || 0}
+                          {userActivity.likedComments.length}
                         </Badge>
                       </div>
                     </div>
@@ -466,7 +468,7 @@ export default function Dashboard() {
                     <Separator />
 
                     {/* Recent Voted Issues */}
-                    {userActivity && userActivity.votedIssues.length > 0 && (
+                    {userActivity.votedIssues.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="text-xs font-medium text-stone-700">Recently Voted</h4>
                         <div className="space-y-1.5">
@@ -498,7 +500,7 @@ export default function Dashboard() {
                     )}
 
                     {/* Recent Comments */}
-                    {userActivity && userActivity.comments.length > 0 && (
+                    {userActivity.comments.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="text-xs font-medium text-stone-700">Recent Comments</h4>
                         <div className="space-y-1.5">
@@ -526,8 +528,7 @@ export default function Dashboard() {
                     )}
 
                     {/* No Activity Message */}
-                    {userActivity && 
-                     userActivity.votedIssues.length === 0 && 
+                    {userActivity.votedIssues.length === 0 && 
                      userActivity.comments.length === 0 && 
                      userActivity.likedComments.length === 0 && (
                       <div className="text-center py-4">

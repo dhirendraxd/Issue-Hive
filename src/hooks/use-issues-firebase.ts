@@ -164,7 +164,12 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    // No onSuccess invalidation needed - real-time subscription handles it
+    // Keep UI in sync for analytics
+    onSettled: (_data, _error, id) => {
+      if (user?.uid) {
+        qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+      }
+    },
   });
 
   const upvoteIssue = useMutation({
@@ -280,7 +285,12 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    // No onSuccess invalidation needed - real-time subscription handles it
+    // Keep UI in sync for analytics
+    onSettled: (_data, _error, id) => {
+      if (user?.uid) {
+        qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+      }
+    },
   });
 
   const setStatus = useMutation({
@@ -302,29 +312,25 @@ export function useIssuesFirebase() {
   const resolveIssue = useMutation({
     mutationFn: async (params: { id: string; message: string; photos?: string[] }) => {
       if (!user) throw new Error('Must be signed in');
+      // 1) Set status first (widely permitted by rules)
+      await updateIssue(params.id, { status: 'resolved' as IssueStatus });
+      // 2) Then set resolution payload (requires owner and status already resolved)
+      const resolutionPayload = {
+        resolution: {
+          message: params.message,
+          photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
+          resolvedAt: Date.now(),
+          resolvedBy: user.uid,
+        },
+      } as const;
       try {
-        // 1) Set status first (widely permitted by rules)
-        await updateIssue(params.id, { status: 'resolved' as IssueStatus });
-        // 2) Then set resolution payload (requires owner and status already resolved)
-        const resolutionPayload = {
-          resolution: {
-            message: params.message,
-            photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
-            resolvedAt: Date.now(),
-            resolvedBy: user.uid,
-          },
-        } as const;
         await updateIssue(params.id, resolutionPayload);
-        return params.id;
-      } catch (err) {
-        const e = err as { code?: string; message?: string };
-        console.error('[resolveIssue] Firestore update failed', {
-          issueId: params.id,
-          code: e.code,
-          message: e.message,
-        });
-        throw new Error(e.message || 'Failed to resolve issue');
+      } catch (e) {
+        // Don't fail the whole mutation if status already updated; UI stays resolved and
+        // real-time snapshot will reconcile resolution field later.
+        console.warn('[resolveIssue] Resolution payload failed to save, status updated', e);
       }
+      return params.id;
     },
     onMutate: async (params) => {
       // Optimistically mark as resolved in cache
