@@ -347,68 +347,87 @@ export interface UserActivity {
 }
 
 export const getUserActivity = async (userId: string): Promise<UserActivity> => {
-  // Get all issues user has voted on
-  const issuesSnapshot = await getDocs(collection(db, COLLECTIONS.ISSUES));
-  const votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }> = [];
-  
-  for (const issueDoc of issuesSnapshot.docs) {
-    const voteDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, issueDoc.id, 'votes', userId));
-    if (voteDoc.exists()) {
-      const voteData = voteDoc.data() as VoteDoc;
-      votedIssues.push({
-        issueId: issueDoc.id,
-        vote: voteData.vote,
-        issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
-      });
+  try {
+    // Get all issues user has voted on
+    const issuesSnapshot = await getDocs(collection(db, COLLECTIONS.ISSUES));
+    const votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }> = [];
+    
+    for (const issueDoc of issuesSnapshot.docs) {
+      try {
+        const voteDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, issueDoc.id, 'votes', userId));
+        if (voteDoc.exists()) {
+          const voteData = voteDoc.data() as VoteDoc;
+          votedIssues.push({
+            issueId: issueDoc.id,
+            vote: voteData.vote,
+            issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
+          });
+        }
+      } catch (err) {
+        console.warn(`[getUserActivity] Failed to get vote for issue ${issueDoc.id}:`, err);
+      }
     }
-  }
 
-  // Get all comments by user
-  const commentsQuery = query(
-    collection(db, COLLECTIONS.COMMENTS),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
-  const commentsSnapshot = await getDocs(commentsQuery);
-  const comments: Array<CommentDoc & { issue?: Issue }> = [];
-  
-  for (const commentDoc of commentsSnapshot.docs) {
-    const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
-    // Fetch associated issue
-    const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
-    if (issueDoc.exists()) {
-      comments.push({
-        ...commentData,
-        issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
-      });
-    } else {
-      comments.push(commentData);
+    // Get all comments by user
+    const commentsQuery = query(
+      collection(db, COLLECTIONS.COMMENTS),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
+    );
+    const commentsSnapshot = await getDocs(commentsQuery);
+    const comments: Array<CommentDoc & { issue?: Issue }> = [];
+    
+    for (const commentDoc of commentsSnapshot.docs) {
+      try {
+        const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
+        // Fetch associated issue
+        const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
+        if (issueDoc.exists()) {
+          comments.push({
+            ...commentData,
+            issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
+          });
+        } else {
+          comments.push(commentData);
+        }
+      } catch (err) {
+        console.warn(`[getUserActivity] Failed to get comment ${commentDoc.id}:`, err);
+      }
     }
-  }
 
-  // Get all comments user has liked
-  const allCommentsSnapshot = await getDocs(collection(db, COLLECTIONS.COMMENTS));
-  const likedComments: Array<{ commentId: string; comment?: CommentDoc; issue?: Issue }> = [];
-  
-  for (const commentDoc of allCommentsSnapshot.docs) {
-    const likeDoc = await getDoc(doc(db, COLLECTIONS.COMMENTS, commentDoc.id, 'likes', userId));
-    if (likeDoc.exists()) {
-      const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
-      // Fetch associated issue
-      const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
-      likedComments.push({
-        commentId: commentDoc.id,
-        comment: commentData,
-        issue: issueDoc.exists() ? { id: issueDoc.id, ...issueDoc.data() } as Issue : undefined,
-      });
+    // Get all comments user has liked
+    const allCommentsSnapshot = await getDocs(collection(db, COLLECTIONS.COMMENTS));
+    const likedComments: Array<{ commentId: string; comment?: CommentDoc; issue?: Issue }> = [];
+    
+    for (const commentDoc of allCommentsSnapshot.docs) {
+      try {
+        const likeDoc = await getDoc(doc(db, COLLECTIONS.COMMENTS, commentDoc.id, 'likes', userId));
+        if (likeDoc.exists()) {
+          const commentData = { id: commentDoc.id, ...commentDoc.data() } as CommentDoc;
+          // Fetch associated issue
+          const issueDoc = await getDoc(doc(db, COLLECTIONS.ISSUES, commentData.issueId));
+          likedComments.push({
+            commentId: commentDoc.id,
+            comment: commentData,
+            issue: issueDoc.exists() ? { id: issueDoc.id, ...issueDoc.data() } as Issue : undefined,
+          });
+        }
+      } catch (err) {
+        console.warn(`[getUserActivity] Failed to get liked comment ${commentDoc.id}:`, err);
+      }
     }
-  }
 
-  return {
-    votedIssues,
-    comments,
-    likedComments,
-  };
+    console.log(`[getUserActivity] Found: ${votedIssues.length} votes, ${comments.length} comments, ${likedComments.length} likes`);
+
+    return {
+      votedIssues,
+      comments,
+      likedComments,
+    };
+  } catch (error) {
+    console.error('[getUserActivity] Error:', error);
+    throw error;
+  }
 };
 
 // Export Firestore utilities for custom queries

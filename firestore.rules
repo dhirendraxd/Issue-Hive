@@ -24,22 +24,26 @@ service cloud.firestore {
         && request.resource.data.status == 'received'
         && (request.resource.data.visibility in ['public','private','draft'] || !('visibility' in request.resource.data));
       
-      // Authenticated users can update issues (status and visibility only)
+      // Authenticated users can update issues
       // Votes are now tracked separately in votes collection
       allow update: if isSignedIn() 
         && (
-          // Status updates
-          request.resource.data.status in ['received', 'in_progress', 'resolved']
+          // Anyone can update status (admin/moderator action)
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) 
+           && request.resource.data.status in ['received', 'in_progress', 'resolved'])
           // Visibility updates (owner-only)
-          || (isOwner(resource.data.createdBy) && (request.resource.data.visibility in ['public','private','draft']))
-          // Resolution updates (owner-only, must include message and set status to resolved)
+          || (isOwner(resource.data.createdBy) 
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visibility', 'updatedAt'])
+              && request.resource.data.visibility in ['public','private','draft'])
+          // Resolution updates (owner-only)
           || (isOwner(resource.data.createdBy) 
               && 'resolution' in request.resource.data 
-              && request.resource.data.resolution.keys().hasAll(['message', 'resolvedAt', 'resolvedBy'])
               && request.resource.data.status == 'resolved')
-          // Progress updates (owner-only, adds to progressUpdates array)
+          // Progress updates (owner-only)
           || (isOwner(resource.data.createdBy) 
               && 'progressUpdates' in request.resource.data)
+          // Vote count updates (system only via vote subcollection batch)
+          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes', 'updatedAt'])
         );
       
       // Only authenticated users can delete (or add ownership check)
