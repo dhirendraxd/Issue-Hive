@@ -28,20 +28,24 @@ service cloud.firestore {
       // Votes are now tracked separately in votes collection
       allow update: if isSignedIn() 
         && (
-          // Anyone can update status (admin/moderator action)
+          // Status updates only
           (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']) 
            && request.resource.data.status in ['received', 'in_progress', 'resolved'])
           // Visibility updates (owner-only)
           || (isOwner(resource.data.createdBy) 
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visibility', 'updatedAt'])
               && request.resource.data.visibility in ['public','private','draft'])
-          // Resolution updates (owner-only)
+          // Resolution updates (owner-only) - includes status change to resolved
           || (isOwner(resource.data.createdBy) 
               && 'resolution' in request.resource.data 
-              && request.resource.data.status == 'resolved')
+              && request.resource.data.status == 'resolved'
+              && request.resource.data.diff(resource.data).affectedKeys().hasAll(['status', 'resolution'])
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'resolution', 'updatedAt']))
           // Progress updates (owner-only)
           || (isOwner(resource.data.createdBy) 
-              && 'progressUpdates' in request.resource.data)
+              && 'progressUpdates' in request.resource.data
+              && request.resource.data.diff(resource.data).affectedKeys().hasAll(['progressUpdates'])
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['progressUpdates', 'hasRecentProgress', 'updatedAt']))
           // Vote count updates (system only via vote subcollection batch)
           || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['votes', 'updatedAt'])
         );
