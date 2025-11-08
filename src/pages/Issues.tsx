@@ -180,7 +180,7 @@ export default function Issues() {
                     <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
                   </div>
 
-                  {/* Status & Category Tags */}
+                  {/* Status & Category / Update Tags */}
                   <div className="flex flex-wrap items-center gap-2 mb-4">
                     <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusColor(i.status)}`}>
                       {ISSUE_STATUSES.find((s) => s.value === i.status)?.label ?? i.status}
@@ -193,9 +193,22 @@ export default function Issues() {
                         🔒 Private
                       </span>
                     )}
-                    {i.hasRecentProgress && i.progressUpdates && i.progressUpdates.length > 0 && (
+                    {/* Progress badge: show if flag OR there are updates */}
+                    {(i.hasRecentProgress || (i.progressUpdates && i.progressUpdates.length > 0)) && i.progressUpdates && i.progressUpdates.length > 0 && (
                       <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
-                        🔄 {i.progressUpdates.length} Progress Update{i.progressUpdates.length !== 1 ? 's' : ''}
+                        🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {/* Generic recent update badge (when no progress badge) */}
+                    {!(i.hasRecentProgress || (i.progressUpdates && i.progressUpdates.length > 0)) && (i.updatedAt > i.createdAt + 60_000) && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 animate-pulse">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" /> Updated
+                      </span>
+                    )}
+                    {/* Resolution badge (optional extra clarity beyond status) */}
+                    {i.status === 'resolved' && i.resolution && (
+                      <span className="inline-flex items-center rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                        ✅ Resolution Posted
                       </span>
                     )}
                   </div>
