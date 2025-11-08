@@ -66,9 +66,9 @@ export default function Dashboard() {
     );
   }
 
-  const displayNameOrEmail = user.displayName || user.email?.split('@')[0] || '';
   const list: Issue[] = (issues as Issue[]) || [];
-  const userIssues = list.filter(issue => issue.createdBy === user.uid || (!!issue.createdByName && issue.createdByName === displayNameOrEmail));
+  // Ownership must be determined by createdBy (auth UID) to satisfy Firestore rules
+  const userIssues = list.filter(issue => issue.createdBy === user.uid);
   const privateCount = userIssues.filter(i => i.visibility === 'private').length;
   const draftCount = userIssues.filter(i => i.visibility === 'draft').length;
 
@@ -119,7 +119,8 @@ export default function Dashboard() {
       setProgressDialogOpen(false);
       setSelectedIssue(null);
     } catch (error) {
-      toast.error('Failed to add progress update');
+      const msg = (error as Error)?.message || 'Failed to add progress update';
+      toast.error(msg);
       console.error('Progress error:', error);
     }
   };
