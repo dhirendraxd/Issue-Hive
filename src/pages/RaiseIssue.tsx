@@ -10,8 +10,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { 
+  AlertCircle, 
+  CheckCircle2, 
+  Loader2, 
+  AlertTriangle, 
+  Zap, 
+  Clock,
+  Info,
+  MapPin,
+  FileText,
+  Tag,
+  Shield
+} from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
@@ -22,6 +35,8 @@ export default function RaiseIssuePage() {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   const [formData, setFormData] = useState({
     title: '',
@@ -37,9 +52,56 @@ export default function RaiseIssuePage() {
     }
   }, [user, authLoading, navigate]);
 
-  // Simple field updater
+  // Validation function
+  const validateField = (field: string, value: string) => {
+    const errors: Record<string, string> = {};
+    
+    if (field === 'title') {
+      if (!value.trim()) {
+        errors.title = 'Title is required';
+      } else if (value.trim().length < 10) {
+        errors.title = 'Title should be at least 10 characters';
+      } else if (value.trim().length > 200) {
+        errors.title = 'Title is too long (max 200 characters)';
+      }
+    }
+    
+    if (field === 'description') {
+      if (!value.trim()) {
+        errors.description = 'Description is required';
+      } else if (value.trim().length < 20) {
+        errors.description = 'Please provide more details (at least 20 characters)';
+      } else if (value.trim().length > 2000) {
+        errors.description = 'Description is too long (max 2000 characters)';
+      }
+    }
+    
+    if (field === 'category' && !value) {
+      errors.category = 'Please select a category';
+    }
+    
+    return errors;
+  };
+
+  // Simple field updater with validation
   const handleChange = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
+    
+    // Clear error when user starts typing
+    if (formErrors[key]) {
+      setFormErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[key];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    const fieldValue = formData[field as keyof typeof formData] as string;
+    const errors = validateField(field, fieldValue);
+    setFormErrors((prev) => ({ ...prev, ...errors }));
   };
 
   // Guard render until auth known; optional early return for unauthenticated
@@ -50,18 +112,17 @@ export default function RaiseIssuePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.title.trim()) {
-      toast.error('Please enter a title');
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      toast.error('Please enter a description');
-      return;
-    }
-
-    if (!formData.category) {
-      toast.error('Please select a category');
+    // Validate all fields
+    const titleErrors = validateField('title', formData.title);
+    const descErrors = validateField('description', formData.description);
+    const catErrors = validateField('category', formData.category);
+    
+    const allErrors = { ...titleErrors, ...descErrors, ...catErrors };
+    
+    if (Object.keys(allErrors).length > 0) {
+      setFormErrors(allErrors);
+      setTouched({ title: true, description: true, category: true });
+      toast.error('Please fix the errors in the form');
       return;
     }
 
@@ -95,6 +156,8 @@ export default function RaiseIssuePage() {
         urgency: 'low',
       });
       setIsAnonymous(false);
+      setFormErrors({});
+      setTouched({});
       setTimeout(() => {
         navigate('/issues');
       }, 1000);
@@ -125,169 +188,372 @@ export default function RaiseIssuePage() {
       <div className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-lg">
+              <AlertCircle className="h-8 w-8 text-white" />
+            </div>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
-              Report a <span className="text-orange-500">Campus Issue</span>
+              Report a <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Campus Issue</span>
             </h1>
-            <p className="text-lg text-gray-600">
-              Help improve our campus by reporting problems with facilities, infrastructure, or services
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Help improve our campus community by reporting facilities, infrastructure, or service issues
             </p>
+            <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <span>Quick & Easy</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-blue-600" />
+                <span>Anonymous Option</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Zap className="h-4 w-4 text-orange-600" />
+                <span>Instant Submission</span>
+              </div>
+            </div>
           </div>
 
           {/* Form Card */}
-          <Card className="border-white/40 bg-white/80 backdrop-blur-xl shadow-2xl">
-            <CardHeader>
+          <Card className="border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl">
+            <CardHeader className="border-b border-gray-100">
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <AlertCircle className="h-6 w-6 text-orange-500" />
-                Campus Issue Details
+                <div className="p-2 rounded-lg bg-orange-100">
+                  <FileText className="h-5 w-5 text-orange-600" />
+                </div>
+                Issue Details
               </CardTitle>
-              <CardDescription>
-                Provide clear information about the campus problem you've encountered
+              <CardDescription className="text-base">
+                Provide clear information to help us address the issue quickly
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <CardContent className="pt-6">
+              <form onSubmit={handleSubmit} className="space-y-8">
+                {/* Progress Indicator */}
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Info className="h-4 w-4" />
+                  <span>All fields marked with <span className="text-red-500">*</span> are required</span>
+                </div>
+
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-base font-semibold">
+                  <Label htmlFor="title" className="text-base font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-gray-500" />
                     Issue Title <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="title"
                     type="text"
-                    placeholder="e.g., Broken water fountain in Building A"
+                    placeholder="e.g., Broken water fountain in Building A, Room 101"
                     value={formData.title}
                     onChange={(e) => handleChange('title', e.target.value)}
+                    onBlur={() => handleBlur('title')}
                     maxLength={200}
-                    className="h-12 text-base border-gray-300 focus:border-orange-500 focus:ring-orange-500"
+                    className={cn(
+                      "h-12 text-base transition-all duration-200",
+                      formErrors.title && touched.title
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:border-orange-500 focus:ring-orange-500",
+                      formData.title && !formErrors.title && "border-green-300"
+                    )}
                     disabled={isSubmitting}
                   />
-                  <p className="text-sm text-gray-500">
-                    {formData.title.length}/200 characters
-                  </p>
+                  <div className="flex justify-between items-center">
+                    {formErrors.title && touched.title ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.title}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        Be specific and concise
+                      </p>
+                    )}
+                    <p className={cn(
+                      "text-sm",
+                      formData.title.length > 180 ? "text-orange-600 font-medium" : "text-gray-400"
+                    )}>
+                      {formData.title.length}/200
+                    </p>
+                  </div>
                 </div>
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-base font-semibold">
+                  <Label htmlFor="category" className="text-base font-semibold flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-gray-500" />
                     Category <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={formData.category}
-                    onValueChange={(value) => handleChange('category', value as IssueCategory)}
+                    onValueChange={(value) => {
+                      handleChange('category', value as IssueCategory);
+                      handleBlur('category');
+                    }}
                     disabled={isSubmitting}
                   >
-                    <SelectTrigger id="category" className="h-12 text-base border-gray-300 focus:border-orange-500 focus:ring-orange-500">
-                      <SelectValue placeholder="Select a category" />
+                    <SelectTrigger 
+                      id="category" 
+                      className={cn(
+                        "h-12 text-base transition-all duration-200",
+                        formErrors.category && touched.category
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                          : "border-gray-300 focus:border-orange-500 focus:ring-orange-500",
+                        formData.category && !formErrors.category && "border-green-300"
+                      )}
+                    >
+                      <SelectValue placeholder="Choose the most relevant category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Facilities">🏢 Facilities - Classrooms, labs, restrooms</SelectItem>
-                      <SelectItem value="Academics">📚 Academics - Courses, schedules, exams</SelectItem>
-                      <SelectItem value="Administration">� Administration - Offices, services, processes</SelectItem>
-                      <SelectItem value="Events">� Events - Activities, announcements</SelectItem>
-                      <SelectItem value="Other">📝 Other - General campus concerns</SelectItem>
+                      <SelectItem value="Facilities">
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-lg">🏢</span>
+                          <div>
+                            <div className="font-medium">Facilities</div>
+                            <div className="text-xs text-gray-500">Classrooms, labs, restrooms, furniture</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Academics">
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-lg">📚</span>
+                          <div>
+                            <div className="font-medium">Academics</div>
+                            <div className="text-xs text-gray-500">Courses, schedules, library, exams</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Administration">
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-lg">🏛️</span>
+                          <div>
+                            <div className="font-medium">Administration</div>
+                            <div className="text-xs text-gray-500">Offices, services, documentation</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Events">
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-lg">🎉</span>
+                          <div>
+                            <div className="font-medium">Events</div>
+                            <div className="text-xs text-gray-500">Activities, clubs, announcements</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="Other">
+                        <div className="flex items-center gap-2 py-1">
+                          <span className="text-lg">📝</span>
+                          <div>
+                            <div className="font-medium">Other</div>
+                            <div className="text-xs text-gray-500">General campus concerns</div>
+                          </div>
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
+                  {formErrors.category && touched.category && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {formErrors.category}
+                    </p>
+                  )}
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-semibold">
-                    Description <span className="text-red-500">*</span>
+                  <Label htmlFor="description" className="text-base font-semibold flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    Detailed Description <span className="text-red-500">*</span>
                   </Label>
                   <Textarea
                     id="description"
-                    placeholder="Describe the campus issue in detail: location, what's broken/needed, when you noticed it, etc."
+                    placeholder="Please include:&#10;• Exact location (building, floor, room number)&#10;• What's wrong or what needs attention&#10;• When you first noticed the issue&#10;• Any safety concerns&#10;• Other relevant details"
                     value={formData.description}
                     onChange={(e) => handleChange('description', e.target.value)}
+                    onBlur={() => handleBlur('description')}
                     maxLength={2000}
-                    rows={8}
-                    className="text-base border-gray-300 focus:border-orange-500 focus:ring-orange-500 resize-none"
+                    rows={10}
+                    className={cn(
+                      "text-base transition-all duration-200 resize-none",
+                      formErrors.description && touched.description
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-500"
+                        : "border-gray-300 focus:border-orange-500 focus:ring-orange-500",
+                      formData.description && !formErrors.description && "border-green-300"
+                    )}
                     disabled={isSubmitting}
                   />
-                  <p className="text-sm text-gray-500">
-                    {formData.description.length}/2000 characters
-                  </p>
-                </div>
-
-                {/* Urgency Level */}
-                <div className="mb-4">
-                  <Label className="block font-medium mb-1">
-                    Urgency Level
-                  </Label>
-                  <div className="flex gap-4">
-                    {['low', 'medium', 'high'].map((level) => (
-                      <Button
-                        key={level}
-                        variant={formData.urgency === level ? 'default' : 'outline'}
-                        onClick={(e) => { e.preventDefault(); handleChange('urgency', level as 'low' | 'medium' | 'high'); }}
-                        className={cn(
-                          'capitalize',
-                          formData.urgency === level && {
-                            'bg-orange-500 text-white border-orange-500': true,
-                          }
-                        )}
-                      >
-                        {level}
-                      </Button>
-                    ))}
+                  <div className="flex justify-between items-center">
+                    {formErrors.description && touched.description ? (
+                      <p className="text-sm text-red-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {formErrors.description}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        More details help us respond faster
+                      </p>
+                    )}
+                    <p className={cn(
+                      "text-sm",
+                      formData.description.length > 1800 ? "text-orange-600 font-medium" : "text-gray-400"
+                    )}>
+                      {formData.description.length}/2000
+                    </p>
                   </div>
                 </div>
 
+                {/* Urgency Level */}
+                <div className="space-y-3">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    Urgency Level
+                  </Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    <Button
+                      type="button"
+                      variant={formData.urgency === 'low' ? 'default' : 'outline'}
+                      onClick={() => handleChange('urgency', 'low')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        formData.urgency === 'low'
+                          ? 'bg-green-500 hover:bg-green-600 text-white border-green-500 shadow-md'
+                          : 'hover:border-green-500 hover:bg-green-50'
+                      )}
+                    >
+                      <Clock className="h-5 w-5" />
+                      <div className="text-center">
+                        <div className="font-semibold">Low</div>
+                        <div className="text-xs opacity-80">Can wait</div>
+                      </div>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={formData.urgency === 'medium' ? 'default' : 'outline'}
+                      onClick={() => handleChange('urgency', 'medium')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        formData.urgency === 'medium'
+                          ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 shadow-md'
+                          : 'hover:border-orange-500 hover:bg-orange-50'
+                      )}
+                    >
+                      <AlertTriangle className="h-5 w-5" />
+                      <div className="text-center">
+                        <div className="font-semibold">Medium</div>
+                        <div className="text-xs opacity-80">Soon</div>
+                      </div>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={formData.urgency === 'high' ? 'default' : 'outline'}
+                      onClick={() => handleChange('urgency', 'high')}
+                      disabled={isSubmitting}
+                      className={cn(
+                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        formData.urgency === 'high'
+                          ? 'bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-md'
+                          : 'hover:border-red-500 hover:bg-red-50'
+                      )}
+                    >
+                      <Zap className="h-5 w-5" />
+                      <div className="text-center">
+                        <div className="font-semibold">High</div>
+                        <div className="text-xs opacity-80">Urgent</div>
+                      </div>
+                    </Button>
+                  </div>
+                  <p className="text-sm text-gray-500 text-center">
+                    {formData.urgency === 'low' && '✓ Normal maintenance or minor issues'}
+                    {formData.urgency === 'medium' && '⚠️ Affects daily activities or multiple people'}
+                    {formData.urgency === 'high' && '🚨 Safety concern or critical infrastructure'}
+                  </p>
+                </div>
+
                 {/* Anonymous Posting Option */}
-                <div className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div className={cn(
+                  "flex items-start space-x-3 p-5 rounded-lg border-2 transition-all duration-200",
+                  isAnonymous 
+                    ? "bg-blue-50 border-blue-300 shadow-sm" 
+                    : "bg-gray-50 border-gray-200 hover:border-gray-300"
+                )}>
                   <Checkbox
                     id="anonymous"
                     checked={isAnonymous}
                     onCheckedChange={(checked) => setIsAnonymous(checked as boolean)}
                     disabled={isSubmitting}
-                    className="mt-1"
+                    className="mt-1 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
                   <div className="flex-1">
                     <Label
                       htmlFor="anonymous"
-                      className="text-base font-semibold cursor-pointer"
+                      className="text-base font-semibold cursor-pointer flex items-center gap-2"
                     >
+                      <Shield className="h-4 w-4" />
                       Post Anonymously
+                      {isAnonymous && (
+                        <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-700">
+                          Active
+                        </Badge>
+                      )}
                     </Label>
                     <p className="text-sm text-gray-600 mt-1">
-                      Your identity will be hidden. Only "Anonymous" will be shown on this report.
+                      Your identity will be completely hidden. Only "Anonymous" will be shown on this report.
+                      {isAnonymous && " You can still vote and comment on this issue."}
                     </p>
                   </div>
                 </div>
 
                 {/* Info Box */}
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-5 shadow-sm">
                   <div className="flex gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-gray-700">
-                      <p className="font-semibold mb-1">Tips for reporting campus issues:</p>
-                      <ul className="list-disc list-inside space-y-1 text-gray-600">
-                        <li>Include the specific location (building, room number, area)</li>
-                        <li>Describe what's broken or what needs attention</li>
-                        <li>Mention if it's urgent or a safety concern</li>
-                        <li>Add any relevant details (when it started, how often, etc.)</li>
+                    <div className="flex-shrink-0">
+                      <div className="p-2 rounded-full bg-orange-100">
+                        <Info className="h-5 w-5 text-orange-600" />
+                      </div>
+                    </div>
+                    <div className="text-sm">
+                      <p className="font-semibold text-gray-900 mb-2">💡 Tips for effective reporting:</p>
+                      <ul className="space-y-1.5 text-gray-700">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span>Include specific location details (building name, floor, room number)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span>Describe the problem clearly (what's broken, missing, or needs attention)</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span>Mention any safety concerns or impact on students/staff</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span>Add timeline information (when did it start, how often it occurs)</span>
+                        </li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex gap-4 pt-4">
+                <div className="flex gap-4 pt-4 border-t border-gray-100">
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 h-12 text-base bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold"
+                    className="flex-1 h-14 text-base bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                   >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Submitting...
+                        Submitting your issue...
                       </>
                     ) : (
                       <>
                         <CheckCircle2 className="mr-2 h-5 w-5" />
-                        Report Campus Issue
+                        Submit Campus Issue
                       </>
                     )}
                   </Button>
@@ -296,7 +562,7 @@ export default function RaiseIssuePage() {
                     variant="outline"
                     onClick={() => navigate('/issues')}
                     disabled={isSubmitting}
-                    className="h-12 px-8 text-base border-gray-300"
+                    className="h-14 px-8 text-base border-2 hover:bg-gray-50"
                   >
                     Cancel
                   </Button>
@@ -305,15 +571,31 @@ export default function RaiseIssuePage() {
             </CardContent>
           </Card>
 
-          {/* Recent Issues Link */}
-          <div className="mt-8 text-center">
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/issues')}
-              className="text-gray-600 hover:text-orange-600"
-            >
-              View all issues →
-            </Button>
+          {/* Footer Info */}
+          <div className="mt-8 space-y-4">
+            <div className="text-center">
+              <Button
+                variant="ghost"
+                onClick={() => navigate('/issues')}
+                className="text-gray-600 hover:text-orange-600 text-base"
+              >
+                View all campus issues →
+              </Button>
+            </div>
+            <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                <span>Real-time tracking</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                <span>Community voting</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                <span>Fast resolution</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
