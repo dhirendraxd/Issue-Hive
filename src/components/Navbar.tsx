@@ -11,7 +11,7 @@ export default function Navbar() {
 
   return (
     <header className="absolute inset-x-0 top-4 z-30">
-      <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between glass-strong rounded-2xl">
+      <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between">
         {/* Logo left */}
         <Link
           to="/"

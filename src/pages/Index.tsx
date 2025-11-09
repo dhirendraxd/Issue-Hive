@@ -132,7 +132,7 @@ const Index = () => {
         {/* Hero */}
         <div className="relative min-h-[100svh]">
           {/* Background decorative layers */}
-          <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
+          <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" opacity={0.18} />
           <HeroRings />
           <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
           <AmbientDust className="absolute inset-0 z-0 pointer-events-none" />
