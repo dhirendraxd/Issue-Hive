@@ -30,6 +30,7 @@ import {
   Activity
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import Navbar from '@/components/Navbar';
 import { formatRelativeTime } from '@/lib/utils';
 import { getUserAvatarUrl } from '@/lib/avatar';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
@@ -137,48 +138,18 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-stone-50">
+      <Navbar />
       {/* Background */}
       <ParticlesBackground>
         <div />
       </ParticlesBackground>
-      
-      <div className="absolute inset-0 opacity-30 pointer-events-none" aria-hidden>
-        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/40 to-amber-500/30 blur-3xl" />
-        <div className="absolute bottom-20 left-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/30 to-cyan-500/20 blur-3xl" />
-        <div className="absolute top-1/2 right-1/3 w-64 h-64 rounded-full bg-gradient-to-br from-green-500/25 to-emerald-500/15 blur-3xl" />
+      <div className="absolute inset-0 opacity-25 pointer-events-none" aria-hidden>
+        {/* Simplified brand-focused decorative blobs */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/35 to-amber-500/25 blur-3xl" />
+        <div className="absolute bottom-24 left-1/3 w-72 h-72 rounded-full bg-gradient-to-br from-orange-400/30 to-amber-400/20 blur-2xl" />
       </div>
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-white/40 glass-card">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 font-display font-semibold text-xl tracking-tight">
-              <img src="/beehive-honey-svgrepo-com.svg" alt="IssueHive" className="h-8 w-8" />
-              <span>Issue<span className="text-orange-500">Hive</span></span>
-            </Link>
-
-            <div className="flex items-center gap-4">
-              <Link to="/issues">
-                <Button variant="outline" size="sm" className="hidden sm:flex">
-                  Browse All Issues
-                </Button>
-              </Link>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="text-red-600 hover:text-red-700 hover:bg-red-50"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
-      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+      <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-display font-semibold tracking-tight">

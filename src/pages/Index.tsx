@@ -25,6 +25,17 @@ function Hero() {
       <div className="absolute inset-0 opacity-50 pointer-events-none" aria-hidden>
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] rounded-full bg-gradient-to-br from-orange-500/20 via-red-500/10 to-amber-500/20 blur-3xl" />
       </div>
+      {/* Subtle top blur overlay to gently fade background visuals around hero content */}
+      <div
+        className="absolute inset-x-0 top-0 h-[55svh] pointer-events-none bg-white/5 hero-breath-blur"
+        style={{
+          WebkitMaskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)",
+          maskImage:
+            "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)",
+        }}
+        aria-hidden
+      />
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8 py-20 md:py-28">
         <div className="flex flex-col items-center text-center gap-4 md:gap-6">
           <h1 className="text-4xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
@@ -45,10 +56,17 @@ function Hero() {
           </div>
         </div>
       </div>
-      {/* Bottom blend gradient to transition into page background */}
+      {/* Subtle bottom feather: very light inset shadow + mask to soften transition without obvious gradient */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-32 md:h-40 bg-gradient-to-b from-transparent via-stone-50/40 to-stone-50"
+        className="absolute inset-x-0 bottom-0 h-20 pointer-events-none"
         aria-hidden
+        style={{
+          boxShadow: "inset 0 -34px 48px -24px rgba(255,255,255,0.9)",
+          WebkitMaskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)",
+          maskImage: "linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 45%, rgba(0,0,0,0) 100%)",
+          backdropFilter: "blur(2px)",
+          WebkitBackdropFilter: "blur(2px)",
+        }}
       />
     </section>
   );
