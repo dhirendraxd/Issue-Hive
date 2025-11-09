@@ -25,19 +25,9 @@ function Hero() {
       <div className="absolute inset-0 opacity-50 pointer-events-none" aria-hidden>
         <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] rounded-full bg-gradient-to-br from-orange-500/20 via-red-500/10 to-amber-500/20 blur-3xl" />
       </div>
-      {/* Subtle top blur overlay to gently fade background visuals around hero content */}
-      <div
-        className="absolute inset-x-0 top-0 h-[55svh] pointer-events-none bg-white/5 hero-breath-blur"
-        style={{
-          WebkitMaskImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)",
-          maskImage:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 35%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)",
-        }}
-        aria-hidden
-      />
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8 py-20 md:py-28">
-        <div className="flex flex-col items-center text-center gap-4 md:gap-6">
+        {/* Content wrapper */}
+        <div className="flex flex-col items-center text-center gap-4 md:gap-6 relative">
           <h1 className="text-4xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
             Unified Campus Platform for
             <br />
@@ -149,10 +139,18 @@ const Index = () => {
   <main id="main" className="scroll-mt-20">
         {/* Hero */}
         <div className="relative min-h-[100svh]">
-          {/* Background decorative layers */}
-          <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" opacity={0.18} />
+          {/* Background decorative layers with softer edges */}
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
+              maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
+            }}
+          >
+            <HiveHexParticles className="absolute inset-0 pointer-events-none" opacity={0.12} />
+            <CommunityNodes className="absolute inset-0 pointer-events-none" />
+          </div>
           <HeroRings />
-          <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
           <AmbientDust className="absolute inset-0 z-0 pointer-events-none" />
           <BubbleParticles className="absolute inset-0 z-0 pointer-events-none" />
           <Hero />

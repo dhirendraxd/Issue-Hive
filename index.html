@@ -6,7 +6,14 @@
     <title>Issue Hive | College Issues Tracker</title>
   <meta name="description" content="IssueHive — Open collaboration on issues" />
   <meta name="author" content="IssueHive" />
-    <meta property="og:image" content="/og-image.png" />
+  <!-- Open Graph / Twitter images: prefer WebP with PNG fallback -->
+  <meta property="og:image" content="/og-image.webp" />
+  <meta property="og:image:type" content="image/webp" />
+  <meta property="og:image" content="/og-image.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="/og-image.webp" />
+  <meta name="twitter:image:alt" content="IssueHive — Open collaboration on issues" />
     <!-- Fonts: Halenoir for headings and Inter for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
