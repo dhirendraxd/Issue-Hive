@@ -27,10 +27,14 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
-  Activity
+  Activity,
+  MoreHorizontal
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { formatRelativeTime } from '@/lib/utils';
+import { isFirebaseConfigured } from '@/integrations/firebase/config';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -252,6 +256,16 @@ export default function Dashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
+                {!isFirebaseConfigured && (
+                  <div className="mb-3">
+                    <Alert className="border-amber-200 bg-amber-50/60">
+                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertDescription>
+                        Engagement metrics (comments and likes) are hidden because Firebase isn't configured.
+                      </AlertDescription>
+                    </Alert>
+                  </div>
+                )}
                 {userIssues.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <AlertCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
@@ -267,88 +281,97 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {userIssues.slice(0, 5).map((issue) => (
-                      <div key={issue.id} className="flex flex-col gap-2 p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                      <div key={issue.id} className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
                         <div className="flex items-start gap-3">
                           <div className={`w-2 h-2 rounded-full mt-1 ${statusColors[issue.status]}`} />
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm truncate flex items-center gap-2">
-                              {issue.title}
-                              {issue.visibility && issue.visibility !== 'public' && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">{issue.visibility}</span>
-                              )}
-                            </h4>
+                            <div className="flex items-center justify-between gap-2">
+                              <h4 className="font-medium text-sm truncate flex items-center gap-2">
+                                {issue.title}
+                                {issue.visibility && issue.visibility !== 'public' && (
+                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">{issue.visibility}</span>
+                                )}
+                                <Badge 
+                                  variant={issue.status === 'resolved' ? 'default' : 'secondary'}
+                                  className="text-[10px] capitalize"
+                                >
+                                  {issue.status.replace('_', ' ')}
+                                </Badge>
+                              </h4>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Visibility</DropdownMenuLabel>
+                                  <DropdownMenuRadioGroup
+                                    value={issue.visibility || 'public'}
+                                    onValueChange={(value) => setVisibility.mutate({ id: issue.id, visibility: value as IssueVisibility })}
+                                  >
+                                    <DropdownMenuRadioItem value="public">Public</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="private">Private</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="draft">Draft</DropdownMenuRadioItem>
+                                  </DropdownMenuRadioGroup>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
                               {issue.description}
                             </p>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
                               <Badge variant="outline" className="text-xs">
                                 {issue.category}
                               </Badge>
-                              <Badge 
-                                variant={issue.status === 'resolved' ? 'default' : 'secondary'}
-                                className="text-xs capitalize"
-                              >
-                                {issue.status.replace('_', ' ')}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground flex items-center gap-1" title="Supports (net votes)">
+                              <span title={`Updated ${formatRelativeTime(new Date(issue.updatedAt))}`}>
+                                Updated {formatRelativeTime(new Date(issue.updatedAt))}
+                              </span>
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                              <span className="flex items-center gap-1" title="Supports (net votes)">
                                 <TrendingUp className="h-3 w-3" /> {issue.votes}
                               </span>
                               {issue.progressUpdates?.length ? (
-                                <span className="text-xs text-muted-foreground flex items-center gap-1" title="Progress updates">
+                                <span className="flex items-center gap-1" title="Progress updates">
                                   <Clock className="h-3 w-3" /> {issue.progressUpdates.length}
                                 </span>
                               ) : null}
-                              {engagement?.[issue.id] && (
+                              {isFirebaseConfigured && engagement?.[issue.id] && (
                                 <>
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1" title="Comments on this issue">
+                                  <span className="flex items-center gap-1" title="Comments on this issue">
                                     <MessageSquare className="h-3 w-3" /> {engagement[issue.id].comments}
                                   </span>
-                                  <span className="text-xs text-muted-foreground flex items-center gap-1" title="Total likes across all comments">
+                                  <span className="flex items-center gap-1" title="Total likes across all comments">
                                     <ThumbsUp className="h-3 w-3" /> {engagement[issue.id].commentLikes}
                                   </span>
                                 </>
                               )}
                             </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <label htmlFor={`vis-${issue.id}`} className="text-[11px] uppercase tracking-wide text-muted-foreground">Visibility</label>
-                          <select
-                            id={`vis-${issue.id}`}
-                            defaultValue={issue.visibility || 'public'}
-                            onChange={(e) => {
-                              const value = e.target.value as IssueVisibility;
-                              setVisibility.mutate({ id: issue.id, visibility: value });
-                            }}
-                            className="border rounded px-2 py-1 text-xs bg-white"
-                          >
-                            {ISSUE_VISIBILITIES.map(v => (
-                              <option key={v.value} value={v.value}>{v.label}</option>
-                            ))}
-                          </select>
-                          <div className="ml-auto flex items-center gap-2">
-                            {issue.status !== 'resolved' && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenProgressDialog(issue)}
-                                  className="text-xs h-7"
-                                >
-                                  <TrendingUp className="h-3 w-3 mr-1" />
-                                  Add Progress
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenResolveDialog(issue)}
-                                  className="text-xs h-7"
-                                >
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                                  Mark Resolved
-                                </Button>
-                              </>
-                            )}
+                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                              {issue.status !== 'resolved' && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenProgressDialog(issue)}
+                                    className="text-xs h-7"
+                                  >
+                                    <TrendingUp className="h-3 w-3 mr-1" />
+                                    Add Progress
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleOpenResolveDialog(issue)}
+                                    className="text-xs h-7"
+                                  >
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                                    Mark Resolved
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
