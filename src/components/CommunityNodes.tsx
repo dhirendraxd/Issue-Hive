@@ -7,7 +7,7 @@ type Props = {
   linkColor?: string; // line color
 };
 
-export default function CommunityNodes({ className, count = 42, color = "#fef3c7", linkColor = "#fb923c" }: Props) {
+export default function CommunityNodes({ className, count = 48, color = "#fde68a", linkColor = "#f97316" }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -62,7 +62,7 @@ export default function CommunityNodes({ className, count = 42, color = "#fef3c7
           const max = 120; // px
           if (dist2 < max * max) {
             const dist = Math.sqrt(dist2);
-            const alpha = Math.max(0, 1 - dist / max) * 0.15;
+            const alpha = Math.max(0, 1 - dist / max) * 0.22;
             ctx.strokeStyle = rgba(linkColor, alpha);
             ctx.lineWidth = 1;
             ctx.beginPath();
@@ -82,7 +82,7 @@ export default function CommunityNodes({ className, count = 42, color = "#fef3c7
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
         // draw
-        ctx.fillStyle = rgba(color, 0.9);
+  ctx.fillStyle = rgba(color, 1);
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();

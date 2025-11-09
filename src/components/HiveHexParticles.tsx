@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   className?: string;
@@ -8,7 +9,7 @@ type Props = {
 };
 
 // Canvas-based subtle animated hexagon grid backdrop.
-export default function HiveHexParticles({ className, density = 48, color = "#fb923c", opacity = 0.08 }: Props) {
+export default function HiveHexParticles({ className, density = 48, color = "#f97316", opacity = 0.12 }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -90,7 +91,20 @@ export default function HiveHexParticles({ className, density = 48, color = "#fb
     };
   }, [density, color, opacity]);
 
-  return <canvas ref={ref} className={className} aria-hidden />;
+  return (
+    <div className={cn("absolute inset-0 z-0 pointer-events-none", className)} aria-hidden>
+      <canvas ref={ref} className="absolute inset-0" />
+      {/* Soft blurred overlays to add a faded glow between hex lines */}
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(249,115,22,0.18),transparent_65%)] mix-blend-screen opacity-70"
+        style={{ filter: "blur(14px)" }}
+      />
+      <div
+        className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,172,94,0.10),transparent_70%)] opacity-60"
+        style={{ filter: "blur(28px)" }}
+      />
+    </div>
+  );
 }
 
 function hexStroke(hex: string, alpha: number) {

@@ -8,7 +8,7 @@ type Props = {
 };
 
 // Subtle, tiny floating dust particles drifting upward.
-export default function AmbientDust({ className, count = 90, color = "#ffffff", maxAlpha = 0.08 }: Props) {
+export default function AmbientDust({ className, count = 90, color = "#ffffff", maxAlpha = 0.12 }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 

@@ -7,7 +7,7 @@ type Props = {
 };
 
 // Soft floating bubbles with a gentle wobble.
-export default function BubbleParticles({ className, count = 22, color = "#fde68a" }: Props) {
+export default function BubbleParticles({ className, count = 26, color = "#fbbf24" }: Props) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -42,10 +42,12 @@ export default function BubbleParticles({ className, count = 22, color = "#fde68
         bubbles.push({
           x: Math.random() * width,
           y: Math.random() * height,
-          r: 8 + Math.random() * 16,
+          // Smaller radius for subtler orange particles
+          r: 4 + Math.random() * 8,
           vy: -0.12 - Math.random() * 0.2,
           wob: 6 + Math.random() * 10,
           phase: Math.random() * Math.PI * 2,
+          // Slightly lower alpha for a softer look
           alpha: 0.08 + Math.random() * 0.12,
         });
       }

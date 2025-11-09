@@ -13,7 +13,7 @@ export default function HeroRings() {
       <defs>
         <linearGradient id="arc" x1="0" x2="1" y1="0" y2="0">
           <stop offset="0%" stopColor="rgba(255,98,0,0)" />
-          <stop offset="100%" stopColor="rgba(255,98,0,0.6)" />
+          <stop offset="100%" stopColor="rgba(255,98,0,0.8)" />
         </linearGradient>
       </defs>
       {rings.map((r, i) => (
