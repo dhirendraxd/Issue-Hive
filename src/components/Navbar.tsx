@@ -9,8 +9,8 @@ export default function Navbar() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-white/70 border-b border-white/40 transition-shadow">
-      <div className="mx-auto max-w-6xl px-4 h-16 relative flex items-center justify-between">
+    <header className="absolute inset-x-0 top-4 z-30">
+      <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between">
         {/* Logo left */}
         <Link
           to="/"
