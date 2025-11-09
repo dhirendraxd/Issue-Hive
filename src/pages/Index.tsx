@@ -126,9 +126,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-stone-50 relative">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
-      <Navbar />
+  <Navbar />
 
-      <main id="main">
+  <main id="main" className="scroll-mt-20">
         {/* Hero */}
         <div className="relative min-h-[100svh]">
           {/* Background decorative layers */}

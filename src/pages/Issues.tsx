@@ -110,7 +110,7 @@ export default function Issues() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <main className="relative px-4 md:px-6 pt-32 pb-24">
+      <main className="relative px-4 md:px-6 pt-28 pb-24 scroll-mt-20">
         {/* Background decorative layers for Issues page */}
         <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
         <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />

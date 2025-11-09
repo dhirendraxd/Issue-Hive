@@ -290,9 +290,14 @@ export default function Dashboard() {
                               >
                                 {issue.status.replace('_', ' ')}
                               </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
+                              <span className="text-xs text-muted-foreground flex items-center gap-1" title="Supports (net votes)">
+                                <TrendingUp className="h-3 w-3" /> {issue.votes}
                               </span>
+                              {issue.progressUpdates?.length ? (
+                                <span className="text-xs text-muted-foreground flex items-center gap-1" title="Progress updates">
+                                  <Clock className="h-3 w-3" /> {issue.progressUpdates.length}
+                                </span>
+                              ) : null}
                               {engagement?.[issue.id] && (
                                 <>
                                   <span className="text-xs text-muted-foreground flex items-center gap-1" title="Comments on this issue">

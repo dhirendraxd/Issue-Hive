@@ -185,7 +185,7 @@ export default function RaiseIssuePage() {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+  <div className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">

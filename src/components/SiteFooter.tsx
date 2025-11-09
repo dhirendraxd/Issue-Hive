@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 export default function SiteFooter() {
   return (
     <footer className="px-4 pb-12">
@@ -11,15 +13,15 @@ export default function SiteFooter() {
           <div>
             <div className="font-medium mb-2">Company</div>
             <ul className="space-y-1 text-sm text-muted-foreground">
-              <li><a href="#about">About</a></li>
-              <li><a href="#careers">Report</a></li>
+              <li><Link to="/about">About</Link></li>
+              <li><Link to="/raise-issue">Raise Issue</Link></li>
             </ul>
           </div>
           <div>
             <div className="font-medium mb-2">Terms</div>
             <ul className="space-y-1 text-sm text-muted-foreground">
-              <li><a href="#privacy">Privacy Policy</a></li>
-              <li><a href="#terms">Terms of Use</a></li>
+              <li><Link to="/about">Privacy Policy</Link></li>
+              <li><Link to="/about">Terms of Use</Link></li>
             </ul>
           </div>
         </div>
