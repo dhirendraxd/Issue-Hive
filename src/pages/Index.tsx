@@ -159,7 +159,7 @@ const Index = () => {
         </div>
 
       {/* Below-hero content with subtle background layers */}
-      <ParticlesBackground>
+  <ParticlesBackground longFade hexOpacity={0.16}>
         {/* Stats */}
         <div className="py-8">
           <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
@@ -185,7 +185,7 @@ const Index = () => {
 
         {/* Community */}
         <CommunityCTA />
-      </ParticlesBackground>
+  </ParticlesBackground>
       </main>
 
       {/* Footer */}

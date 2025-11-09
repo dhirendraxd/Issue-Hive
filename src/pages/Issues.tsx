@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
 import { ThumbsUp, RotateCcw } from "lucide-react";
 import Navbar from "@/components/Navbar";
-import HiveHexParticles from "@/components/HiveHexParticles";
-import CommunityNodes from "@/components/CommunityNodes";
+import ParticlesBackground from "@/components/ParticlesBackground";
 import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
@@ -112,9 +111,7 @@ export default function Issues() {
     <div className="min-h-screen bg-stone-50">
       <Navbar />
       <main className="relative px-4 md:px-6 pt-28 pb-24 scroll-mt-20">
-        {/* Background decorative layers for Issues page */}
-        <HiveHexParticles className="absolute inset-0 z-0 pointer-events-none" />
-        <CommunityNodes className="absolute inset-0 z-0 pointer-events-none" />
+        <ParticlesBackground fullPage hexOpacity={0.11}>
         <section className="mx-auto max-w-7xl">
           <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Campus Issues</h1>
@@ -250,6 +247,7 @@ export default function Issues() {
             ))}
           </div>
         </section>
+        </ParticlesBackground>
       </main>
 
       {/* Issue Detail Dialog */}

@@ -175,7 +175,7 @@ export default function RaiseIssuePage() {
       <Navbar />
 
       {/* Background Effects */}
-      <ParticlesBackground>
+      <ParticlesBackground fullPage hexOpacity={0.10}>
         <div />
       </ParticlesBackground>
       

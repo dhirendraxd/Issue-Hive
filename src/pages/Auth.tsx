@@ -84,8 +84,8 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-stone-50">
-      {/* Background effects */}
-      <ParticlesBackground>
+      {/* Background Effects */}
+      <ParticlesBackground fullPage hexOpacity={0.10}>
         <div />
       </ParticlesBackground>
       

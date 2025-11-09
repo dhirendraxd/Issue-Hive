@@ -140,7 +140,7 @@ export default function Dashboard() {
     <div className="min-h-screen relative overflow-hidden bg-stone-50">
       <Navbar />
       {/* Background */}
-      <ParticlesBackground>
+      <ParticlesBackground fullPage hexOpacity={0.10}>
         <div />
       </ParticlesBackground>
       <div className="absolute inset-0 opacity-25 pointer-events-none" aria-hidden>
