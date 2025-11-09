@@ -405,19 +405,28 @@ export function useIssuesFirebase() {
       const issueDoc = await getIssue(params.id);
       if (!issueDoc) throw new Error('Issue not found');
       
-      const existingUpdates = issueDoc.progressUpdates || [];
-      const newUpdate = {
+      const existingUpdates = (issueDoc.progressUpdates || []).map((u) => {
+        // Strip undefined photos to satisfy Firestore (no undefined allowed)
+        const { photos, ...rest } = u as NonNullable<Issue['progressUpdates']>[number] & { photos?: string[] };
+        return photos && photos.length > 0 ? { ...rest, photos } : rest;
+      });
+
+      const baseUpdate: NonNullable<Issue['progressUpdates']>[number] = {
         message: params.message,
-        photos: params.photos && params.photos.length > 0 ? params.photos : undefined,
         updatedAt: Date.now(),
         updatedBy: user.uid,
       };
-      
-      await updateIssue(params.id, {
+      const newUpdate = (params.photos && params.photos.length > 0)
+        ? { ...baseUpdate, photos: params.photos }
+        : baseUpdate;
+
+      // Build payload without any undefined fields
+      const payload: Partial<Issue> = {
         progressUpdates: [...existingUpdates, newUpdate],
         hasRecentProgress: true,
-        updatedAt: Date.now(),
-      });
+      };
+
+      await updateIssue(params.id, payload);
       return params.id;
     },
     onMutate: async (params) => {
