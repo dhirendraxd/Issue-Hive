@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
+import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useUserActivity } from '@/hooks/use-user-activity';
 import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
 import type { Issue } from '@/types/issue';
@@ -40,6 +41,12 @@ export default function Dashboard() {
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
+  // Prepare engagement metrics early to satisfy hook ordering rules
+  const list: Issue[] = (issues as Issue[]) || [];
+  const userIssues = user ? list.filter(issue => issue.createdBy === user.uid) : [];
+  const recentIssueIds = userIssues.slice(0, 5).map(i => i.id);
+  const { data: engagement } = useIssueEngagement(recentIssueIds);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
@@ -67,9 +74,7 @@ export default function Dashboard() {
     );
   }
 
-  const list: Issue[] = (issues as Issue[]) || [];
   // Ownership must be determined by createdBy (auth UID) to satisfy Firestore rules
-  const userIssues = list.filter(issue => issue.createdBy === user.uid);
   const privateCount = userIssues.filter(i => i.visibility === 'private').length;
   const draftCount = userIssues.filter(i => i.visibility === 'draft').length;
 
@@ -288,6 +293,16 @@ export default function Dashboard() {
                               <span className="text-xs text-muted-foreground">
                                 {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
                               </span>
+                              {engagement?.[issue.id] && (
+                                <>
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1" title="Comments on this issue">
+                                    <MessageSquare className="h-3 w-3" /> {engagement[issue.id].comments}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground flex items-center gap-1" title="Total likes across all comments">
+                                    <ThumbsUp className="h-3 w-3" /> {engagement[issue.id].commentLikes}
+                                  </span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
