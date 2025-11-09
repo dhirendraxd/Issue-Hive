@@ -3,7 +3,7 @@ import { useComments } from '@/hooks/use-comments';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
-import { cn } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@/lib/utils';
 import { MessageSquare, Reply, ThumbsUp } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
@@ -170,11 +170,16 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
                       </span>
                     )}
                   </div>
-                  <span className={cn("text-gray-500 flex-shrink-0", isReply ? "text-[9px]" : "text-[10px]")}>
+                  <span className={cn("text-gray-500 flex-shrink-0", isReply ? "text-[9px]" : "text-[10px]")}
+                        title={(() => { 
+                          if (typeof c.createdAt === 'number') return new Date(c.createdAt).toLocaleString();
+                          const ts = c as unknown as { createdAt?: { toDate?: () => Date } };
+                          return ts.createdAt?.toDate ? ts.createdAt.toDate().toLocaleString() : '';
+                        })()}>
                     {(() => { 
-                      if (typeof c.createdAt === 'number') return new Date(c.createdAt).toLocaleDateString(); 
+                      if (typeof c.createdAt === 'number') return formatRelativeTime(c.createdAt); 
                       const ts = c as unknown as { createdAt?: { toDate?: () => Date } }; 
-                      return ts.createdAt?.toDate ? ts.createdAt.toDate().toLocaleDateString() : ''; 
+                      return ts.createdAt?.toDate ? formatRelativeTime(ts.createdAt.toDate() as Date) : ''; 
                     })()}
                   </span>
                 </div>

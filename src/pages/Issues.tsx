@@ -8,6 +8,7 @@ import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
+import { formatRelativeTime } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -168,8 +169,8 @@ export default function Issues() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{i.createdByName ?? "Anonymous"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(i.createdAt).toLocaleDateString()}
+                      <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
+                        {formatRelativeTime(i.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -193,22 +194,22 @@ export default function Issues() {
                         🔒 Private
                       </span>
                     )}
-                    {/* Progress badge: show if flag OR there are updates */}
-                    {(i.hasRecentProgress || (i.progressUpdates && i.progressUpdates.length > 0)) && i.progressUpdates && i.progressUpdates.length > 0 && (
-                      <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
-                        🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {/* Generic recent update badge (when no progress badge) */}
-                    {!(i.hasRecentProgress || (i.progressUpdates && i.progressUpdates.length > 0)) && (i.updatedAt > i.createdAt + 60_000) && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700 animate-pulse">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" /> Updated
-                      </span>
-                    )}
                     {/* Resolution badge (optional extra clarity beyond status) */}
                     {i.status === 'resolved' && i.resolution && (
                       <span className="inline-flex items-center rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
                         ✅ Resolution Posted
+                      </span>
+                    )}
+                    {/* Progress badge: show if there are updates */}
+                    {i.progressUpdates && i.progressUpdates.length > 0 && (
+                      <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
+                        🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                    {/* Updated badge: only for status advanced to in_progress and no explicit progress/resolution badges */}
+                    {i.status === 'in_progress' && !(i.progressUpdates && i.progressUpdates.length > 0) && !i.resolution && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" /> Updated
                       </span>
                     )}
                   </div>

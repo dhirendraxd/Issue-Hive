@@ -29,6 +29,7 @@ import {
   Activity
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import { formatRelativeTime } from '@/lib/utils';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -376,7 +377,9 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {new Date(user.metadata.creationTime || '').toLocaleDateString()}</span>
+                    <span title={new Date(user.metadata.creationTime || '').toLocaleString()}>
+                      Joined {formatRelativeTime(new Date(user.metadata.creationTime || ''))}
+                    </span>
                   </div>
                 </div>
               </CardContent>

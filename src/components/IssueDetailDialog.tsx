@@ -11,7 +11,7 @@ import IssueComments from "./IssueComments";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -96,13 +96,7 @@ export default function IssueDetailDialog({
               </DialogTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                <span>{new Date(issue.createdAt).toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</span>
+                <span title={new Date(issue.createdAt).toLocaleString()}>{formatRelativeTime(issue.createdAt)}</span>
               </div>
             </div>
             {issue.anonymous && (
@@ -234,8 +228,8 @@ export default function IssueDetailDialog({
                     </div>
                     <div>
                       <div className="text-sm font-semibold text-green-900">Issue Resolved</div>
-                      <div className="text-xs text-green-700">
-                        {new Date(issue.resolution.resolvedAt).toLocaleDateString()}
+                      <div className="text-xs text-green-700" title={new Date(issue.resolution.resolvedAt).toLocaleString()}>
+                        {formatRelativeTime(issue.resolution.resolvedAt)}
                       </div>
                     </div>
                   </div>
@@ -290,12 +284,8 @@ export default function IssueDetailDialog({
                           <span className="font-medium">
                             Update {issue.progressUpdates!.length - idx}
                           </span>
-                          <span>
-                            {new Date(update.updatedAt).toLocaleDateString()} at{' '}
-                            {new Date(update.updatedAt).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
+                          <span title={new Date(update.updatedAt).toLocaleString()}>
+                            {formatRelativeTime(update.updatedAt)}
                           </span>
                         </div>
                         
