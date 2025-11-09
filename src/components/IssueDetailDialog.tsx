@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime } from "@/lib/utils";
+import { getUserAvatarUrl } from "@/lib/avatar";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -85,9 +86,9 @@ export default function IssueDetailDialog({
           {/* User info header */}
           <div className="flex items-center gap-3">
             <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-orange-500/20">
-              <AvatarImage src={user?.photoURL || undefined} />
+              <AvatarImage src={user?.photoURL || getUserAvatarUrl(issue.createdBy)} />
               <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm font-semibold">
-                {getInitials(issue.createdByName ?? "User")}
+                <img src={getUserAvatarUrl(issue.createdBy)} alt="" className="w-full h-full" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">

@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUserAvatarUrl } from "@/lib/avatar";
 
 export default function Navbar() {
   const location = useLocation();
@@ -46,9 +47,9 @@ export default function Navbar() {
           {user ? (
             <Link to="/dashboard">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
-                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
+                <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
-                  {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                  <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
                 </AvatarFallback>
               </Avatar>
             </Link>
@@ -66,9 +67,9 @@ export default function Navbar() {
           {user ? (
             <Link to="/dashboard">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
-                <AvatarImage src={user.photoURL || undefined} alt={user.displayName || user.email || 'User'} />
+                <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
-                  {(user.displayName || user.email || 'U')[0].toUpperCase()}
+                  <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
                 </AvatarFallback>
               </Avatar>
             </Link>

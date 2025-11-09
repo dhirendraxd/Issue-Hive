@@ -9,6 +9,7 @@ import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
 import { formatRelativeTime } from '@/lib/utils';
+import { getUserAvatarUrl } from '@/lib/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -163,8 +164,9 @@ export default function Issues() {
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-10 w-10 flex-shrink-0">
+                      <AvatarImage src={getUserAvatarUrl(i.createdBy)} />
                       <AvatarFallback className="bg-orange-500 text-white text-xs">
-                        {getInitials(i.createdByName ?? "User")}
+                        <img src={getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">

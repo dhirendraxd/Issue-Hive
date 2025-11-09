@@ -27,14 +27,14 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
-  Activity,
-  MoreHorizontal
+  Activity
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { formatRelativeTime } from '@/lib/utils';
+import { getUserAvatarUrl } from '@/lib/avatar';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import IssueCard from '@/components/IssueCard';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -281,100 +281,14 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {userIssues.slice(0, 5).map((issue) => (
-                      <div key={issue.id} className="p-4 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-start gap-3">
-                          <div className={`w-2 h-2 rounded-full mt-1 ${statusColors[issue.status]}`} />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <h4 className="font-medium text-sm truncate flex items-center gap-2">
-                                {issue.title}
-                                {issue.visibility && issue.visibility !== 'public' && (
-                                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide">{issue.visibility}</span>
-                                )}
-                                <Badge 
-                                  variant={issue.status === 'resolved' ? 'default' : 'secondary'}
-                                  className="text-[10px] capitalize"
-                                >
-                                  {issue.status.replace('_', ' ')}
-                                </Badge>
-                              </h4>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button size="icon" variant="ghost" className="h-8 w-8">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Visibility</DropdownMenuLabel>
-                                  <DropdownMenuRadioGroup
-                                    value={issue.visibility || 'public'}
-                                    onValueChange={(value) => setVisibility.mutate({ id: issue.id, visibility: value as IssueVisibility })}
-                                  >
-                                    <DropdownMenuRadioItem value="public">Public</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="private">Private</DropdownMenuRadioItem>
-                                    <DropdownMenuRadioItem value="draft">Draft</DropdownMenuRadioItem>
-                                  </DropdownMenuRadioGroup>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                              {issue.description}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
-                              <Badge variant="outline" className="text-xs">
-                                {issue.category}
-                              </Badge>
-                              <span title={`Updated ${formatRelativeTime(new Date(issue.updatedAt))}`}>
-                                Updated {formatRelativeTime(new Date(issue.updatedAt))}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                              <span className="flex items-center gap-1" title="Supports (net votes)">
-                                <TrendingUp className="h-3 w-3" /> {issue.votes}
-                              </span>
-                              {issue.progressUpdates?.length ? (
-                                <span className="flex items-center gap-1" title="Progress updates">
-                                  <Clock className="h-3 w-3" /> {issue.progressUpdates.length}
-                                </span>
-                              ) : null}
-                              {isFirebaseConfigured && engagement?.[issue.id] && (
-                                <>
-                                  <span className="flex items-center gap-1" title="Comments on this issue">
-                                    <MessageSquare className="h-3 w-3" /> {engagement[issue.id].comments}
-                                  </span>
-                                  <span className="flex items-center gap-1" title="Total likes across all comments">
-                                    <ThumbsUp className="h-3 w-3" /> {engagement[issue.id].commentLikes}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            <div className="mt-2 flex items-center gap-2 flex-wrap">
-                              {issue.status !== 'resolved' && (
-                                <>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleOpenProgressDialog(issue)}
-                                    className="text-xs h-7"
-                                  >
-                                    <TrendingUp className="h-3 w-3 mr-1" />
-                                    Add Progress
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleOpenResolveDialog(issue)}
-                                    className="text-xs h-7"
-                                  >
-                                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Mark Resolved
-                                  </Button>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <IssueCard
+                        key={issue.id}
+                        issue={issue}
+                        engagement={engagement?.[issue.id]}
+                        onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                        onAddProgress={handleOpenProgressDialog}
+                        onResolve={handleOpenResolveDialog}
+                      />
                     ))}
                   </div>
                 )}
@@ -390,17 +304,18 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || 'User'}
-                      className="h-16 w-16 rounded-full border-2 border-orange-500"
-                    />
-                  ) : (
-                    <div className="h-16 w-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white text-xl font-semibold">
-                      {(user.displayName || user.email || 'U')[0].toUpperCase()}
-                    </div>
-                  )}
+                  <img
+                    src={user.photoURL || getUserAvatarUrl(user.uid)}
+                    alt={user.displayName || 'User'}
+                    className="h-16 w-16 rounded-full border-2 border-orange-500 object-cover bg-white"
+                    onError={(e) => {
+                      // Fallback to a different avatar style if primary fails
+                      const img = e.target as HTMLImageElement;
+                      if (!img.src.includes('backup')) {
+                        img.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.uid}&backup=true`;
+                      }
+                    }}
+                  />
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">
                       {user.displayName || 'IssueHive User'}
