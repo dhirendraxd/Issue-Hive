@@ -28,7 +28,7 @@ const statusColors = {
 
 export default function IssueCard({ issue, engagement, onSetVisibility, onAddProgress, onResolve }: IssueCardProps) {
   return (
-    <div className="p-4 rounded-lg glass-card hover:glass-strong transition-all duration-300">
+    <div className="p-4 rounded-lg glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
       <div className="flex items-start gap-3">
         <div className={`w-2 h-2 rounded-full mt-1 flex-shrink-0 ${statusColors[issue.status]}`} />
         <div className="flex-1 min-w-0">

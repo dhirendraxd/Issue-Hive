@@ -110,13 +110,14 @@ export default function Issues() {
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
-      <main className="relative px-4 md:px-6 pt-28 pb-24 scroll-mt-20">
+      <main className="scroll-mt-20">
         <ParticlesBackground fullPage hexOpacity={0.11}>
-        <section className="mx-auto max-w-7xl">
-          <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-semibold tracking-tight">Campus Issues</h1>
-            <p className="mt-3 text-muted-foreground">Browse top issues and show support by upvoting.</p>
-          </div>
+          <div className="px-4 md:px-6 pt-28 pb-24">
+            <section className="mx-auto max-w-7xl">
+              <div className="text-center mb-10">
+                <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight">Campus Issues</h1>
+                <p className="mt-3 text-muted-foreground">Browse top issues and show support by upvoting.</p>
+                  </div>
 
           {/* Filters: improved UX and UI */}
           <div className="mb-6 relative z-10">
@@ -154,7 +155,7 @@ export default function Issues() {
             {visibleIssues.map((i) => (
               <Card 
                 key={i.id} 
-                className="rounded-2xl glass-card hover:glass-strong transition-all duration-300 flex flex-col h-full cursor-pointer"
+                className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
                 onClick={() => handleCardClick(i)}
               >
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
@@ -247,6 +248,7 @@ export default function Issues() {
             ))}
           </div>
         </section>
+          </div>
         </ParticlesBackground>
       </main>
 

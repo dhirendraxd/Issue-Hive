@@ -19,19 +19,19 @@ export default function About() {
             </section>
 
             <section className="mx-auto max-w-5xl mt-12 grid gap-8 md:grid-cols-3">
-              <div className="rounded-2xl glass-card p-6 text-left">
+              <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                 <h3 className="text-lg font-display font-semibold">Student‑first</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Built for students to raise their voice safely and effectively, with simple tools that respect privacy.
                 </p>
               </div>
-              <div className="rounded-2xl glass-card p-6 text-left">
+              <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                 <h3 className="text-lg font-display font-semibold">Transparent</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Issues, statuses, and supports are visible so the community can track progress and impact.
                 </p>
               </div>
-              <div className="rounded-2xl glass-card p-6 text-left">
+              <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                 <h3 className="text-lg font-display font-semibold">Collaborative</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Students and admins work together—from reporting to resolution—with clear, shared context.
@@ -43,7 +43,7 @@ export default function About() {
             <section className="mx-auto max-w-5xl mt-12 md:mt-16">
               <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight text-center">How it works</h2>
               <div className="mt-8 grid gap-8 md:grid-cols-3">
-                <div className="rounded-2xl glass-card p-6 text-left">
+                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
                       <Megaphone className="h-5 w-5" />
@@ -52,7 +52,7 @@ export default function About() {
                   </div>
                   <p className="text-sm text-muted-foreground">Share a campus issue with a clear description and category.</p>
                 </div>
-                <div className="rounded-2xl glass-card p-6 text-left">
+                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
                       <ThumbsUp className="h-5 w-5" />
@@ -61,7 +61,7 @@ export default function About() {
                   </div>
                   <p className="text-sm text-muted-foreground">Students upvote to show support and prioritize what matters.</p>
                 </div>
-                <div className="rounded-2xl glass-card p-6 text-left">
+                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
                       <CheckCircle2 className="h-5 w-5" />

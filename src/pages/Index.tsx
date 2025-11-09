@@ -123,7 +123,7 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
   return (
     <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
       {items.map((i) => (
-        <Card key={i.label} className="rounded-2xl glass-card hover:glass-strong transition-all duration-300">
+        <Card key={i.label} className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
           <CardContent className="py-8 text-center">
             <div className="text-3xl md:text-4xl font-display font-semibold text-orange-500">
               <CountUpNumber value={i.value} />

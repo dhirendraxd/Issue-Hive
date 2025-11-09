@@ -162,7 +162,7 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-blue-400">
+          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-blue-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Total Issues
@@ -175,7 +175,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-orange-400">
+          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-orange-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Open Issues
@@ -188,7 +188,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-green-400">
+          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-green-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Total Supports
@@ -201,7 +201,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-purple-400">
+          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-purple-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-display font-medium text-muted-foreground flex items-center gap-2">
                 Your Issues

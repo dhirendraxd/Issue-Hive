@@ -110,15 +110,15 @@
   }
   
   .glass-card {
-    @apply bg-white/60 backdrop-blur-2xl border border-white/50 shadow-xl;
+    @apply bg-white/60 backdrop-blur-2xl border border-white/50 shadow-md;
   }
   
   .glass-strong {
-    @apply bg-white/80 backdrop-blur-3xl border border-white/60 shadow-2xl;
+    @apply bg-white/80 backdrop-blur-3xl border border-white/60 shadow-lg shadow-orange-500/10;
   }
   
   .glass-subtle {
-    @apply bg-white/40 backdrop-blur-lg border border-white/30 shadow-md;
+    @apply bg-white/40 backdrop-blur-lg border border-white/30 shadow-sm;
   }
   
   .glass-dark {

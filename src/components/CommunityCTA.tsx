@@ -26,7 +26,7 @@ export default function CommunityCTA() {
                 aria-label={label}
                 className="group block focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
               >
-                <div className="rounded-xl glass-subtle hover:glass-card transition-all duration-300 p-6 text-center">
+                <div className="rounded-xl glass-subtle hover:shadow-md hover:shadow-orange-400/15 hover:border-orange-100/40 transition-all duration-300 p-6 text-center">
                   <Icon className="mx-auto h-6 w-6 transition-colors group-hover:text-orange-500" />
                 </div>
                 <div className="mt-2 text-center text-xs text-muted-foreground transition-colors group-hover:text-orange-500">
