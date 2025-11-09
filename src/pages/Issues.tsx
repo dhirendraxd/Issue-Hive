@@ -157,7 +157,7 @@ export default function Issues() {
             {visibleIssues.map((i) => (
               <Card 
                 key={i.id} 
-                className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg transition-all hover:bg-white/70 hover:shadow-md hover:border-orange-200/60 flex flex-col h-full cursor-pointer"
+                className="rounded-2xl glass-card hover:glass-strong transition-all duration-300 flex flex-col h-full cursor-pointer"
                 onClick={() => handleCardClick(i)}
               >
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
@@ -179,7 +179,7 @@ export default function Issues() {
 
                   {/* Issue Title & Description */}
                   <div className="mb-4 flex-1">
-                    <h3 className="text-lg font-semibold break-words leading-snug mb-2">{i.title}</h3>
+                    <h3 className="text-lg font-display font-semibold break-words leading-snug mb-2">{i.title}</h3>
                     <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
                   </div>
 

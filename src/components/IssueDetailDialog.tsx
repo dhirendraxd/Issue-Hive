@@ -92,7 +92,7 @@ export default function IssueDetailDialog({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-semibold truncate">
+              <DialogTitle className="text-lg font-display font-semibold truncate">
                 {issue.createdByName ?? "Anonymous"}
               </DialogTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">

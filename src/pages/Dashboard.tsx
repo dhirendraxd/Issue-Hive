@@ -142,15 +142,17 @@ export default function Dashboard() {
         <div />
       </ParticlesBackground>
       
-      <div className="absolute inset-0 opacity-20 pointer-events-none" aria-hidden>
-        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/30 to-amber-500/20 blur-3xl" />
+      <div className="absolute inset-0 opacity-30 pointer-events-none" aria-hidden>
+        <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/40 to-amber-500/30 blur-3xl" />
+        <div className="absolute bottom-20 left-1/4 w-80 h-80 rounded-full bg-gradient-to-br from-blue-500/30 to-cyan-500/20 blur-3xl" />
+        <div className="absolute top-1/2 right-1/3 w-64 h-64 rounded-full bg-gradient-to-br from-green-500/25 to-emerald-500/15 blur-3xl" />
       </div>
 
       {/* Header */}
-      <header className="relative z-10 border-b border-white/40 bg-white/60 backdrop-blur-xl">
+      <header className="relative z-10 border-b border-white/40 glass-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Link to="/" className="flex items-center gap-2 font-semibold text-xl tracking-tight">
+            <Link to="/" className="flex items-center gap-2 font-display font-semibold text-xl tracking-tight">
               <img src="/beehive-honey-svgrepo-com.svg" alt="IssueHive" className="h-8 w-8" />
               <span>Issue<span className="text-orange-500">Hive</span></span>
             </Link>
@@ -179,7 +181,7 @@ export default function Dashboard() {
       <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">
+          <h1 className="text-3xl font-display font-semibold tracking-tight">
             Welcome back, {user.displayName || user.email?.split('@')[0]}!
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -189,57 +191,57 @@ export default function Dashboard() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-blue-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Total Issues
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+              <AlertCircle className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats?.total || 0}</div>
+              <div className="text-2xl font-display font-bold text-blue-600">{stats?.total || 0}</div>
               <p className="text-xs text-muted-foreground mt-1">Community-wide</p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-orange-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Open Issues
               </CardTitle>
               <Clock className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-500">{stats?.open || 0}</div>
+              <div className="text-2xl font-display font-bold text-orange-500">{stats?.open || 0}</div>
               <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-green-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
                 Total Supports
               </CardTitle>
               <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-500">{stats?.votes || 0}</div>
+              <div className="text-2xl font-display font-bold text-green-600">{stats?.votes || 0}</div>
               <p className="text-xs text-muted-foreground mt-1">Community engagement</p>
             </CardContent>
           </Card>
 
-          <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+          <Card className="glass-card hover:glass-strong transition-all duration-300 border-l-4 border-l-purple-400">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <CardTitle className="text-sm font-display font-medium text-muted-foreground flex items-center gap-2">
                 Your Issues
                 {(privateCount > 0 || draftCount > 0) && (
                   <span className="text-[10px] font-normal text-muted-foreground">{privateCount} private · {draftCount} draft</span>
                 )}
               </CardTitle>
-              <User className="h-4 w-4 text-blue-500" />
+              <User className="h-4 w-4 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-500">{userIssues.length}</div>
+              <div className="text-2xl font-display font-bold text-purple-600">{userIssues.length}</div>
               <p className="text-xs text-muted-foreground mt-1">Issues you reported</p>
             </CardContent>
           </Card>
@@ -248,9 +250,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Your Recent Issues */}
           <div className="lg:col-span-2">
-            <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+            <Card className="glass-card">
               <CardHeader>
-                <CardTitle>Your Recent Issues</CardTitle>
+                <CardTitle className="font-display">Your Recent Issues</CardTitle>
                 <CardDescription>
                   Issues you've reported to the community
                 </CardDescription>
@@ -298,9 +300,9 @@ export default function Dashboard() {
 
           {/* User Profile Sidebar */}
           <div className="space-y-6">
-            <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+            <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="text-lg">Your Profile</CardTitle>
+                <CardTitle className="text-lg font-display">Your Profile</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -343,9 +345,9 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-white/40 bg-white/80 backdrop-blur-xl">
+            <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                <CardTitle className="text-lg font-display">Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Link to="/raise-issue" className="block">
@@ -370,9 +372,9 @@ export default function Dashboard() {
             </Card>
 
             {/* User Activity Card */}
-            <Card className="border-stone-200 shadow-sm">
+            <Card className="glass-card">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
+                <CardTitle className="text-base font-display flex items-center gap-2">
                   <Activity className="h-4 w-4 text-orange-600" />
                   Your Activity
                 </CardTitle>

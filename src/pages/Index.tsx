@@ -27,7 +27,7 @@ function Hero() {
       </div>
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8 py-20 md:py-28">
         <div className="flex flex-col items-center text-center gap-4 md:gap-6">
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
+          <h1 className="text-4xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
             Unified Campus Platform for
             <br />
             Students & Admins
@@ -38,7 +38,7 @@ function Hero() {
 
           <div className="mt-2 md:mt-4 flex gap-3">
             <Link to={user ? "/raise-issue" : "/auth"}>
-              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-display font-medium text-[13px]">
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -105,9 +105,9 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
   return (
     <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
       {items.map((i) => (
-        <Card key={i.label} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
+        <Card key={i.label} className="rounded-2xl glass-card hover:glass-strong transition-all duration-300">
           <CardContent className="py-8 text-center">
-            <div className="text-3xl md:text-4xl font-semibold text-orange-500">
+            <div className="text-3xl md:text-4xl font-display font-semibold text-orange-500">
               <CountUpNumber value={i.value} />
             </div>
             <div className="mt-2 text-sm text-muted-foreground">{i.label}</div>

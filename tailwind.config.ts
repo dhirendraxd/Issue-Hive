@@ -22,6 +22,10 @@ export default {
 		extend: {
 			fontFamily: {
 				sans: ["Inter", ...defaultTheme.fontFamily.sans],
+				display: ["Halenoir", "Inter", ...defaultTheme.fontFamily.sans],
+			},
+			backdropBlur: {
+				xs: '2px',
 			},
 			colors: {
 				border: 'hsl(var(--border))',

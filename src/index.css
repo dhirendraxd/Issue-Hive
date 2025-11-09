@@ -103,3 +103,25 @@
     scroll-behavior: smooth;
   }
 }
+@layer utilities {
+  /* Glassmorphism effect utilities */
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-lg;
+  }
+  
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-2xl border border-white/50 shadow-xl;
+  }
+  
+  .glass-strong {
+    @apply bg-white/80 backdrop-blur-3xl border border-white/60 shadow-2xl;
+  }
+  
+  .glass-subtle {
+    @apply bg-white/40 backdrop-blur-lg border border-white/30 shadow-md;
+  }
+  
+  .glass-dark {
+    @apply bg-black/20 backdrop-blur-xl border border-white/20 shadow-lg;
+  }
+}

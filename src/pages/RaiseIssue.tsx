@@ -179,9 +179,10 @@ export default function RaiseIssuePage() {
         <div />
       </ParticlesBackground>
       
-      <div className="absolute inset-0 opacity-20 pointer-events-none" aria-hidden>
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/30 to-amber-500/20 blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-amber-500/30 to-orange-500/20 blur-3xl" />
+      <div className="absolute inset-0 opacity-30 pointer-events-none" aria-hidden>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-orange-500/40 to-amber-500/30 blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-gradient-to-br from-amber-500/35 to-orange-500/25 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 rounded-full bg-gradient-to-br from-yellow-500/25 to-orange-500/20 blur-3xl" />
       </div>
 
       {/* Main Content */}
@@ -189,37 +190,37 @@ export default function RaiseIssuePage() {
         <div className="max-w-3xl mx-auto">
           {/* Header */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-lg">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-xl ring-4 ring-orange-100">
               <AlertCircle className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
+            <h1 className="text-4xl font-display font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
               Report a <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Campus Issue</span>
             </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Help improve our campus community by reporting facilities, infrastructure, or service issues
             </p>
             <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
                 <CheckCircle2 className="h-4 w-4 text-green-600" />
-                <span>Quick & Easy</span>
+                <span className="font-medium">Quick & Easy</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
                 <Shield className="h-4 w-4 text-blue-600" />
-                <span>Anonymous Option</span>
+                <span className="font-medium">Anonymous Option</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
                 <Zap className="h-4 w-4 text-orange-600" />
-                <span>Instant Submission</span>
+                <span className="font-medium">Instant Submission</span>
               </div>
             </div>
           </div>
 
           {/* Form Card */}
-          <Card className="border-white/40 bg-white/90 backdrop-blur-xl shadow-2xl">
-            <CardHeader className="border-b border-gray-100">
-              <CardTitle className="flex items-center gap-2 text-2xl">
-                <div className="p-2 rounded-lg bg-orange-100">
-                  <FileText className="h-5 w-5 text-orange-600" />
+          <Card className="glass-strong shadow-2xl border-t-4 border-t-orange-400">
+            <CardHeader className="border-b border-white/40 bg-gradient-to-r from-orange-50/50 to-amber-50/50">
+              <CardTitle className="flex items-center gap-2 text-2xl font-display">
+                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 shadow-md">
+                  <FileText className="h-5 w-5 text-white" />
                 </div>
                 Issue Details
               </CardTitle>
@@ -406,7 +407,7 @@ export default function RaiseIssuePage() {
                 {/* Urgency Level */}
                 <div className="space-y-3">
                   <Label className="text-base font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
+                    <Clock className="h-4 w-4 text-orange-600" />
                     Urgency Level
                   </Label>
                   <div className="grid grid-cols-3 gap-3">
@@ -417,9 +418,9 @@ export default function RaiseIssuePage() {
                       disabled={isSubmitting}
                       className={cn(
                         'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
-                        formData.urgency === 'low'
-                          ? 'bg-green-500 hover:bg-green-600 text-white border-green-500 shadow-md'
-                          : 'hover:border-green-500 hover:bg-green-50'
+                        formData.urgency === 'low' 
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-green-400 shadow-lg shadow-green-200' 
+                          : 'hover:bg-green-50 hover:border-green-300 glass-subtle'
                       )}
                     >
                       <Clock className="h-5 w-5" />
@@ -436,8 +437,8 @@ export default function RaiseIssuePage() {
                       className={cn(
                         'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
                         formData.urgency === 'medium'
-                          ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-500 shadow-md'
-                          : 'hover:border-orange-500 hover:bg-orange-50'
+                          ? 'bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white border-orange-400 shadow-lg shadow-orange-200'
+                          : 'hover:bg-orange-50 hover:border-orange-300 glass-subtle'
                       )}
                     >
                       <AlertTriangle className="h-5 w-5" />
@@ -454,8 +455,8 @@ export default function RaiseIssuePage() {
                       className={cn(
                         'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
                         formData.urgency === 'high'
-                          ? 'bg-red-500 hover:bg-red-600 text-white border-red-500 shadow-md'
-                          : 'hover:border-red-500 hover:bg-red-50'
+                          ? 'bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white border-red-400 shadow-lg shadow-red-200'
+                          : 'hover:bg-red-50 hover:border-red-300 glass-subtle'
                       )}
                     >
                       <Zap className="h-5 w-5" />
