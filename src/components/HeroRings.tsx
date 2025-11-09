@@ -1,8 +1,9 @@
 export default function HeroRings() {
   // Decorative concentric rings with adjusted radii and a more pronounced orange arc
   const cx = 560; // slightly left-of-center for composition
-  const cy = 420;
+  const cy = 480;
   const rings = [260, 360, 480, 620, 760];
+  const movingRadius = 480; // align animated ring with one of the rings
   return (
     <svg
       className="absolute inset-0 w-full h-full pointer-events-none"
@@ -11,10 +12,31 @@ export default function HeroRings() {
       preserveAspectRatio="xMidYMid slice"
     >
       <defs>
-        <linearGradient id="arc" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%" stopColor="rgba(255,98,0,0)" />
-          <stop offset="100%" stopColor="rgba(255,98,0,0.8)" />
+        {/* Gradient band for the moving orange color around the ring */}
+        <linearGradient
+          id="ringSweep"
+          gradientUnits="userSpaceOnUse"
+          x1={cx - movingRadius}
+          y1={cy}
+          x2={cx + movingRadius}
+          y2={cy}
+        >
+          {/* Narrow highlight band: short bright window around 50% */}
+          <stop offset="0%" stopColor="rgba(228, 219, 214, 0)" />
+          <stop offset="47%" stopColor="rgba(255,98,0,0)" />
+          <stop offset="50%" stopColor="rgba(255,98,0,0.95)" />
+          <stop offset="53%" stopColor="rgba(149, 120, 101, 0)" />
+          <stop offset="100%" stopColor="rgba(255,98,0,0)" />
         </linearGradient>
+
+        {/* Soft glow for the outer moving ring */}
+        <filter id="ringGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="1.6" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
       {rings.map((r, i) => (
         <circle
@@ -23,18 +45,57 @@ export default function HeroRings() {
           cy={cy}
           r={r}
           fill="none"
-          stroke={i % 2 === 0 ? "#e7e5e4" : "#ececec"}
+          stroke={i % 2 === 0 ? "#634f4414" : "#dda22a7a"}
           strokeOpacity={0.7}
           strokeWidth={1}
         />
       ))}
-      {/* Orange arc sweeping across the upper-left quadrant */}
-      <path
-        d={`M ${cx + 240} ${cy - 220} A 480 480 0 0 0 ${cx - 20} ${cy - 460}`}
-        fill="none"
-        stroke="url(#arc)"
-        strokeWidth={3}
-      />
+      {/* Animated orange color moving around the circle: inner and outer passes */}
+      {/* Inner moving highlight */}
+      <g>
+        <circle
+          cx={cx}
+          cy={cy}
+          r={movingRadius - 10}
+          fill="none"
+          stroke="url(#ringSweep)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          opacity={0.9}
+        />
+        <animateTransform
+          attributeName="transform"
+          attributeType="XML"
+          type="rotate"
+          from={`0 ${cx} ${cy}`}
+          to={`360 ${cx} ${cy}`}
+          dur="22s"
+          repeatCount="indefinite"
+        />
+      </g>
+
+      {/* Outer moving glow */}
+      <g filter="url(#ringGlow)">
+        <circle
+          cx={cx}
+          cy={cy}
+          r={movingRadius + 10}
+          fill="none"
+          stroke="url(#ringSweep)"
+          strokeWidth={2}
+          strokeLinecap="round"
+          opacity={0.6}
+        />
+        <animateTransform
+          attributeName="transform"
+          attributeType="XML"
+          type="rotate"
+          from={`360 ${cx} ${cy}`}
+          to={`0 ${cx} ${cy}`}
+          dur="26s"
+          repeatCount="indefinite"
+        />
+      </g>
     </svg>
   );
 }
