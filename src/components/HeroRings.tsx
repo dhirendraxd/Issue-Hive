@@ -50,50 +50,17 @@ export default function HeroRings() {
           strokeWidth={1}
         />
       ))}
-      {/* Animated orange color moving around the circle: inner and outer passes */}
-      {/* Inner moving highlight */}
+      {/* Single static highlight ring (no motion), shorter band */}
       <g>
         <circle
           cx={cx}
           cy={cy}
-          r={movingRadius - 10}
+          r={movingRadius - 4}
           fill="none"
           stroke="url(#ringSweep)"
           strokeWidth={2}
           strokeLinecap="round"
-          opacity={0.9}
-        />
-        <animateTransform
-          attributeName="transform"
-          attributeType="XML"
-          type="rotate"
-          from={`0 ${cx} ${cy}`}
-          to={`360 ${cx} ${cy}`}
-          dur="22s"
-          repeatCount="indefinite"
-        />
-      </g>
-
-      {/* Outer moving glow */}
-      <g filter="url(#ringGlow)">
-        <circle
-          cx={cx}
-          cy={cy}
-          r={movingRadius + 10}
-          fill="none"
-          stroke="url(#ringSweep)"
-          strokeWidth={2}
-          strokeLinecap="round"
-          opacity={0.6}
-        />
-        <animateTransform
-          attributeName="transform"
-          attributeType="XML"
-          type="rotate"
-          from={`360 ${cx} ${cy}`}
-          to={`0 ${cx} ${cy}`}
-          dur="26s"
-          repeatCount="indefinite"
+          opacity={0.85}
         />
       </g>
     </svg>
