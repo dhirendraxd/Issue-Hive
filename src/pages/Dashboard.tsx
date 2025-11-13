@@ -316,6 +316,14 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                <Button
+                  variant="destructive"
+                  className="w-full mt-2"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                </Button>
+
                 <Separator />
 
                 <div className="space-y-3 text-sm">

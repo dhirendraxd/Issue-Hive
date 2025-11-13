@@ -6,22 +6,44 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Upload, Loader2, Check } from 'lucide-react';
+import { AlertCircle, Upload, Loader2, Check, Scissors } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { uploadProfilePicture, updateUserProfilePicture, setDefaultAvatar } from '@/integrations/firebase/profile';
 import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl, getUserAvatarUrl } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
 import { toast } from 'sonner';
+import ImageCropDialog from './ImageCropDialog';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [croppedImage, setCroppedImage] = useState<Blob | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
 
   if (!user) return null;
+  const handleNameSave = async () => {
+    if (!displayName.trim() || displayName === user.displayName) return;
+    setSavingName(true);
+    setError(null);
+    try {
+      const { updateUserDisplayName } = await import('@/integrations/firebase/profile');
+      await updateUserDisplayName(user, displayName.trim());
+      toast.success('Username updated!');
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to update username';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -44,23 +66,34 @@ export default function ProfilePictureEditor() {
     setError(null);
     setSelectedFile(file);
 
-    // Create preview
+    // Create preview and open crop dialog
     const reader = new FileReader();
     reader.onload = () => {
       setPreviewUrl(reader.result as string);
+      setCropDialogOpen(true);
     };
     reader.readAsDataURL(file);
   };
 
+  const handleCropComplete = (croppedBlob: Blob) => {
+    setCroppedImage(croppedBlob);
+    // Create preview URL from cropped image
+    const croppedUrl = URL.createObjectURL(croppedBlob);
+    setPreviewUrl(croppedUrl);
+  };
+
   const handleUpload = async () => {
-    if (!selectedFile || !user) return;
+    if (!croppedImage || !user) return;
 
     setUploading(true);
     setError(null);
 
     try {
+      // Convert blob to file
+      const file = new File([croppedImage], 'profile.jpg', { type: 'image/jpeg' });
+      
       // Upload to Firebase Storage
-      const downloadURL = await uploadProfilePicture(selectedFile, user.uid);
+      const downloadURL = await uploadProfilePicture(file, user.uid);
       
       // Update user profile
       await updateUserProfilePicture(user, downloadURL);
@@ -68,6 +101,7 @@ export default function ProfilePictureEditor() {
       toast.success('Profile picture updated successfully!');
       setSelectedFile(null);
       setPreviewUrl(null);
+      setCroppedImage(null);
       
       // Reload to reflect changes
       window.location.reload();
@@ -105,17 +139,36 @@ export default function ProfilePictureEditor() {
   return (
     <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
       <div className="space-y-6">
-        {/* Current Avatar */}
+        {/* Current Avatar & Username Edit */}
         <div className="flex items-center gap-4">
           <Avatar className="w-20 h-20 border-2 border-orange-200">
-            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || 'User'} />
+            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={displayName || 'User'} />
             <AvatarFallback className="bg-gradient-to-br from-orange-100 to-amber-100 text-orange-900">
-              {user.displayName?.[0] || user.email?.[0] || 'U'}
+              {displayName?.[0] || user.email?.[0] || 'U'}
             </AvatarFallback>
           </Avatar>
           <div>
-            <h3 className="font-semibold text-lg">{user.displayName || 'Set your name'}</h3>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <Label htmlFor="username" className="font-semibold text-lg mb-1 block">Username</Label>
+            <div className="flex gap-2 items-center">
+              <Input
+                id="username"
+                value={displayName}
+                onChange={e => setDisplayName(e.target.value)}
+                disabled={savingName}
+                className="w-40"
+                maxLength={32}
+                placeholder="Set your name"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleNameSave}
+                disabled={savingName || !displayName.trim() || displayName === user.displayName}
+              >
+                {savingName ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
           </div>
         </div>
 
@@ -155,27 +208,40 @@ export default function ProfilePictureEditor() {
             {previewUrl && (
               <div className="space-y-3">
                 <Label>Preview</Label>
-                <div className="flex items-center gap-4">
-                  <Avatar className="w-24 h-24 border-2 border-orange-300">
+                <div className="flex flex-col gap-4">
+                  <Avatar className="w-32 h-32 border-2 border-orange-300 mx-auto">
                     <AvatarImage src={previewUrl} alt="Preview" />
                   </Avatar>
-                  <Button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
-                  >
-                    {uploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload & Save
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCropDialogOpen(true);
+                      }}
+                      disabled={uploading}
+                      className="rounded-full"
+                    >
+                      <Scissors className="mr-2 h-4 w-4" />
+                      Adjust Crop
+                    </Button>
+                    <Button
+                      onClick={handleUpload}
+                      disabled={uploading}
+                      className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload & Save
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -217,6 +283,16 @@ export default function ProfilePictureEditor() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Image Crop Dialog */}
+        {selectedFile && previewUrl && (
+          <ImageCropDialog
+            open={cropDialogOpen}
+            onClose={() => setCropDialogOpen(false)}
+            imageSrc={previewUrl}
+            onCropComplete={handleCropComplete}
+          />
+        )}
       </div>
     </Card>
   );
