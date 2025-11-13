@@ -2,12 +2,31 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getUserAvatarUrl } from "@/lib/avatar";
+import { User, LayoutDashboard, LogOut } from "lucide-react";
+import { signOut } from "@/integrations/firebase/auth";
 
 export default function Navbar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useAuth();
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Failed to sign out:', error);
+    }
+  };
 
   return (
     <header className="absolute inset-x-0 top-4 z-30">
@@ -45,14 +64,44 @@ export default function Navbar() {
           )}
           
           {user ? (
-            <Link to="/dashboard">
-              <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
-                <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
-                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
-                  <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
-                </AvatarFallback>
-              </Avatar>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
+                  <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
+                    <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
+                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
+                      <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-lg border border-white/40">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.displayName || 'IssueHive User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to={`/u/${user.uid}`} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Your Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link to="/auth">
               <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
@@ -65,14 +114,44 @@ export default function Navbar() {
         {/* Mobile quick action */}
   <div className="md:hidden flex items-center gap-2">
           {user ? (
-            <Link to="/dashboard">
-              <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
-                <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
-                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
-                  <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
-                </AvatarFallback>
-              </Avatar>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
+                  <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
+                    <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
+                    <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
+                      <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-white/95 backdrop-blur-lg border border-white/40">
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{user.displayName || 'IssueHive User'}</p>
+                    <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link to={`/u/${user.uid}`} className="cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Your Profile</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/dashboard" className="cursor-pointer">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             <Link to="/auth">
               <Button aria-label="Join Now" className="h-9 rounded-full px-3 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[12px]">

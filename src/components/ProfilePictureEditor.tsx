@@ -1,0 +1,223 @@
+import { useState } from 'react';
+import { useAuth } from '@/hooks/use-auth';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Upload, Loader2, Check } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { uploadProfilePicture, updateUserProfilePicture, setDefaultAvatar } from '@/integrations/firebase/profile';
+import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl, getUserAvatarUrl } from '@/lib/avatar';
+import type { AvatarStyleId } from '@/lib/avatar';
+import { toast } from 'sonner';
+
+export default function ProfilePictureEditor() {
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
+
+  if (!user) return null;
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      setError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setError('File too large. Maximum size is 5MB.');
+      return;
+    }
+
+    setError(null);
+    setSelectedFile(file);
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPreviewUrl(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile || !user) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      // Upload to Firebase Storage
+      const downloadURL = await uploadProfilePicture(selectedFile, user.uid);
+      
+      // Update user profile
+      await updateUserProfilePicture(user, downloadURL);
+      
+      toast.success('Profile picture updated successfully!');
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      
+      // Reload to reflect changes
+      window.location.reload();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSetDefaultAvatar = async (style: AvatarStyleId) => {
+    if (!user) return;
+
+    setUploading(true);
+    setError(null);
+
+    try {
+      await setDefaultAvatar(user, style);
+      setSelectedStyle(style);
+      toast.success('Profile picture updated!');
+      
+      // Reload to reflect changes
+      setTimeout(() => window.location.reload(), 500);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to set default avatar';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+      <div className="space-y-6">
+        {/* Current Avatar */}
+        <div className="flex items-center gap-4">
+          <Avatar className="w-20 h-20 border-2 border-orange-200">
+            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || 'User'} />
+            <AvatarFallback className="bg-gradient-to-br from-orange-100 to-amber-100 text-orange-900">
+              {user.displayName?.[0] || user.email?.[0] || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <h3 className="font-semibold text-lg">{user.displayName || 'Set your name'}</h3>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+        </div>
+
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* Tabs for Upload / Default */}
+        <Tabs defaultValue="upload" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="upload">Upload Custom</TabsTrigger>
+            <TabsTrigger value="defaults">Choose Default</TabsTrigger>
+          </TabsList>
+
+          {/* Upload Tab */}
+          <TabsContent value="upload" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="picture">Upload your profile picture</Label>
+              <Input
+                id="picture"
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                onChange={handleFileSelect}
+                disabled={uploading}
+                className="cursor-pointer"
+              />
+              <p className="text-xs text-muted-foreground">
+                Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+              </p>
+            </div>
+
+            {/* Preview */}
+            {previewUrl && (
+              <div className="space-y-3">
+                <Label>Preview</Label>
+                <div className="flex items-center gap-4">
+                  <Avatar className="w-24 h-24 border-2 border-orange-300">
+                    <AvatarImage src={previewUrl} alt="Preview" />
+                  </Avatar>
+                  <Button
+                    onClick={handleUpload}
+                    disabled={uploading}
+                    className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload & Save
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Default Avatars Tab */}
+          <TabsContent value="defaults" className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Choose from our collection of generated avatars
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {DEFAULT_AVATAR_STYLES.map(({ id, label, description }) => {
+                const avatarUrl = getDefaultAvatarUrl(user.uid, id);
+                const isSelected = selectedStyle === id;
+
+                return (
+                  <button
+                    key={id}
+                    onClick={() => handleSetDefaultAvatar(id)}
+                    disabled={uploading}
+                    className={`relative p-3 rounded-xl border-2 transition-all hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-300 ${
+                      isSelected
+                        ? 'border-orange-500 bg-orange-50 shadow-lg shadow-orange-400/20'
+                        : 'border-white/40 bg-white/40'
+                    } ${uploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                  >
+                    <Avatar className="w-full aspect-square mb-2">
+                      <AvatarImage src={avatarUrl} alt={label} />
+                    </Avatar>
+                    <p className="text-xs font-medium text-center truncate">{label}</p>
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 bg-orange-500 rounded-full p-1">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </Card>
+  );
+}

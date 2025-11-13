@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow anyone to read all files
+    match /{allPaths=**} {
+      allow read: if true;
+    }
+
+    // Profile pictures: users can upload their own
+    match /avatars/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null 
+                   && request.auth.uid == userId
+                   && request.resource.size < 5 * 1024 * 1024 // 5MB max
+                   && request.resource.contentType.matches('image/.*'); // Only images
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Issue attachments (for future use)
+    match /issues/{issueId}/{fileName} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.resource.size < 10 * 1024 * 1024 // 10MB max
+                   && request.resource.contentType.matches('image/.*|application/pdf'); // Images and PDFs
+      allow delete: if request.auth != null;
+    }
+  }
+}
