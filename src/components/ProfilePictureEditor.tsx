@@ -33,7 +33,9 @@ export default function ProfilePictureEditor() {
     setError(null);
     try {
       const { updateUserDisplayName } = await import('@/integrations/firebase/profile');
+      const { syncUserProfile } = await import('@/integrations/firebase/user-sync');
       await updateUserDisplayName(user, displayName.trim());
+      await syncUserProfile({ ...user, displayName: displayName.trim() });
       toast.success('Username updated!');
       setTimeout(() => window.location.reload(), 500);
     } catch (err) {
@@ -91,19 +93,16 @@ export default function ProfilePictureEditor() {
     try {
       // Convert blob to file
       const file = new File([croppedImage], 'profile.jpg', { type: 'image/jpeg' });
-      
       // Upload to Firebase Storage
       const downloadURL = await uploadProfilePicture(file, user.uid);
-      
       // Update user profile
       await updateUserProfilePicture(user, downloadURL);
-      
+      const { syncUserProfile } = await import('@/integrations/firebase/user-sync');
+      await syncUserProfile({ ...user, photoURL: downloadURL });
       toast.success('Profile picture updated successfully!');
       setSelectedFile(null);
       setPreviewUrl(null);
       setCroppedImage(null);
-      
-      // Reload to reflect changes
       window.location.reload();
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
