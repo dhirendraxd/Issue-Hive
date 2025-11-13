@@ -19,6 +19,8 @@ export interface Issue {
   visibility?: IssueVisibility;
   createdBy: string;
   createdByName: string;
+  /** Profile photo URL of the user who created the issue */
+  createdByPhotoURL?: string;
   anonymous?: boolean;
   createdAt: number;
   updatedAt: number;

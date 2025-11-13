@@ -33,10 +33,12 @@ export default function ProfilePictureEditor() {
     setError(null);
     try {
       const { updateUserDisplayName } = await import('@/integrations/firebase/profile');
-      const { syncUserProfile } = await import('@/integrations/firebase/user-sync');
+      const { syncUserProfile, updateUserNameInIssues } = await import('@/integrations/firebase/user-sync');
       await updateUserDisplayName(user, displayName.trim());
       await syncUserProfile({ ...user, displayName: displayName.trim() });
-      toast.success('Username updated!');
+      // Update the display name in all issues created by this user
+      await updateUserNameInIssues(user.uid, displayName.trim());
+      toast.success('Username updated everywhere!');
       setTimeout(() => window.location.reload(), 500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update username';
@@ -97,9 +99,11 @@ export default function ProfilePictureEditor() {
       const downloadURL = await uploadProfilePicture(file, user.uid);
       // Update user profile
       await updateUserProfilePicture(user, downloadURL);
-      const { syncUserProfile } = await import('@/integrations/firebase/user-sync');
+      const { syncUserProfile, updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
       await syncUserProfile({ ...user, photoURL: downloadURL });
-      toast.success('Profile picture updated successfully!');
+      // Update profile photo in all issues created by this user
+      await updateUserPhotoInIssues(user.uid, downloadURL);
+      toast.success('Profile picture updated everywhere!');
       setSelectedFile(null);
       setPreviewUrl(null);
       setCroppedImage(null);
@@ -120,9 +124,12 @@ export default function ProfilePictureEditor() {
     setError(null);
 
     try {
-      await setDefaultAvatar(user, style);
+      const avatarUrl = await setDefaultAvatar(user, style);
+      const { updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
+      // Update profile photo in all issues created by this user
+      await updateUserPhotoInIssues(user.uid, avatarUrl);
       setSelectedStyle(style);
-      toast.success('Profile picture updated!');
+      toast.success('Profile picture updated everywhere!');
       
       // Reload to reflect changes
       setTimeout(() => window.location.reload(), 500);

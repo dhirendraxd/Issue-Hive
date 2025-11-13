@@ -92,6 +92,7 @@ export function useIssuesFirebase() {
       votes: number;
       createdBy: string;
       createdByName: string;
+      createdByPhotoURL?: string;
       createdAt: number;
       updatedAt: number;
       urgency?: 'low' | 'medium' | 'high';
@@ -108,6 +109,7 @@ export function useIssuesFirebase() {
         votes: data.votes,
         createdBy: data.createdBy,
         createdByName: data.createdByName,
+        createdByPhotoURL: data.createdByPhotoURL,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         visibility: 'public' as IssueVisibility,

@@ -139,6 +139,7 @@ export default function RaiseIssuePage() {
         votes: 0,
         createdBy: user?.uid ?? '',
         createdByName: isAnonymous ? 'Anonymous' : user?.displayName ?? '',
+        createdByPhotoURL: isAnonymous ? undefined : user?.photoURL ?? undefined,
         createdAt: now,
         updatedAt: now,
         urgency: formData.urgency,

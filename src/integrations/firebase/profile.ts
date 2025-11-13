@@ -58,10 +58,12 @@ export async function updateUserProfilePicture(user: User, photoURL: string): Pr
  * Set a default avatar for the user
  * @param user - The current user
  * @param style - The avatar style to use
+ * @returns The photo URL that was set
  */
-export async function setDefaultAvatar(user: User, style: AvatarStyleId): Promise<void> {
+export async function setDefaultAvatar(user: User, style: AvatarStyleId): Promise<string> {
   const photoURL = getDefaultAvatarUrl(user.uid, style);
   await updateUserProfilePicture(user, photoURL);
+  return photoURL;
 }
 
 /**

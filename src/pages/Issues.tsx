@@ -162,9 +162,9 @@ export default function Issues() {
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
                     <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={getUserAvatarUrl(i.createdBy)} />
+                      <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
                       <AvatarFallback className="bg-orange-500 text-white text-xs">
-                        <img src={getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
+                        <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
