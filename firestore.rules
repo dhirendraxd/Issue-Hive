@@ -19,9 +19,12 @@ service cloud.firestore {
       
       // Only authenticated users can create issues
       allow create: if isSignedIn() 
-        && request.resource.data.keys().hasAll(['title', 'description', 'category', 'status', 'votes'])
+        && request.resource.data.keys().hasAll(['title', 'description', 'category', 'status', 'votes', 'createdBy'])
         && request.resource.data.votes == 0
         && request.resource.data.status == 'received'
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.title.size() > 0 && request.resource.data.title.size() <= 200
+        && request.resource.data.description.size() > 0 && request.resource.data.description.size() <= 5000
         && (request.resource.data.visibility in ['public','private','draft'] || !('visibility' in request.resource.data));
       
       // Authenticated users can update issues
@@ -88,6 +91,8 @@ service cloud.firestore {
       allow create: if isSignedIn()
         && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt','likes'])
         && request.resource.data.likes == 0
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 2000
         && (
           // If issue is anonymous, anyone can comment
           get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.anonymous == true

@@ -13,12 +13,12 @@ function mountGlobalErrorHandlers() {
 				// show minimal overlay so user sees something instead of white screen
 				const root = document.getElementById('root');
 				if (root) {
+					// Sanitize error message to prevent XSS
+					const errorMsg = String(ev.error || ev.message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 					root.innerHTML = `
 	<div style="padding:24px;font-family:Inter,system-ui,Arial;">
 		<h2 style="color:#b91c1c;">Unhandled Error</h2>
-		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${String(
-						ev.error || ev.message
-					)}</pre>
+		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
 		<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
 	</div>
 	`;
@@ -33,12 +33,12 @@ function mountGlobalErrorHandlers() {
 				console.error('[Global] Unhandled Rejection', ev.reason);
 				const root = document.getElementById('root');
 				if (root) {
+					// Sanitize error message to prevent XSS
+					const errorMsg = String(ev.reason).replace(/</g, '&lt;').replace(/>/g, '&gt;');
 					root.innerHTML = `
 	<div style="padding:24px;font-family:Inter,system-ui,Arial;">
 		<h2 style="color:#b91c1c;">Unhandled Promise Rejection</h2>
-		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${String(
-						ev.reason
-					)}</pre>
+		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
 		<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
 	</div>
 	`;
