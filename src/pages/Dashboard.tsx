@@ -11,9 +11,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
+import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { 
   LogOut, 
   Plus,
@@ -27,7 +29,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   MessageSquare,
-  Activity
+  Activity,
+  Edit2
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
@@ -44,6 +47,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [profileDialogOpen, setProfileDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
 
   // Prepare engagement metrics early to satisfy hook ordering rules
@@ -272,8 +276,21 @@ export default function Dashboard() {
           {/* User Profile Sidebar */}
           <div className="space-y-6">
             <Card className="glass-card">
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle className="text-lg font-display">Your Profile</CardTitle>
+                <Dialog open={profileDialogOpen} onOpenChange={setProfileDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle className="font-display text-xl">Edit Profile</DialogTitle>
+                    </DialogHeader>
+                    <ProfilePictureEditor />
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
