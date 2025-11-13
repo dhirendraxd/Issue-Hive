@@ -1,44 +1,48 @@
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
-import { storage, auth } from './config';
+import { auth } from './config';
 import type { User } from 'firebase/auth';
 import { getDefaultAvatarUrl, type AvatarStyleId } from '@/lib/avatar';
 
 /**
- * Upload a custom profile picture to Firebase Storage
+ * Upload a custom profile picture (stores as base64 in Firestore - no Storage needed)
  * @param file - The image file to upload
  * @param userId - The user's ID
- * @returns The download URL of the uploaded image
+ * @returns The base64 data URL of the image
  */
 export async function uploadProfilePicture(file: File, userId: string): Promise<string> {
-  if (!storage) {
-    throw new Error('Firebase Storage is not configured');
-  }
-
+  console.log('uploadProfilePicture called with:', { fileName: file.name, fileSize: file.size, userId });
+  
   // Validate file type
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
   if (!validTypes.includes(file.type)) {
     throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
   }
 
-  // Validate file size (max 5MB)
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  // Validate file size (max 1MB for base64 storage in Firestore)
+  const maxSize = 1 * 1024 * 1024; // 1MB max
   if (file.size > maxSize) {
-    throw new Error('File too large. Maximum size is 5MB.');
+    throw new Error('File too large. Maximum size is 1MB for profile pictures.');
   }
 
-  // Create a reference to the storage location
-  const fileExtension = file.name.split('.').pop();
-  const fileName = `profile-${Date.now()}.${fileExtension}`;
-  const storageRef = ref(storage, `avatars/${userId}/${fileName}`);
-
-  // Upload the file
-  await uploadBytes(storageRef, file);
-
-  // Get the download URL
-  const downloadURL = await getDownloadURL(storageRef);
-  
-  return downloadURL;
+  try {
+    // Convert file to base64 data URL
+    const dataURL = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+    
+    console.log('Image converted to base64, length:', dataURL.length);
+    
+    return dataURL;
+  } catch (error) {
+    console.error('Upload error details:', error);
+    if (error instanceof Error) {
+      throw new Error(`Upload failed: ${error.message}`);
+    }
+    throw new Error('Upload failed: Unknown error');
+  }
 }
 
 /**
@@ -67,26 +71,15 @@ export async function setDefaultAvatar(user: User, style: AvatarStyleId): Promis
 }
 
 /**
- * Delete the user's custom profile picture from storage
+ * Delete the user's custom profile picture
  * @param photoURL - The URL of the photo to delete
+ * Note: For base64 images stored in Firestore, this is a no-op
  */
 export async function deleteProfilePicture(photoURL: string): Promise<void> {
-  if (!storage) {
-    throw new Error('Firebase Storage is not configured');
-  }
-
-  // Only delete if it's a Firebase Storage URL
-  if (!photoURL.includes('firebasestorage.googleapis.com')) {
-    return; // Don't try to delete external URLs (like DiceBear)
-  }
-
-  try {
-    const storageRef = ref(storage, photoURL);
-    await deleteObject(storageRef);
-  } catch (error) {
-    console.warn('Failed to delete profile picture:', error);
-    // Don't throw - it's OK if deletion fails
-  }
+  // Base64 data URLs are stored in Firestore, nothing to delete from Storage
+  // External URLs (like DiceBear) also don't need deletion
+  console.log('Profile picture cleanup (no-op for base64/external URLs)');
+  return;
 }
 
 /**

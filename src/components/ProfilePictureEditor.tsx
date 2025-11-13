@@ -34,14 +34,23 @@ export default function ProfilePictureEditor() {
     try {
       const { updateUserDisplayName } = await import('@/integrations/firebase/profile');
       const { syncUserProfile, updateUserNameInIssues } = await import('@/integrations/firebase/user-sync');
+      
+      console.log('Updating display name...');
       await updateUserDisplayName(user, displayName.trim());
       await syncUserProfile({ ...user, displayName: displayName.trim() });
-      // Update the display name in all issues created by this user
-      await updateUserNameInIssues(user.uid, displayName.trim());
-      toast.success('Username updated everywhere!');
-      setTimeout(() => window.location.reload(), 500);
+      
+      // Update the display name in all issues created by this user (optional, don't block)
+      console.log('Updating issues in background...');
+      updateUserNameInIssues(user.uid, displayName.trim()).catch(err => {
+        console.warn('Failed to update issues:', err);
+        // Don't fail the whole operation if this fails
+      });
+      
+      toast.success('Username updated!');
+      setTimeout(() => window.location.reload(), 800);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update username';
+      console.error('Name update error:', err);
       setError(message);
       toast.error(message);
     } finally {
@@ -60,10 +69,11 @@ export default function ProfilePictureEditor() {
       return;
     }
 
-    // Validate file size (max 5MB)
-    const maxSize = 5 * 1024 * 1024;
+    // Validate file size (max 1MB for Firestore base64 storage)
+    const maxSize = 1 * 1024 * 1024; // 1MB
     if (file.size > maxSize) {
-      setError('File too large. Maximum size is 5MB.');
+      setError('File too large. Maximum size is 1MB.');
+      toast.error('Please choose an image smaller than 1MB');
       return;
     }
 
@@ -95,21 +105,38 @@ export default function ProfilePictureEditor() {
     try {
       // Convert blob to file
       const file = new File([croppedImage], 'profile.jpg', { type: 'image/jpeg' });
+      
       // Upload to Firebase Storage
+      console.log('Uploading to Firebase Storage...');
       const downloadURL = await uploadProfilePicture(file, user.uid);
+      console.log('Upload complete, URL:', downloadURL);
+      
       // Update user profile
+      console.log('Updating user profile...');
       await updateUserProfilePicture(user, downloadURL);
+      
+      // Sync to Firestore users collection
+      console.log('Syncing to Firestore...');
       const { syncUserProfile, updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
       await syncUserProfile({ ...user, photoURL: downloadURL });
-      // Update profile photo in all issues created by this user
-      await updateUserPhotoInIssues(user.uid, downloadURL);
-      toast.success('Profile picture updated everywhere!');
+      
+      // Update profile photo in all issues created by this user (optional, don't block)
+      console.log('Updating issues in background...');
+      updateUserPhotoInIssues(user.uid, downloadURL).catch(err => {
+        console.warn('Failed to update issues:', err);
+        // Don't fail the whole operation if this fails
+      });
+      
+      toast.success('Profile picture updated!');
       setSelectedFile(null);
       setPreviewUrl(null);
       setCroppedImage(null);
-      window.location.reload();
+      
+      // Small delay before reload to ensure Firebase sync
+      setTimeout(() => window.location.reload(), 800);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
+      console.error('Upload error:', err);
       setError(message);
       toast.error(message);
     } finally {
@@ -124,17 +151,24 @@ export default function ProfilePictureEditor() {
     setError(null);
 
     try {
+      console.log('Setting default avatar...');
       const avatarUrl = await setDefaultAvatar(user, style);
+      
+      // Update profile photo in all issues created by this user (optional, don't block)
+      console.log('Updating issues in background...');
       const { updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
-      // Update profile photo in all issues created by this user
-      await updateUserPhotoInIssues(user.uid, avatarUrl);
+      updateUserPhotoInIssues(user.uid, avatarUrl).catch(err => {
+        console.warn('Failed to update issues:', err);
+      });
+      
       setSelectedStyle(style);
-      toast.success('Profile picture updated everywhere!');
+      toast.success('Profile picture updated!');
       
       // Reload to reflect changes
-      setTimeout(() => window.location.reload(), 500);
+      setTimeout(() => window.location.reload(), 800);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set default avatar';
+      console.error('Avatar update error:', err);
       setError(message);
       toast.error(message);
     } finally {
@@ -206,7 +240,7 @@ export default function ProfilePictureEditor() {
                 className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
-                Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
+                Maximum file size: 1MB. Supported formats: JPEG, PNG, GIF, WebP
               </p>
             </div>
 
