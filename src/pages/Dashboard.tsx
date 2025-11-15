@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useUserActivity } from '@/hooks/use-user-activity';
+import { useQueryClient } from '@tanstack/react-query';
 import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
@@ -370,13 +372,34 @@ export default function Dashboard() {
             {/* User Activity Card */}
             <Card className="glass-card">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base font-display flex items-center gap-2">
-                  <Activity className="h-4 w-4 text-orange-600" />
-                  Your Activity
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Your engagement across the platform
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base font-display flex items-center gap-2">
+                      <Activity className="h-4 w-4 text-orange-600" />
+                      Your Activity
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Your engagement across the platform
+                    </CardDescription>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => queryClient.invalidateQueries({ queryKey: ['user-activity', user?.uid] })}
+                    className="h-8 px-2 text-xs"
+                    disabled={isActivityLoading}
+                    title="Refresh activity"
+                  >
+                    <svg 
+                      className={`h-3.5 w-3.5 ${isActivityLoading ? 'animate-spin' : ''}`} 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isActivityLoading ? (
@@ -385,6 +408,30 @@ export default function Dashboard() {
                   <div className="text-sm text-stone-500">No activity data.</div>
                 ) : (
                   <>
+                    {/* Total Activity Summary */}
+                    <div className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-orange-600" />
+                          <span className="font-semibold text-stone-800">Total Engagement</span>
+                        </div>
+                        <Badge className="bg-orange-600 text-white text-base font-bold px-3 py-1">
+                          {(() => {
+                            const upvotes = userActivity.votedIssues.filter(v => v.vote === 1).length;
+                            const downvotes = userActivity.votedIssues.filter(v => v.vote === -1).length;
+                            const comments = userActivity.comments.length;
+                            const commentsLiked = userActivity.likedComments.length;
+                            return upvotes + downvotes + comments + commentsLiked;
+                          })()}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-stone-600 mt-1">
+                        All your votes, comments, and interactions
+                      </p>
+                    </div>
+
+                    <Separator />
+
                     {/* Activity Stats */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
@@ -432,7 +479,70 @@ export default function Dashboard() {
                           {userActivity.likedComments.length}
                         </Badge>
                       </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-stone-600">
+                          <ThumbsUp className="h-4 w-4 text-amber-600" />
+                          <span>Comment Likes Received</span>
+                        </div>
+                        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+                          {userActivity.comments.reduce((sum, comment) => sum + (comment.likes || 0), 0)}
+                        </Badge>
+                      </div>
                     </div>
+
+                    {/* Activity Breakdown */}
+                    {(() => {
+                      const upvotes = userActivity.votedIssues.filter(v => v.vote === 1).length;
+                      const downvotes = userActivity.votedIssues.filter(v => v.vote === -1).length;
+                      const totalComments = userActivity.comments.length;
+                      const replies = userActivity.comments.filter(c => 'parentId' in c && c.parentId).length;
+                      const topLevelComments = totalComments - replies;
+                      const commentsLiked = userActivity.likedComments.length;
+                      const commentLikesReceived = userActivity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
+                      const total = upvotes + downvotes + totalComments + commentsLiked;
+
+                      return total > 0 ? (
+                        <>
+                          <Separator />
+                          <div className="space-y-2">
+                            <h4 className="text-xs font-semibold text-stone-700 uppercase tracking-wide">
+                              Activity Breakdown
+                            </h4>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <div className="p-2 bg-stone-50 rounded border border-stone-200">
+                                <div className="text-stone-500">Voting Actions</div>
+                                <div className="font-bold text-stone-900 text-lg">
+                                  {upvotes + downvotes}
+                                </div>
+                                <div className="text-xs text-stone-500">
+                                  {upvotes} up · {downvotes} down
+                                </div>
+                              </div>
+                              <div className="p-2 bg-stone-50 rounded border border-stone-200">
+                                <div className="text-stone-500">Comment Actions</div>
+                                <div className="font-bold text-stone-900 text-lg">
+                                  {totalComments + commentsLiked}
+                                </div>
+                                <div className="text-xs text-stone-500">
+                                  {totalComments} written · {commentsLiked} liked
+                                </div>
+                              </div>
+                            </div>
+                            <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-blue-700 font-medium">Impact Score</span>
+                                <span className="text-lg font-bold text-blue-900">
+                                  {commentLikesReceived}
+                                </span>
+                              </div>
+                              <div className="text-xs text-blue-600 mt-0.5">
+                                Total likes received on your {totalComments} comment{totalComments !== 1 ? 's' : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      ) : null;
+                    })()}
 
                     <Separator />
 
