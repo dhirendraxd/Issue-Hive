@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -40,8 +40,11 @@ export default function IssueDetailDialog({
 
   const isOwner = user?.uid === issue.createdBy;
   const isAnonymous = issue.anonymous === true;
+  const isPrivate = (issue as Issue & { visibility?: 'public' | 'private' | 'draft' }).visibility === 'private';
+  
   // Allow comments on anonymous issues even if owner
-  const disableComments = isOwner && !isAnonymous;
+  // Disable comments if: (1) owner and not anonymous OR (2) private issue and not owner
+  const disableComments = (isOwner && !isAnonymous) || (isPrivate && !isOwner);
   const hasUpvoted = userVote?.vote === 1;
   const hasDownvoted = userVote?.vote === -1;
 
@@ -103,6 +106,12 @@ export default function IssueDetailDialog({
             {issue.anonymous && (
               <Badge variant="outline" className="text-xs">
                 Posted Anonymously
+              </Badge>
+            )}
+            {isPrivate && (
+              <Badge variant="outline" className="text-xs bg-orange-50 border-orange-300 text-orange-700 flex items-center gap-1">
+                <Lock className="h-3 w-3" />
+                Private Issue
               </Badge>
             )}
           </div>
@@ -316,10 +325,36 @@ export default function IssueDetailDialog({
 
             <Separator />
 
+            {/* Private Issue Info Banner */}
+            {isPrivate && !isOwner && (
+              <>
+                <div className="rounded-lg bg-orange-50 border border-orange-200 p-4 flex items-start gap-3">
+                  <div className="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
+                    <Lock className="h-4 w-4 text-orange-600" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold text-orange-900 mb-1">Private Issue</div>
+                    <p className="text-xs text-orange-700">
+                      This issue is set to private. You can view all existing comments and updates, but only the issue owner can add new comments or updates.
+                    </p>
+                  </div>
+                </div>
+                <Separator />
+              </>
+            )}
+
             {/* Comments Section */}
             {isFirebaseConfigured && (
               <div className="space-y-3">
-                <IssueComments issueId={issue.id} disabled={disableComments} />
+                <IssueComments 
+                  issueId={issue.id} 
+                  disabled={disableComments}
+                  disabledReason={
+                    isPrivate && !isOwner 
+                      ? 'This is a private issue. Only the owner can add comments or updates.' 
+                      : undefined
+                  }
+                />
               </div>
             )}
           </div>

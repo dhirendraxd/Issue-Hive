@@ -13,9 +13,10 @@ interface IssueCommentsProps {
   issueId: string;
   disabled?: boolean; // disable add for owner
   className?: string;
+  disabledReason?: string; // reason why commenting is disabled
 }
 
-export default function IssueComments({ issueId, disabled, className }: IssueCommentsProps) {
+export default function IssueComments({ issueId, disabled, className, disabledReason }: IssueCommentsProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: comments, isLoading, error: commentsError, addComment, userCommentCount, canAddTopLevel } = useComments(issueId);
@@ -318,7 +319,7 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
       
       {!canAdd && (
         <p className="text-[10px] text-muted-foreground">
-          {user ? 'You cannot comment on your own issue.' : 'Sign in to comment.'}
+          {disabledReason || (user ? 'You cannot comment on your own issue.' : 'Sign in to comment.')}
         </p>
       )}
     </div>
