@@ -1,6 +1,7 @@
 import { useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Issue, IssueCategory, IssueStatus, IssueVisibility } from "@/types/issue";
+import { logActivity } from "@/lib/activity-tracker";
 import { 
   getIssues,
   getIssue,
@@ -177,6 +178,20 @@ export function useIssuesFirebase() {
     onSettled: (_data, _error, id) => {
       if (user?.uid) {
         qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+        qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
+      }
+    },
+    onSuccess: (id) => {
+      // Log activity to local storage
+      if (user?.uid) {
+        const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user.uid]);
+        if (currentVote?.vote === 1) {
+          // Removed upvote
+          logActivity(user.uid, 'remove_vote', { issueId: id });
+        } else {
+          // Added/changed to upvote
+          logActivity(user.uid, 'upvote', { issueId: id, voteValue: 1 });
+        }
       }
     },
   });
@@ -300,6 +315,20 @@ export function useIssuesFirebase() {
     onSettled: (_data, _error, id) => {
       if (user?.uid) {
         qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+        qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
+      }
+    },
+    onSuccess: (id) => {
+      // Log activity to local storage
+      if (user?.uid) {
+        const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user.uid]);
+        if (currentVote?.vote === -1) {
+          // Removed downvote
+          logActivity(user.uid, 'remove_vote', { issueId: id });
+        } else {
+          // Added/changed to downvote
+          logActivity(user.uid, 'downvote', { issueId: id, voteValue: -1 });
+        }
       }
     },
   });

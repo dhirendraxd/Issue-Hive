@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useUserActivity } from '@/hooks/use-user-activity';
+import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useQueryClient } from '@tanstack/react-query';
 import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
 import type { Issue } from '@/types/issue';
@@ -45,6 +46,7 @@ export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
+  const activityTracker = useActivityTracker();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
@@ -385,13 +387,17 @@ export default function Dashboard() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => queryClient.invalidateQueries({ queryKey: ['user-activity', user?.uid] })}
+                    onClick={() => {
+                      queryClient.invalidateQueries({ queryKey: ['user-activity', user?.uid] });
+                      queryClient.invalidateQueries({ queryKey: ['local-activity', user?.uid] });
+                      queryClient.invalidateQueries({ queryKey: ['firebase-activity', user?.uid] });
+                    }}
                     className="h-8 px-2 text-xs"
-                    disabled={isActivityLoading}
+                    disabled={activityTracker.isLoading}
                     title="Refresh activity"
                   >
                     <svg 
-                      className={`h-3.5 w-3.5 ${isActivityLoading ? 'animate-spin' : ''}`} 
+                      className={`h-3.5 w-3.5 ${activityTracker.isLoading ? 'animate-spin' : ''}`} 
                       fill="none" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
@@ -402,37 +408,32 @@ export default function Dashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                {isActivityLoading ? (
+                {activityTracker.isLoading ? (
                   <div className="text-sm text-stone-500">Loading activity...</div>
-                ) : !userActivity ? (
-                  <div className="text-sm text-stone-500">No activity data.</div>
                 ) : (
                   <>
-                    {/* Total Activity Summary */}
+                    {/* Total Activity Summary - Using local tracker for instant updates */}
                     <div className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg border border-orange-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Activity className="h-5 w-5 text-orange-600" />
                           <span className="font-semibold text-stone-800">Total Engagement</span>
+                          {activityTracker.isLoadingFirebase && (
+                            <span className="text-xs text-stone-500">(syncing...)</span>
+                          )}
                         </div>
                         <Badge className="bg-orange-600 text-white text-base font-bold px-3 py-1">
-                          {(() => {
-                            const upvotes = userActivity.votedIssues.filter(v => v.vote === 1).length;
-                            const downvotes = userActivity.votedIssues.filter(v => v.vote === -1).length;
-                            const comments = userActivity.comments.length;
-                            const commentsLiked = userActivity.likedComments.length;
-                            return upvotes + downvotes + comments + commentsLiked;
-                          })()}
+                          {activityTracker.local.totalEngagement}
                         </Badge>
                       </div>
                       <p className="text-xs text-stone-600 mt-1">
-                        All your votes, comments, and interactions
+                        All your votes, comments, and interactions • Updated in real-time
                       </p>
                     </div>
 
                     <Separator />
 
-                    {/* Activity Stats */}
+                    {/* Activity Stats - Using local tracker */}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2 text-stone-600">
@@ -440,7 +441,7 @@ export default function Dashboard() {
                           <span>Upvotes Given</span>
                         </div>
                         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          {userActivity.votedIssues.filter(v => v.vote === 1).length}
+                          {activityTracker.local.upvotesGiven}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -449,7 +450,7 @@ export default function Dashboard() {
                           <span>Downvotes Given</span>
                         </div>
                         <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
-                          {userActivity.votedIssues.filter(v => v.vote === -1).length}
+                          {activityTracker.local.downvotesGiven}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -458,7 +459,7 @@ export default function Dashboard() {
                           <span>Comments Made</span>
                         </div>
                         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                          {userActivity.comments.length}
+                          {activityTracker.local.commentsMade}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -467,7 +468,7 @@ export default function Dashboard() {
                           <span>Replies Made</span>
                         </div>
                         <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                          {userActivity.comments.filter(c => 'parentId' in c && c.parentId).length}
+                          {activityTracker.local.repliesMade}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -476,7 +477,7 @@ export default function Dashboard() {
                           <span>Comments Liked</span>
                         </div>
                         <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                          {userActivity.likedComments.length}
+                          {activityTracker.local.commentsLiked}
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between text-sm">
@@ -485,20 +486,19 @@ export default function Dashboard() {
                           <span>Comment Likes Received</span>
                         </div>
                         <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                          {userActivity.comments.reduce((sum, comment) => sum + (comment.likes || 0), 0)}
+                          {activityTracker.firebase?.commentLikesReceived || 0}
                         </Badge>
                       </div>
                     </div>
 
                     {/* Activity Breakdown */}
                     {(() => {
-                      const upvotes = userActivity.votedIssues.filter(v => v.vote === 1).length;
-                      const downvotes = userActivity.votedIssues.filter(v => v.vote === -1).length;
-                      const totalComments = userActivity.comments.length;
-                      const replies = userActivity.comments.filter(c => 'parentId' in c && c.parentId).length;
-                      const topLevelComments = totalComments - replies;
-                      const commentsLiked = userActivity.likedComments.length;
-                      const commentLikesReceived = userActivity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
+                      const upvotes = activityTracker.local.upvotesGiven;
+                      const downvotes = activityTracker.local.downvotesGiven;
+                      const totalComments = activityTracker.local.commentsMade;
+                      const replies = activityTracker.local.repliesMade;
+                      const commentsLiked = activityTracker.local.commentsLiked;
+                      const commentLikesReceived = activityTracker.firebase?.commentLikesReceived || 0;
                       const total = upvotes + downvotes + totalComments + commentsLiked;
 
                       return total > 0 ? (
@@ -546,8 +546,8 @@ export default function Dashboard() {
 
                     <Separator />
 
-                    {/* Recent Voted Issues */}
-                    {userActivity.votedIssues.length > 0 && (
+                    {/* Recent Voted Issues - Show from Firebase if available */}
+                    {userActivity && userActivity.votedIssues.length > 0 && (
                       <div className="space-y-2">
                         <h4 className="text-xs font-medium text-stone-700">Recently Voted</h4>
                         <div className="space-y-1.5">

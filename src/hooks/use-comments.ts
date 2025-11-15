@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createComment, getCommentsForIssue, subscribeToComments, countUserTopLevelComments, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
+import { logActivity } from '@/lib/activity-tracker';
 
 // Temporary ID generator for optimistic updates
 const generateTempId = () => `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -133,6 +134,23 @@ export function useComments(issueId: string | undefined) {
       // Update user activity analytics
       if (user?.uid) {
         qc.invalidateQueries({ queryKey: ['user-activity', user.uid] });
+        qc.invalidateQueries({ queryKey: ['local-activity', user.uid] });
+        
+        // Log activity to local storage
+        if (variables.parentId) {
+          logActivity(user.uid, 'reply', {
+            issueId,
+            commentId: data.id,
+            parentCommentId: variables.parentId,
+            content: variables.content,
+          });
+        } else {
+          logActivity(user.uid, 'comment', {
+            issueId,
+            commentId: data.id,
+            content: variables.content,
+          });
+        }
       }
     }
   });

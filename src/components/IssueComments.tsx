@@ -7,6 +7,7 @@ import { cn, formatRelativeTime } from '@/lib/utils';
 import { MessageSquare, Reply, ThumbsUp } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
+import { logActivity } from '@/lib/activity-tracker';
 
 interface IssueCommentsProps {
   issueId: string;
@@ -76,6 +77,17 @@ export default function IssueComments({ issueId, disabled, className }: IssueCom
       qc.invalidateQueries({ queryKey: ['comment-like', commentId, user?.uid] });
       if (user?.uid) {
         qc.invalidateQueries({ queryKey: ['user-activity', user.uid] });
+        qc.invalidateQueries({ queryKey: ['local-activity', user.uid] });
+      }
+    },
+    onSuccess: (result, commentId) => {
+      // Log activity to local storage
+      if (user?.uid) {
+        if (result === 'liked') {
+          logActivity(user.uid, 'like_comment', { commentId, issueId });
+        } else {
+          logActivity(user.uid, 'unlike_comment', { commentId, issueId });
+        }
       }
     }
   });
