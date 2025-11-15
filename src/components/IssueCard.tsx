@@ -4,10 +4,11 @@ import type { Issue } from '@/types/issue';
 import { ISSUE_VISIBILITIES, type IssueVisibility } from '@/types/issue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from '@/components/ui/dropdown-menu';
-import { TrendingUp, Clock, MessageSquare, ThumbsUp, CheckCircle2, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { TrendingUp, Clock, MessageSquare, ThumbsUp, CheckCircle2, MoreHorizontal, Globe, Lock, FileText, Eye } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
+import { cn } from '@/lib/utils';
 
 interface IssueCardProps {
   issue: Issue;
@@ -27,6 +28,32 @@ const statusColors = {
 };
 
 export default function IssueCard({ issue, engagement, onSetVisibility, onAddProgress, onResolve }: IssueCardProps) {
+  const getVisibilityIcon = (visibility: IssueVisibility) => {
+    switch (visibility) {
+      case 'public':
+        return <Globe className="h-3.5 w-3.5 text-green-600" />;
+      case 'private':
+        return <Lock className="h-3.5 w-3.5 text-orange-600" />;
+      case 'draft':
+        return <FileText className="h-3.5 w-3.5 text-gray-600" />;
+      default:
+        return <Globe className="h-3.5 w-3.5 text-green-600" />;
+    }
+  };
+
+  const getVisibilityBadgeClass = (visibility: IssueVisibility) => {
+    switch (visibility) {
+      case 'public':
+        return 'bg-green-100 text-green-700 border-green-300';
+      case 'private':
+        return 'bg-orange-100 text-orange-700 border-orange-300';
+      case 'draft':
+        return 'bg-gray-100 text-gray-700 border-gray-300';
+      default:
+        return 'bg-green-100 text-green-700 border-green-300';
+    }
+  };
+
   return (
     <div className="p-4 rounded-lg glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
       <div className="flex items-start gap-3">
@@ -42,9 +69,13 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onAddPro
                 {issue.title}
               </Link>
               {issue.visibility && issue.visibility !== 'public' && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-200 text-gray-600 uppercase tracking-wide flex-shrink-0">
+                <Badge 
+                  variant="outline"
+                  className={cn("text-[10px] px-2 py-0.5 flex items-center gap-1 flex-shrink-0 border", getVisibilityBadgeClass(issue.visibility))}
+                >
+                  {getVisibilityIcon(issue.visibility)}
                   {issue.visibility}
-                </span>
+                </Badge>
               )}
               <Badge 
                 variant={issue.status === 'resolved' ? 'default' : 'secondary'}
@@ -55,19 +86,67 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onAddPro
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button size="icon" variant="ghost" className="h-8 w-8 flex-shrink-0">
-                  <MoreHorizontal className="h-4 w-4" />
+                <Button 
+                  size="icon" 
+                  variant="ghost" 
+                  className="h-8 w-8 flex-shrink-0 hover:bg-orange-100 hover:text-orange-600 transition-colors"
+                  title="Change visibility"
+                >
+                  <Eye className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Visibility</DropdownMenuLabel>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel className="flex items-center gap-2 pb-2">
+                  <Eye className="h-4 w-4 text-orange-600" />
+                  <span>Change Visibility</span>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   value={issue.visibility || 'public'}
                   onValueChange={(value) => onSetVisibility(issue.id, value as IssueVisibility)}
                 >
-                  <DropdownMenuRadioItem value="public">Public</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="private">Private</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="draft">Draft</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem 
+                    value="public"
+                    className="cursor-pointer py-3 px-3 focus:bg-green-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Globe className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">Public</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Visible to everyone on the platform
+                        </div>
+                      </div>
+                    </div>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem 
+                    value="private"
+                    className="cursor-pointer py-3 px-3 focus:bg-orange-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Lock className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">Private</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Only you can see this issue
+                        </div>
+                      </div>
+                    </div>
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem 
+                    value="draft"
+                    className="cursor-pointer py-3 px-3 focus:bg-gray-50"
+                  >
+                    <div className="flex items-start gap-3">
+                      <FileText className="h-4 w-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">Draft</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                          Save as draft, edit before publishing
+                        </div>
+                      </div>
+                    </div>
+                  </DropdownMenuRadioItem>
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>

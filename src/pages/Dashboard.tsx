@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
@@ -92,6 +93,8 @@ export default function Dashboard() {
   // Ownership must be determined by createdBy (auth UID) to satisfy Firestore rules
   const privateCount = userIssues.filter(i => i.visibility === 'private').length;
   const draftCount = userIssues.filter(i => i.visibility === 'draft').length;
+  const publishedIssues = userIssues.filter(i => i.visibility === 'public');
+  const draftPrivateIssues = userIssues.filter(i => i.visibility === 'draft' || i.visibility === 'private');
 
   const statusColors = {
     received: 'bg-blue-500',
@@ -233,9 +236,9 @@ export default function Dashboard() {
           <div className="lg:col-span-2">
             <Card className="glass-card">
               <CardHeader>
-                <CardTitle className="font-display">Your Recent Issues</CardTitle>
+                <CardTitle className="font-display">Your Issues</CardTitle>
                 <CardDescription>
-                  Issues you've reported to the community
+                  Manage your published and draft issues
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -262,37 +265,92 @@ export default function Dashboard() {
                     </Link>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {userIssues.slice(0, 5).map((issue) => (
-                      <div key={issue.id}>
-                        <Card
-                          className="hover:shadow-lg transition cursor-pointer"
-                          onClick={() => setSelectedIssue(issue)}
-                        >
-                          <IssueCard
-                            issue={issue}
-                            engagement={engagement?.[issue.id]}
-                            onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
-                            onAddProgress={handleOpenProgressDialog}
-                            onResolve={handleOpenResolveDialog}
-                          />
-                        </Card>
-                      </div>
-                    ))}
-          {/* Issue Analytics Dialog for recent issues */}
-          <IssueAnalyticsDialog
-            issue={selectedIssue}
-            open={!!selectedIssue}
-            onOpenChange={(open) => {
-              if (!open) setSelectedIssue(null);
-            }}
-            engagement={selectedIssue ? engagement?.[selectedIssue.id] : undefined}
-            activitySummary={activityTracker.local}
-          />
-                  </div>
+                  <Tabs defaultValue="published" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
+                      <TabsTrigger value="published" className="flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Published
+                        <Badge variant="secondary" className="ml-1 bg-green-100 text-green-700">
+                          {publishedIssues.length}
+                        </Badge>
+                      </TabsTrigger>
+                      <TabsTrigger value="drafts" className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        Drafts & Private
+                        <Badge variant="secondary" className="ml-1 bg-orange-100 text-orange-700">
+                          {draftPrivateIssues.length}
+                        </Badge>
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="published" className="space-y-4">
+                      {publishedIssues.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm font-medium">No published issues yet</p>
+                          <p className="text-xs mt-1">Your public issues will appear here</p>
+                        </div>
+                      ) : (
+                        publishedIssues.slice(0, 5).map((issue) => (
+                          <div key={issue.id}>
+                            <Card
+                              className="hover:shadow-lg transition cursor-pointer"
+                              onClick={() => setSelectedIssue(issue)}
+                            >
+                              <IssueCard
+                                issue={issue}
+                                engagement={engagement?.[issue.id]}
+                                onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                                onAddProgress={handleOpenProgressDialog}
+                                onResolve={handleOpenResolveDialog}
+                              />
+                            </Card>
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+                    
+                    <TabsContent value="drafts" className="space-y-4">
+                      {draftPrivateIssues.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Clock className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                          <p className="text-sm font-medium">No draft or private issues</p>
+                          <p className="text-xs mt-1">Issues saved as drafts or marked private will appear here</p>
+                        </div>
+                      ) : (
+                        draftPrivateIssues.slice(0, 5).map((issue) => (
+                          <div key={issue.id}>
+                            <Card
+                              className="hover:shadow-lg transition cursor-pointer border-l-4 border-l-orange-400"
+                              onClick={() => setSelectedIssue(issue)}
+                            >
+                              <IssueCard
+                                issue={issue}
+                                engagement={engagement?.[issue.id]}
+                                onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                                onAddProgress={handleOpenProgressDialog}
+                                onResolve={handleOpenResolveDialog}
+                              />
+                            </Card>
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+                  </Tabs>
                 )}
               </CardContent>
             </Card>
+            
+            {/* Issue Analytics Dialog for recent issues */}
+            <IssueAnalyticsDialog
+              issue={selectedIssue}
+              open={!!selectedIssue}
+              onOpenChange={(open) => {
+                if (!open) setSelectedIssue(null);
+              }}
+              engagement={selectedIssue ? engagement?.[selectedIssue.id] : undefined}
+              activitySummary={activityTracker.local}
+            />
           </div>
 
           {/* User Profile Sidebar */}
