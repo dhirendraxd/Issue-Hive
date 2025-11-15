@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ThumbsUp, RotateCcw } from "lucide-react";
+import { ThumbsUp, RotateCcw, Sparkles } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { useIssues } from "@/hooks/use-issues";
@@ -107,6 +107,13 @@ export default function Issues() {
     }
   };
 
+  // Helper to check if issue is new (within last 24 hours)
+  const isNewIssue = (createdAt: number) => {
+    const now = Date.now();
+    const twentyFourHours = 24 * 60 * 60 * 1000;
+    return (now - createdAt) < twentyFourHours;
+  };
+
   return (
     <div className="min-h-screen bg-stone-50">
       <Navbar />
@@ -178,7 +185,15 @@ export default function Issues() {
 
                   {/* Issue Title & Description */}
                   <div className="mb-4 flex-1">
-                    <h3 className="text-lg font-display font-semibold break-words leading-snug mb-2">{i.title}</h3>
+                    <div className="flex items-start gap-2 mb-2">
+                      <h3 className="text-lg font-display font-semibold break-words leading-snug flex-1">{i.title}</h3>
+                      {isNewIssue(i.createdAt) && (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-orange-300 bg-gradient-to-r from-orange-100 to-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 shadow-sm flex-shrink-0 animate-pulse">
+                          <Sparkles className="h-3 w-3" />
+                          New
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
                   </div>
 
