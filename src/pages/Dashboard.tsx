@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
+import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
 import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { 
   LogOut, 
@@ -278,13 +279,15 @@ export default function Dashboard() {
                         </Card>
                       </div>
                     ))}
-          {/* Issue Detail Dialog for recent issues */}
-          <IssueDetailDialog
+          {/* Issue Analytics Dialog for recent issues */}
+          <IssueAnalyticsDialog
             issue={selectedIssue}
             open={!!selectedIssue}
             onOpenChange={(open) => {
               if (!open) setSelectedIssue(null);
             }}
+            engagement={selectedIssue ? engagement?.[selectedIssue.id] : undefined}
+            activitySummary={activityTracker.local}
           />
                   </div>
                 )}
