@@ -421,29 +421,171 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
+            {/* Detailed Activity History Card */}
             <Card className="glass-card">
-              <CardHeader>
-                <CardTitle className="text-lg font-display">Quick Actions</CardTitle>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base font-display flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4 text-blue-600" />
+                  Activity History
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Your comments, likes, and replies across issues
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <Link to="/raise-issue" className="block">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Raise New Issue
-                  </Button>
-                </Link>
-                <Link to="/issues" className="block">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <AlertCircle className="h-4 w-4 mr-2" />
-                    Browse All Issues
-                  </Button>
-                </Link>
-                <Link to="/about" className="block">
-                  <Button variant="outline" className="w-full justify-start" size="sm">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    About IssueHive
-                  </Button>
-                </Link>
+              <CardContent>
+                {isActivityLoading ? (
+                  <div className="text-sm text-stone-500 text-center py-4">Loading activity history...</div>
+                ) : userActivity && (userActivity.comments.length > 0 || userActivity.likedComments.length > 0) ? (
+                  <Tabs defaultValue="comments" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 mb-4">
+                      <TabsTrigger value="comments" className="text-xs">
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Comments ({userActivity.comments.length})
+                      </TabsTrigger>
+                      <TabsTrigger value="replies" className="text-xs">
+                        <MessageSquare className="h-3 w-3 mr-1" />
+                        Replies ({userActivity.comments.filter(c => c.parentId).length})
+                      </TabsTrigger>
+                      <TabsTrigger value="likes" className="text-xs">
+                        <ThumbsUp className="h-3 w-3 mr-1" />
+                        Likes ({userActivity.likedComments.length})
+                      </TabsTrigger>
+                    </TabsList>
+
+                    {/* Comments Tab */}
+                    <TabsContent value="comments" className="space-y-3 max-h-96 overflow-y-auto">
+                      {userActivity.comments.filter(c => !c.parentId).length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No comments yet</p>
+                        </div>
+                      ) : (
+                        userActivity.comments
+                          .filter(c => !c.parentId)
+                          .slice(0, 10)
+                          .map((comment) => (
+                            <div key={comment.id} className="p-3 bg-white/70 backdrop-blur border rounded-lg hover:shadow-md transition-shadow">
+                              <div className="flex items-start gap-2 mb-2">
+                                <MessageSquare className="h-3.5 w-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-stone-900 mb-1">
+                                    on "{comment.issue?.title || 'Unknown Issue'}"
+                                  </p>
+                                  <p className="text-xs text-stone-600 break-words">
+                                    {comment.content}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-2 text-xs text-stone-500">
+                                <span>
+                                  {(() => { 
+                                    if (typeof comment.createdAt === 'number') {
+                                      return formatRelativeTime(comment.createdAt);
+                                    }
+                                    const ts = comment.createdAt as unknown as { toDate?: () => Date };
+                                    return ts?.toDate ? formatRelativeTime(ts.toDate()) : 'Unknown';
+                                  })()}
+                                </span>
+                                {comment.likes > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3 text-orange-600" />
+                                    <span>{comment.likes}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                      )}
+                    </TabsContent>
+
+                    {/* Replies Tab */}
+                    <TabsContent value="replies" className="space-y-3 max-h-96 overflow-y-auto">
+                      {userActivity.comments.filter(c => c.parentId).length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No replies yet</p>
+                        </div>
+                      ) : (
+                        userActivity.comments
+                          .filter(c => c.parentId)
+                          .slice(0, 10)
+                          .map((reply) => (
+                            <div key={reply.id} className="p-3 bg-orange-50/50 backdrop-blur border border-orange-200 rounded-lg hover:shadow-md transition-shadow">
+                              <div className="flex items-start gap-2 mb-2">
+                                <MessageSquare className="h-3.5 w-3.5 text-purple-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-stone-900 mb-1">
+                                    Reply on "{reply.issue?.title || 'Unknown Issue'}"
+                                  </p>
+                                  <p className="text-xs text-stone-600 break-words">
+                                    {reply.content}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-2 text-xs text-stone-500">
+                                <span>
+                                  {(() => { 
+                                    if (typeof reply.createdAt === 'number') {
+                                      return formatRelativeTime(reply.createdAt);
+                                    }
+                                    const ts = reply.createdAt as unknown as { toDate?: () => Date };
+                                    return ts?.toDate ? formatRelativeTime(ts.toDate()) : 'Unknown';
+                                  })()}
+                                </span>
+                                {reply.likes > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3 text-orange-600" />
+                                    <span>{reply.likes}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))
+                      )}
+                    </TabsContent>
+
+                    {/* Likes Tab */}
+                    <TabsContent value="likes" className="space-y-3 max-h-96 overflow-y-auto">
+                      {userActivity.likedComments.length === 0 ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <ThumbsUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                          <p className="text-xs">No liked comments yet</p>
+                        </div>
+                      ) : (
+                        userActivity.likedComments.slice(0, 10).map((liked) => (
+                          <div key={liked.commentId} className="p-3 bg-white/70 backdrop-blur border rounded-lg hover:shadow-md transition-shadow">
+                            <div className="flex items-start gap-2 mb-2">
+                              <ThumbsUp className="h-3.5 w-3.5 text-orange-600 mt-0.5 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-stone-900 mb-1">
+                                  on "{liked.issue?.title || 'Unknown Issue'}"
+                                </p>
+                                {liked.comment && (
+                                  <p className="text-xs text-stone-600 break-words">
+                                    {liked.comment.content}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            {liked.comment && (
+                              <div className="text-xs text-stone-500 mt-2">
+                                by {liked.comment.userName}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </TabsContent>
+                  </Tabs>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Activity className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm font-medium">No activity history yet</p>
+                    <p className="text-xs mt-1">
+                      Comment on issues and interact with the community
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -695,174 +837,6 @@ export default function Dashboard() {
                       </div>
                     )}
                   </>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Detailed Activity History Card */}
-            <Card className="glass-card">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-display flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4 text-blue-600" />
-                  Activity History
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  Your comments, likes, and replies across issues
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isActivityLoading ? (
-                  <div className="text-sm text-stone-500 text-center py-4">Loading activity history...</div>
-                ) : userActivity && (userActivity.comments.length > 0 || userActivity.likedComments.length > 0) ? (
-                  <Tabs defaultValue="comments" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 mb-4">
-                      <TabsTrigger value="comments" className="text-xs">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Comments ({userActivity.comments.length})
-                      </TabsTrigger>
-                      <TabsTrigger value="replies" className="text-xs">
-                        <MessageSquare className="h-3 w-3 mr-1" />
-                        Replies ({userActivity.comments.filter(c => c.parentId).length})
-                      </TabsTrigger>
-                      <TabsTrigger value="likes" className="text-xs">
-                        <ThumbsUp className="h-3 w-3 mr-1" />
-                        Likes ({userActivity.likedComments.length})
-                      </TabsTrigger>
-                    </TabsList>
-
-                    {/* Comments Tab */}
-                    <TabsContent value="comments" className="space-y-3 max-h-96 overflow-y-auto">
-                      {userActivity.comments.filter(c => !c.parentId).length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No comments yet</p>
-                        </div>
-                      ) : (
-                        userActivity.comments
-                          .filter(c => !c.parentId)
-                          .slice(0, 10)
-                          .map((comment) => (
-                            <div key={comment.id} className="p-3 bg-white/70 backdrop-blur border rounded-lg hover:shadow-md transition-shadow">
-                              <div className="flex items-start gap-2 mb-2">
-                                <MessageSquare className="h-3.5 w-3.5 text-blue-600 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-stone-900 mb-1">
-                                    on "{comment.issue?.title || 'Unknown Issue'}"
-                                  </p>
-                                  <p className="text-xs text-stone-600 break-words">
-                                    {comment.content}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between mt-2 text-xs text-stone-500">
-                                <span>
-                                  {(() => { 
-                                    if (typeof comment.createdAt === 'number') {
-                                      return formatRelativeTime(comment.createdAt);
-                                    }
-                                    const ts = comment.createdAt as unknown as { toDate?: () => Date };
-                                    return ts?.toDate ? formatRelativeTime(ts.toDate()) : 'Unknown';
-                                  })()}
-                                </span>
-                                {comment.likes > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <ThumbsUp className="h-3 w-3 text-orange-600" />
-                                    <span>{comment.likes}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))
-                      )}
-                    </TabsContent>
-
-                    {/* Replies Tab */}
-                    <TabsContent value="replies" className="space-y-3 max-h-96 overflow-y-auto">
-                      {userActivity.comments.filter(c => c.parentId).length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No replies yet</p>
-                        </div>
-                      ) : (
-                        userActivity.comments
-                          .filter(c => c.parentId)
-                          .slice(0, 10)
-                          .map((reply) => (
-                            <div key={reply.id} className="p-3 bg-orange-50/50 backdrop-blur border border-orange-200 rounded-lg hover:shadow-md transition-shadow">
-                              <div className="flex items-start gap-2 mb-2">
-                                <MessageSquare className="h-3.5 w-3.5 text-purple-600 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-stone-900 mb-1">
-                                    Reply on "{reply.issue?.title || 'Unknown Issue'}"
-                                  </p>
-                                  <p className="text-xs text-stone-600 break-words">
-                                    {reply.content}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between mt-2 text-xs text-stone-500">
-                                <span>
-                                  {(() => { 
-                                    if (typeof reply.createdAt === 'number') {
-                                      return formatRelativeTime(reply.createdAt);
-                                    }
-                                    const ts = reply.createdAt as unknown as { toDate?: () => Date };
-                                    return ts?.toDate ? formatRelativeTime(ts.toDate()) : 'Unknown';
-                                  })()}
-                                </span>
-                                {reply.likes > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <ThumbsUp className="h-3 w-3 text-orange-600" />
-                                    <span>{reply.likes}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))
-                      )}
-                    </TabsContent>
-
-                    {/* Likes Tab */}
-                    <TabsContent value="likes" className="space-y-3 max-h-96 overflow-y-auto">
-                      {userActivity.likedComments.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                          <ThumbsUp className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                          <p className="text-xs">No liked comments yet</p>
-                        </div>
-                      ) : (
-                        userActivity.likedComments.slice(0, 10).map((liked) => (
-                          <div key={liked.commentId} className="p-3 bg-white/70 backdrop-blur border rounded-lg hover:shadow-md transition-shadow">
-                            <div className="flex items-start gap-2 mb-2">
-                              <ThumbsUp className="h-3.5 w-3.5 text-orange-600 mt-0.5 flex-shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-stone-900 mb-1">
-                                  on "{liked.issue?.title || 'Unknown Issue'}"
-                                </p>
-                                {liked.comment && (
-                                  <p className="text-xs text-stone-600 break-words">
-                                    {liked.comment.content}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            {liked.comment && (
-                              <div className="text-xs text-stone-500 mt-2">
-                                by {liked.comment.userName}
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </TabsContent>
-                  </Tabs>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Activity className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm font-medium">No activity history yet</p>
-                    <p className="text-xs mt-1">
-                      Comment on issues and interact with the community
-                    </p>
-                  </div>
                 )}
               </CardContent>
             </Card>
