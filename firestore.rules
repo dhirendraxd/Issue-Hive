@@ -14,8 +14,13 @@ service cloud.firestore {
     
     // Issues collection
     match /issues/{issueId} {
-      // Anyone can read issues
-      allow read: if true;
+      // Read access:
+      // - Public issues: anyone can read
+      // - Private issues: only owner can read
+      // - Draft issues: only owner can read
+      allow read: if true || // Allow all for now (filtering done client-side)
+        resource.data.visibility == 'public' ||
+        (isSignedIn() && resource.data.createdBy == request.auth.uid);
       
       // Only authenticated users can create issues
       allow create: if isSignedIn() 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { cn, formatRelativeTime } from '@/lib/utils';
+import { validateCommentData } from '@/lib/security';
 import { MessageSquare, Reply, ThumbsUp } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
@@ -114,6 +115,13 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
     setError(null);
     const content = value.trim();
     if (!content) return;
+    
+    // Validate comment content
+    const validation = validateCommentData(content);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid comment');
+      return;
+    }
     
     // Clear the input immediately for better UX
     const submittedContent = content;

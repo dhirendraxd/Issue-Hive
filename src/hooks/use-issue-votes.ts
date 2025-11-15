@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/integrations/firebase/config';
 import { COLLECTIONS } from '@/integrations/firebase/firestore';
 
 export interface VoteInfo {
   userId: string;
   vote: 1 | -1;
-  createdAt: any;
+  createdAt: Timestamp | number;
 }
 
 export function useIssueVotes(issueId?: string) {
