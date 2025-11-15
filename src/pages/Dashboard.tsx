@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
+import IssueDetailDialog from '@/components/IssueDetailDialog';
 import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { 
   LogOut, 
@@ -262,15 +263,29 @@ export default function Dashboard() {
                 ) : (
                   <div className="space-y-4">
                     {userIssues.slice(0, 5).map((issue) => (
-                      <IssueCard
-                        key={issue.id}
-                        issue={issue}
-                        engagement={engagement?.[issue.id]}
-                        onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
-                        onAddProgress={handleOpenProgressDialog}
-                        onResolve={handleOpenResolveDialog}
-                      />
+                      <div key={issue.id}>
+                        <Card
+                          className="hover:shadow-lg transition cursor-pointer"
+                          onClick={() => setSelectedIssue(issue)}
+                        >
+                          <IssueCard
+                            issue={issue}
+                            engagement={engagement?.[issue.id]}
+                            onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                            onAddProgress={handleOpenProgressDialog}
+                            onResolve={handleOpenResolveDialog}
+                          />
+                        </Card>
+                      </div>
                     ))}
+          {/* Issue Detail Dialog for recent issues */}
+          <IssueDetailDialog
+            issue={selectedIssue}
+            open={!!selectedIssue}
+            onOpenChange={(open) => {
+              if (!open) setSelectedIssue(null);
+            }}
+          />
                   </div>
                 )}
               </CardContent>

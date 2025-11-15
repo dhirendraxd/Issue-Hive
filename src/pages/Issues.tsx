@@ -139,7 +139,8 @@ export default function Issues() {
                 <p className="text-muted-foreground">No matching issues.</p>
                 <Button
                   variant="ghost"
-                  className="mt-3 rounded-full"
+                  className="mt-3 rounded-full flex items-center justify-center"
+                  aria-label="Reset filters"
                   onClick={() => {
                     setQ("");
                     setCategories([]);
@@ -147,7 +148,7 @@ export default function Issues() {
                     setSort("new");
                   }}
                 >
-                  <RotateCcw className="h-4 w-4 mr-2" /> Reset filters
+                  <RotateCcw className="h-5 w-5" />
                 </Button>
               </div>
             )}
@@ -221,15 +222,16 @@ export default function Issues() {
                       <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
                     </div>
                     <Button
-                      size="sm"
+                      size="icon"
                       variant="ghost"
-                      className="rounded-full text-xs"
+                      className="rounded-full"
+                      aria-label="View Details"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleCardClick(i);
                       }}
                     >
-                      View Details →
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </Button>
                   </div>
 

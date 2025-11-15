@@ -181,15 +181,18 @@ export function useIssuesFirebase() {
         qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
       }
     },
-    onSuccess: (id) => {
-      // Log activity to local storage
+    onSuccess: (id, _vars, context) => {
+      // Log activity to local storage using previous vote
       if (user?.uid) {
-        const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user.uid]);
-        if (currentVote?.vote === 1) {
-          // Removed upvote
+        const previousVote = context?.previousVote as { vote?: number } | null;
+        if (previousVote?.vote === 1) {
+          // User toggled off upvote
           logActivity(user.uid, 'remove_vote', { issueId: id });
+        } else if (previousVote?.vote === -1) {
+          // User switched from downvote to upvote
+          logActivity(user.uid, 'upvote', { issueId: id, voteValue: 1 });
         } else {
-          // Added/changed to upvote
+          // User added upvote
           logActivity(user.uid, 'upvote', { issueId: id, voteValue: 1 });
         }
       }
@@ -318,15 +321,18 @@ export function useIssuesFirebase() {
         qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
       }
     },
-    onSuccess: (id) => {
-      // Log activity to local storage
+    onSuccess: (id, _vars, context) => {
+      // Log activity to local storage using previous vote
       if (user?.uid) {
-        const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user.uid]);
-        if (currentVote?.vote === -1) {
-          // Removed downvote
+        const previousVote = context?.previousVote as { vote?: number } | null;
+        if (previousVote?.vote === -1) {
+          // User toggled off downvote
           logActivity(user.uid, 'remove_vote', { issueId: id });
+        } else if (previousVote?.vote === 1) {
+          // User switched from upvote to downvote
+          logActivity(user.uid, 'downvote', { issueId: id, voteValue: -1 });
         } else {
-          // Added/changed to downvote
+          // User added downvote
           logActivity(user.uid, 'downvote', { issueId: id, voteValue: -1 });
         }
       }

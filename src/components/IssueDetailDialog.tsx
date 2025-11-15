@@ -187,7 +187,7 @@ export default function IssueDetailDialog({
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
-                    size="sm"
+                    size="icon"
                     variant={hasDownvoted ? "default" : "outline"}
                     className={cn(
                       "rounded-full",
@@ -196,12 +196,12 @@ export default function IssueDetailDialog({
                     onClick={() => onDownvote?.(issue.id)}
                     disabled={(isOwner && !isAnonymous) || isDownvoting || !onDownvote}
                     title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
+                    aria-label={hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
                   >
-                    <ThumbsDown className="h-4 w-4 mr-1" />
-                    {hasDownvoted ? 'Downvoted' : 'Downvote'}
+                    <ThumbsDown className="h-5 w-5" />
                   </Button>
                   <Button
-                    size="sm"
+                    size="icon"
                     variant={hasUpvoted ? "default" : "outline"}
                     className={cn(
                       "rounded-full",
@@ -210,9 +210,9 @@ export default function IssueDetailDialog({
                     onClick={() => onUpvote?.(issue.id)}
                     disabled={(isOwner && !isAnonymous) || isUpvoting || !onUpvote}
                     title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
+                    aria-label={hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
                   >
-                    <ThumbsUp className="h-4 w-4 mr-1" />
-                    {hasUpvoted ? 'Upvoted' : 'Upvote'}
+                    <ThumbsUp className="h-5 w-5" />
                   </Button>
                 </div>
               </div>
