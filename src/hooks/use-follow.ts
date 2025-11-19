@@ -23,10 +23,19 @@ export function useFollowCounts(userId?: string) {
     enabled: !!userId && !!db,
     queryFn: async () => {
       if (!userId || !db) return { followers: 0, following: 0 };
-      // Lightweight counts by listing subcollection (could be optimized later)
-      // Firestore Web SDK doesn't have list API; would need collection query
-      // For brevity, we skip implementing counts with queries here.
-      return { followers: 0, following: 0 };
+      
+      // Import collection and getDocs to count subcollection documents
+      const { collection, getDocs } = await import('firebase/firestore');
+      
+      // Count followers
+      const followersSnap = await getDocs(collection(db, 'users', userId, 'followers'));
+      const followers = followersSnap.size;
+      
+      // Count following
+      const followingSnap = await getDocs(collection(db, 'users', userId, 'following'));
+      const following = followingSnap.size;
+      
+      return { followers, following };
     }
   });
 }
