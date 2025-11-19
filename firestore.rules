@@ -11,6 +11,9 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    function getIssue(issueId) {
+      return get(/databases/$(database)/documents/issues/$(issueId)).data;
+    }
     
     // Issues collection
     match /issues/{issueId} {
@@ -100,14 +103,13 @@ service cloud.firestore {
         && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 2000
         && (
           // Anonymous issue: anyone can comment (top-level or reply)
-          get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.anonymous == true
+          getIssue(request.resource.data.issueId).anonymous == true
           || (
             // Non-anonymous issue logic
-            let issue = get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data;
             // Non-owner commenting (top-level or reply)
-            issue.createdBy != request.auth.uid
+            getIssue(request.resource.data.issueId).createdBy != request.auth.uid
             // Owner replying only (must have parentId)
-            || (issue.createdBy == request.auth.uid && 'parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
+            || (getIssue(request.resource.data.issueId).createdBy == request.auth.uid && 'parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
           )
         );
       
@@ -121,7 +123,7 @@ service cloud.firestore {
           || (
             // Pin/unpin: only issue owner and only pinnedAt/pinnedBy fields
             request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinnedAt','pinnedBy'])
-            && get(/databases/$(database)/documents/issues/$(resource.data.issueId)).data.createdBy == request.auth.uid
+            && getIssue(resource.data.issueId).createdBy == request.auth.uid
           )
         );
       

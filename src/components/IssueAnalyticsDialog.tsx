@@ -5,12 +5,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, AlertCircle, CheckCircle2, Pin } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
 import type { Issue } from "@/types/issue";
 import { useIssueComments } from "@/hooks/use-issue-comments";
 import { useIssueVotes } from "@/hooks/use-issue-votes";
 import { useMemo } from "react";
+import { useAuth } from "@/hooks/use-auth";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { pinComment, type CommentDoc, Timestamp } from "@/integrations/firebase/firestore";
+import { toast } from "sonner";
 
 interface IssueAnalyticsDialogProps {
   issue: Issue | null;
@@ -36,6 +41,45 @@ export default function IssueAnalyticsDialog({
 }: IssueAnalyticsDialogProps) {
   const { data: comments = [] } = useIssueComments(issue?.id);
   const { data: votes = [] } = useIssueVotes(issue?.id);
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  const isOwner = !!issue && user?.uid === issue.createdBy;
+
+  const pinMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      if (!issue) throw new Error("No issue context");
+      return await pinComment(commentId, issue.id, user!.uid);
+    },
+    onMutate: async (commentId: string) => {
+      await qc.cancelQueries({ queryKey: ['issue-comments', issue?.id] });
+      const previous = qc.getQueryData<CommentDoc[]>(['issue-comments', issue?.id]);
+      qc.setQueryData<CommentDoc[]>(['issue-comments', issue?.id], (old) => {
+        if (!old) return old;
+        return old.map(c => {
+          if (c.id === commentId) {
+            if (c.pinnedAt) {
+              const { pinnedAt, pinnedBy, ...rest } = c;
+              return rest as CommentDoc;
+            } else {
+              return { ...c, pinnedAt: Timestamp.now(), pinnedBy: user!.uid };
+            }
+          }
+          return c;
+        });
+      });
+      return { previous };
+    },
+    onError: (err, _commentId, ctx) => {
+      if (ctx?.previous) qc.setQueryData(['issue-comments', issue?.id], ctx.previous);
+      toast.error(err instanceof Error ? err.message : 'Failed to toggle pin');
+    },
+    onSuccess: (result) => {
+      toast.success(result === 'pinned' ? 'Comment pinned' : 'Comment unpinned');
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ['issue-comments', issue?.id] });
+    }
+  });
 
   // Find when the issue hit the most likes (upvotes)
   const mostLiked = useMemo(() => {
@@ -88,6 +132,25 @@ export default function IssueAnalyticsDialog({
   }, [comments]);
 
   if (!issue) return null;
+
+  // Sort comments so pinned appear first (then chronological by createdAt)
+  function toMillis(val: unknown): number {
+    if (typeof val === 'number') return val;
+    if (val instanceof Date) return val.getTime();
+    if (val && typeof val === 'object' && 'toDate' in val && typeof (val as { toDate: () => Date }).toDate === 'function') {
+      try { return (val as { toDate: () => Date }).toDate().getTime(); } catch { return 0; }
+    }
+    return 0;
+  }
+
+  const sortedComments = [...comments].sort((a, b) => {
+    const aPinned = !!a.pinnedAt; const bPinned = !!b.pinnedAt;
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+    const aTime = toMillis(a.createdAt as unknown);
+    const bTime = toMillis(b.createdAt as unknown);
+    return aTime - bTime;
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -148,11 +211,11 @@ export default function IssueAnalyticsDialog({
             <Separator />
             <div>
               <div className="font-semibold mb-1 flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-blue-500" /> Comments ({comments.length})
+                <MessageSquare className="h-4 w-4 text-blue-500" /> Comments ({sortedComments.length})
               </div>
               <div className="space-y-2">
-                {comments.length === 0 && <div className="text-xs text-muted-foreground">No comments yet.</div>}
-                {comments.map((c) => {
+                {sortedComments.length === 0 && <div className="text-xs text-muted-foreground">No comments yet.</div>}
+                {sortedComments.map((c) => {
                   let createdDate: Date | undefined = undefined;
                   if (c.createdAt) {
                     if (isWithToDate(c.createdAt)) {
@@ -162,14 +225,34 @@ export default function IssueAnalyticsDialog({
                     }
                   }
                   return (
-                    <div key={c.id} className="bg-stone-50 border border-stone-200 rounded p-2">
+                    <div key={c.id} className={`bg-stone-50 border rounded p-2 ${c.pinnedAt ? 'border-orange-300 bg-orange-50/70 shadow-sm' : 'border-stone-200'}`}>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
                         <User className="h-3 w-3" /> {c.userName || c.userId}
                         <Calendar className="h-3 w-3 ml-2" /> {createdDate ? formatRelativeTime(createdDate) : ''}
+                        {c.pinnedAt && (
+                          <span className="flex items-center gap-1 text-[10px] text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">
+                            <Pin className="h-3 w-3" /> Pinned
+                          </span>
+                        )}
                       </div>
-                      <div className="text-sm mb-1">{c.content}</div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <ThumbsUp className="h-3 w-3 text-green-500" /> {c.likes} likes
+                      <div className="text-sm mb-1 break-words">{c.content}</div>
+                      <div className="flex items-center gap-3 text-xs">
+                        <div className="flex items-center gap-1">
+                          <ThumbsUp className="h-3 w-3 text-green-500" /> {c.likes} likes
+                        </div>
+                        {isOwner && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={pinMutation.isPending}
+                            onClick={() => pinMutation.mutate(c.id)}
+                            className={`h-6 px-2 text-[10px] ${c.pinnedAt ? 'text-orange-600' : ''}`}
+                          >
+                            <Pin className={`h-3 w-3 mr-1 ${c.pinnedAt ? 'fill-orange-600' : ''}`} />
+                            {c.pinnedAt ? 'Unpin' : 'Pin'}
+                          </Button>
+                        )}
                       </div>
                     </div>
                   );
