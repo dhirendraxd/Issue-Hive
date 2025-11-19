@@ -1,12 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/integrations/firebase/config';
-import { COLLECTIONS } from '@/integrations/firebase/firestore';
+import { COLLECTIONS, getIssueVoteCounts } from '@/integrations/firebase/firestore';
 
 export interface IssueEngagementMetrics {
   issueId: string;
   comments: number;
   commentLikes: number; // sum of likes counts across comments
+  upvotes: number;
+  downvotes: number;
 }
 
 export function useIssueEngagement(issueIds: string[] | undefined) {
@@ -31,10 +33,26 @@ export function useIssueEngagement(issueIds: string[] | undefined) {
               const data = d.data() as { likes?: number };
               commentLikes += data.likes || 0;
             });
-            results[id] = { issueId: id, comments, commentLikes };
+            
+            // Get vote counts
+            const voteCounts = await getIssueVoteCounts(id);
+            
+            results[id] = { 
+              issueId: id, 
+              comments, 
+              commentLikes,
+              upvotes: voteCounts.upvotes,
+              downvotes: voteCounts.downvotes
+            };
           } catch (e) {
             // On error keep it absent; could add logging
-            results[id] = { issueId: id, comments: 0, commentLikes: 0 };
+            results[id] = { 
+              issueId: id, 
+              comments: 0, 
+              commentLikes: 0,
+              upvotes: 0,
+              downvotes: 0
+            };
           }
         })
       );

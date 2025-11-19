@@ -5,27 +5,31 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { validateCommentData } from '@/lib/security';
-import { MessageSquare, Reply, ThumbsUp } from 'lucide-react';
+import { MessageSquare, Reply, ThumbsUp, Pin } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
 import { logActivity } from '@/lib/activity-tracker';
 
 interface IssueCommentsProps {
   issueId: string;
+    issueOwnerId?: string; // The creator of the issue
+  allowPin?: boolean; // Whether pin UI should be shown (context gated)
   disabled?: boolean; // disable add for owner
   className?: string;
   disabledReason?: string; // reason why commenting is disabled
 }
 
-export default function IssueComments({ issueId, disabled, className, disabledReason }: IssueCommentsProps) {
+export default function IssueComments({ issueId, issueOwnerId, allowPin = false, disabled, className, disabledReason }: IssueCommentsProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const { data: comments, isLoading, error: commentsError, addComment, userCommentCount, canAddTopLevel } = useComments(issueId);
+  const { data: comments, isLoading, error: commentsError, addComment, pinComment, userCommentCount, canAddTopLevel } = useComments(issueId);
   const [value, setValue] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const isIssueOwner = user?.uid === issueOwnerId;
 
   const canAdd = !!user && !disabled;
+  const canAddTopLevelComment = canAdd && !isIssueOwner; // Owners can only reply, not create top-level comments
 
   // Like mutation with optimistic updates
   const likeMutation = useMutation({
@@ -107,7 +111,15 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
   };
 
   // Organize comments into threads
-  const topLevelComments = comments?.filter(c => !c.parentId) || [];
+  const topLevelComments = (comments?.filter(c => !c.parentId) || []).sort((a, b) => {
+    // Sort pinned comments to the top
+    if (a.pinnedAt && !b.pinnedAt) return -1;
+    if (!a.pinnedAt && b.pinnedAt) return 1;
+    // Then sort by creation time
+    const aTime = typeof a.createdAt === 'number' ? a.createdAt : (a.createdAt as unknown as { toDate?: () => Date })?.toDate?.()?.getTime() || 0;
+    const bTime = typeof b.createdAt === 'number' ? b.createdAt : (b.createdAt as unknown as { toDate?: () => Date })?.toDate?.()?.getTime() || 0;
+    return aTime - bTime;
+  });
   const getReplies = (commentId: string) => comments?.filter(c => c.parentId === commentId) || [];
 
   const handleSubmit = async (e: React.FormEvent, parentId: string | null = null) => {
@@ -184,6 +196,12 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
                   <div className="flex items-center gap-2 flex-1 min-w-0">
                     <span className={cn("font-medium truncate", isReply ? "text-[11px]" : "text-xs")}>
                       {c.userName}
+                                        {allowPin && c.pinnedAt && (
+                                          <span className="text-[9px] text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
+                                            <Pin className="h-2.5 w-2.5" />
+                                            Pinned
+                                          </span>
+                                        )}
                     </span>
                     {isOptimistic && (
                       <span className="text-[9px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded flex-shrink-0">
@@ -238,6 +256,21 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
                     >
                       <Reply className="h-3 w-3 mr-1" />
                       Reply
+                                      {allowPin && isIssueOwner && !isReply && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className={cn(
+                                            "h-6 px-2 text-[10px]",
+                                            c.pinnedAt && "text-orange-600"
+                                          )}
+                                          onClick={() => pinComment.mutate(c.id)}
+                                          disabled={pinComment.isPending}
+                                        >
+                                          <Pin className={cn("h-3 w-3 mr-1", c.pinnedAt && "fill-orange-600")} />
+                                          {c.pinnedAt ? 'Unpin' : 'Pin'}
+                                        </Button>
+                                      )}
                     </Button>
                   )}
                 </div>
@@ -300,23 +333,19 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
       {error && <p className="text-xs text-red-600">{error}</p>}
 
       {/* Top-level comment form */}
-      {canAdd && !replyTo && (
+      {canAddTopLevelComment && !replyTo && (
         <form onSubmit={(e) => handleSubmit(e, null)} className="space-y-2">
           <Textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={canAddTopLevel ? "Add a comment..." : "You've reached the 2-comment limit. Reply to existing comments instead."}
+            placeholder="Add a comment..."
             className="min-h-[60px] text-xs"
-            disabled={!canAddTopLevel}
           />
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] text-muted-foreground">
-              {canAddTopLevel ? `${2 - userCommentCount} comment${2 - userCommentCount !== 1 ? 's' : ''} remaining` : 'Reply to comments instead'}
-            </span>
+          <div className="flex justify-end">
             <Button
               size="sm"
               type="submit"
-              disabled={addComment.isPending || !value.trim() || !canAddTopLevel}
+              disabled={addComment.isPending || !value.trim()}
               className="rounded-full"
             >
               {addComment.isPending ? 'Posting...' : 'Post Comment'}
@@ -325,9 +354,15 @@ export default function IssueComments({ issueId, disabled, className, disabledRe
         </form>
       )}
       
-      {!canAdd && (
+      {!canAdd && !replyTo && (
         <p className="text-[10px] text-muted-foreground">
-          {disabledReason || (user ? 'You cannot comment on your own issue.' : 'Sign in to comment.')}
+          {disabledReason || 'Sign in to comment.'}
+      
+              {isIssueOwner && !replyTo && (
+                <p className="text-[10px] text-orange-600 bg-orange-50 p-2 rounded">
+                  As the issue owner, you can reply to comments but cannot create new top-level comments.
+                </p>
+              )}
         </p>
       )}
     </div>

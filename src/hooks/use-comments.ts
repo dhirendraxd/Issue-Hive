@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { createComment, getCommentsForIssue, subscribeToComments, countUserTopLevelComments, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
+import { createComment, getCommentsForIssue, subscribeToComments, countUserTopLevelComments, pinComment, Timestamp, type CommentDoc } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
 import { logActivity } from '@/lib/activity-tracker';
 
@@ -56,14 +56,6 @@ export function useComments(issueId: string | undefined) {
     mutationFn: async ({ content, parentId }: { content: string; parentId?: string | null }) => {
       if (!user) throw new Error('Must be signed in');
       if (!issueId) throw new Error('No issueId');
-      
-      // Check if trying to add top-level comment and already at limit
-      if (!parentId) {
-        const count = userCommentCountQuery.data || 0;
-        if (count >= 2) {
-          throw new Error('You can only post 2 comments per issue. You can reply to existing comments instead.');
-        }
-      }
       
       const commentData: {
         issueId: string;
@@ -155,10 +147,46 @@ export function useComments(issueId: string | undefined) {
     }
   });
 
+  const pinCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      if (!user) throw new Error('Must be signed in');
+      if (!issueId) throw new Error('No issueId');
+      
+      return await pinComment(commentId, issueId, user.uid);
+    },
+    onMutate: async (commentId: string) => {
+      await qc.cancelQueries({ queryKey: ['comments', issueId] });
+      const previousComments = qc.getQueryData<CommentDoc[]>(['comments', issueId]);
+      
+      qc.setQueryData<CommentDoc[]>(['comments', issueId], (old) => {
+        if (!old) return old;
+        return old.map((comment) => {
+          if (comment.id === commentId) {
+            if (comment.pinnedAt) {
+              const { pinnedAt, pinnedBy, ...rest } = comment;
+              return rest as CommentDoc;
+            } else {
+              return { ...comment, pinnedAt: Timestamp.now(), pinnedBy: user!.uid };
+            }
+          }
+          return comment;
+        });
+      });
+      
+      return { previousComments };
+    },
+    onError: (err, variables, context) => {
+      if (context?.previousComments) {
+        qc.setQueryData(['comments', issueId], context.previousComments);
+      }
+    },
+  });
+
   return { 
     ...commentsQuery, 
     addComment,
+    pinComment: pinCommentMutation,
     userCommentCount: userCommentCountQuery.data || 0,
-    canAddTopLevel: (userCommentCountQuery.data || 0) < 2,
+    canAddTopLevel: true, // Allow unlimited comments
   };
 }

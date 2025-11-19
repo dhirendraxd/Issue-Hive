@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock } from "lucide-react";
+import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -13,6 +13,7 @@ import { useUserVote } from "@/hooks/use-user-vote";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
+import { useState } from "react";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -22,6 +23,7 @@ interface IssueDetailDialogProps {
   onDownvote?: (id: string) => void;
   isUpvoting?: boolean;
   isDownvoting?: boolean;
+  enablePin?: boolean; // allow pin UI in comments for this context
 }
 
 export default function IssueDetailDialog({
@@ -32,9 +34,11 @@ export default function IssueDetailDialog({
   onDownvote,
   isUpvoting,
   isDownvoting,
+  enablePin = false,
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
+  const [commentsExpanded, setCommentsExpanded] = useState(true);
 
   if (!issue) return null;
 
@@ -42,9 +46,8 @@ export default function IssueDetailDialog({
   const isAnonymous = issue.anonymous === true;
   const isPrivate = (issue as Issue & { visibility?: 'public' | 'private' | 'draft' }).visibility === 'private';
   
-  // Allow comments on anonymous issues even if owner
-  // Disable comments if: (1) owner and not anonymous OR (2) private issue and not owner
-  const disableComments = (isOwner && !isAnonymous) || (isPrivate && !isOwner);
+  // Only disable comments for private issues when user is not the owner
+  const disableComments = isPrivate && !isOwner;
   const hasUpvoted = userVote?.vote === 1;
   const hasDownvoted = userVote?.vote === -1;
 
@@ -346,15 +349,44 @@ export default function IssueDetailDialog({
             {/* Comments Section */}
             {isFirebaseConfigured && (
               <div className="space-y-3">
-                <IssueComments 
-                  issueId={issue.id} 
-                  disabled={disableComments}
-                  disabledReason={
-                    isPrivate && !isOwner 
-                      ? 'This is a private issue. Only the owner can add comments or updates.' 
-                      : undefined
-                  }
-                />
+                {/* Comments Header with Toggle */}
+                <div 
+                  className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-orange-50/50 to-amber-50/50 border border-orange-200/50 cursor-pointer hover:bg-orange-50 transition-colors"
+                  onClick={() => setCommentsExpanded(!commentsExpanded)}
+                >
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-orange-600" />
+                    <span className="font-semibold text-stone-800">Comments & Discussion</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-orange-100"
+                  >
+                    {commentsExpanded ? (
+                      <ChevronUp className="h-4 w-4 text-orange-600" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 text-orange-600" />
+                    )}
+                  </Button>
+                </div>
+
+                {/* Collapsible Comments Content */}
+                {commentsExpanded && (
+                  <div className="animate-in slide-in-from-top-2 duration-200">
+                    <IssueComments 
+                      issueId={issue.id} 
+                                            issueOwnerId={issue.createdBy}
+                      allowPin={enablePin}
+                      disabled={disableComments}
+                      disabledReason={
+                        isPrivate && !isOwner 
+                          ? 'This is a private issue. Only the owner can add comments or updates.' 
+                          : undefined
+                      }
+                    />
+                  </div>
+                )}
               </div>
             )}
           </div>

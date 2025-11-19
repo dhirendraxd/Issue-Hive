@@ -16,6 +16,7 @@ import {
   QueryConstraint,
   writeBatch,
   onSnapshot,
+    deleteField,
   type Unsubscribe,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './config';
@@ -130,7 +131,48 @@ export interface CommentDoc {
   parentId?: string; // undefined for top-level, commentId for replies
   likes: number; // count of likes
   createdAt: Timestamp;
+  pinnedAt?: Timestamp; // when it was pinned (undefined if not pinned)
+  pinnedBy?: string; // userId of who pinned it (issue owner)
 }
+
+// Pin/Unpin a comment (only issue owner can pin)
+export const pinComment = async (commentId: string, issueId: string, userId: string): Promise<'pinned' | 'unpinned'> => {
+  // Get the issue to verify ownership
+  const issueRef = doc(db, COLLECTIONS.ISSUES, issueId);
+  const issueSnap = await getDoc(issueRef);
+  
+  if (!issueSnap.exists()) throw new Error('Issue not found');
+  
+  const issue = issueSnap.data() as Issue;
+  if (issue.createdBy !== userId) {
+    throw new Error('Only issue owner can pin comments');
+  }
+  
+  // Get the comment
+  const commentRef = doc(db, COLLECTIONS.COMMENTS, commentId);
+  const commentSnap = await getDoc(commentRef);
+  
+  if (!commentSnap.exists()) throw new Error('Comment not found');
+  
+  const comment = commentSnap.data() as CommentDoc;
+  
+  // Toggle pin status
+  if (comment.pinnedAt) {
+    // Unpin
+    await updateDoc(commentRef, {
+      pinnedAt: deleteField(),
+      pinnedBy: deleteField(),
+    });
+    return 'unpinned';
+  } else {
+    // Pin
+    await updateDoc(commentRef, {
+      pinnedAt: Timestamp.now(),
+      pinnedBy: userId,
+    });
+    return 'pinned';
+  }
+};
 
 export const createComment = async (data: Omit<CommentDoc, 'id' | 'createdAt' | 'likes'>) => {
   const now = Timestamp.now();
@@ -268,6 +310,26 @@ export const removeVote = async (issueId: string, userId: string) => {
   batch.update(issueRef, { votes: newVotes, updatedAt: Timestamp.now() });
   
   await batch.commit();
+};
+
+// Get upvote and downvote counts for an issue
+export const getIssueVoteCounts = async (issueId: string): Promise<{ upvotes: number; downvotes: number }> => {
+  const votesRef = collection(db, COLLECTIONS.ISSUES, issueId, 'votes');
+  const votesSnapshot = await getDocs(votesRef);
+  
+  let upvotes = 0;
+  let downvotes = 0;
+  
+  votesSnapshot.forEach((doc) => {
+    const voteData = doc.data() as VoteDoc;
+    if (voteData.vote === 1) {
+      upvotes++;
+    } else if (voteData.vote === -1) {
+      downvotes++;
+    }
+  });
+  
+  return { upvotes, downvotes };
 };
 
 // Count user's top-level comments on an issue

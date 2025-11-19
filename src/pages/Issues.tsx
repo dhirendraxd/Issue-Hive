@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { ThumbsUp, RotateCcw, Sparkles } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
+import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
@@ -85,6 +86,10 @@ export default function Issues() {
     else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
     return arr;
   }, [useCloud, cloud.data, local.data, categories, q, statuses, sort, user?.uid]);
+
+  // Fetch engagement metrics for visible issues
+  const visibleIssueIds = useMemo(() => visibleIssues.map(i => i.id), [visibleIssues]);
+  const { data: engagement } = useIssueEngagement(visibleIssueIds);
 
   const getInitials = (name: string) => {
     return name
@@ -230,11 +235,30 @@ export default function Issues() {
                     )}
                   </div>
 
-                  {/* Footer: Votes & Action */}
+                  {/* Footer: Votes & Engagement */}
                   <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <ThumbsUp className="h-4 w-4 text-orange-500" />
-                      <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      {isFirebaseConfigured && engagement?.[i.id] ? (
+                        <>
+                          <div className="flex items-center gap-1" title="Upvotes">
+                            <ThumbsUp className="h-4 w-4 text-green-600" />
+                            <span>{engagement[i.id].upvotes}</span>
+                          </div>
+                          <div className="flex items-center gap-1" title="Downvotes">
+                            <ThumbsDown className="h-4 w-4 text-red-600" />
+                            <span>{engagement[i.id].downvotes}</span>
+                          </div>
+                          <div className="flex items-center gap-1" title="Comments">
+                            <MessageSquare className="h-4 w-4 text-blue-600" />
+                            <span>{engagement[i.id].comments}</span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <ThumbsUp className="h-4 w-4 text-orange-500" />
+                          <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
+                        </div>
+                      )}
                     </div>
                     <Button
                       size="icon"
@@ -278,6 +302,7 @@ export default function Issues() {
         onDownvote={(id) => downvote.mutate(id)}
         isUpvoting={upvote.isPending}
         isDownvoting={downvote.isPending}
+        enablePin={selectedIssue ? selectedIssue.createdBy === user?.uid : false}
       />
     </div>
   );

@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ISSUE_CATEGORIES, ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
-import { ListFilter, Search, X, ChevronDown, SortDesc, Filter } from "lucide-react";
+import { ListFilter, Search, X, ChevronDown, SortDesc, Filter, Inbox, Clock, CheckCircle2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo } from "react";
 
@@ -144,29 +144,42 @@ export function IssuesFilterBar({
 
           {/* Status Filter Section */}
           <div className="flex-1">
-            <div className="text-xs font-medium text-stone-600 mb-2">Status</div>
+            <div className="text-xs font-medium text-stone-600 mb-2"></div>
             <ToggleGroup 
               type="multiple" 
               value={statuses} 
               onValueChange={(v) => onStatusesChange(v as IssueStatus[])} 
               className="justify-start gap-2 flex-wrap"
             >
-              {statusItems.map((s) => (
-                <ToggleGroupItem 
-                  key={s.value} 
-                  value={s.value} 
-                  aria-label={s.label} 
-                  className="rounded-xl data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 data-[state=on]:border-orange-300 hover:bg-orange-50 transition-colors h-9 px-4"
-                >
-                  {s.label}
-                </ToggleGroupItem>
-              ))}
+              {statusItems.map((s) => {
+                const statusConfig = {
+                  received: { icon: Inbox },
+                  "in-progress": { icon: Clock },
+                  resolved: { icon: CheckCircle2 },
+                  closed: { icon: Lock }
+                }[s.value] || { icon: Inbox };
+                
+                const Icon = statusConfig.icon;
+                
+                return (
+                  <ToggleGroupItem 
+                    key={s.value} 
+                    value={s.value} 
+                    aria-label={s.label} 
+                    className="rounded-xl data-[state=on]:bg-orange-100 data-[state=on]:text-orange-700 data-[state=on]:border-orange-300 hover:bg-orange-50 transition-colors h-10 px-3 sm:px-4 text-sm font-medium border border-orange-200/50 gap-1.5"
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span className="hidden sm:inline">{s.label}</span>
+                    <span className="sm:hidden">{s.label.split(' ')[0]}</span>
+                  </ToggleGroupItem>
+                );
+              })}
             </ToggleGroup>
           </div>
 
           {/* Sort Dropdown */}
           <div className="flex-1 sm:flex-initial">
-            <div className="text-xs font-medium text-stone-600 mb-2">Sort by</div>
+            <div className="text-xs font-medium text-stone-600 mb-2"></div>
             <Select value={sort} onValueChange={(v) => onSortChange(v as SortKey)}>
               <SelectTrigger className="w-full sm:w-48 h-11 rounded-xl border-orange-200/50 hover:bg-orange-50 hover:border-orange-300 transition-colors">
                 <SortDesc className="h-4 w-4 mr-2 text-orange-600" />

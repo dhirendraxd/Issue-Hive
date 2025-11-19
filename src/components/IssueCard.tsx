@@ -5,7 +5,7 @@ import { ISSUE_VISIBILITIES, type IssueVisibility } from '@/types/issue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { TrendingUp, Clock, MessageSquare, ThumbsUp, CheckCircle2, MoreHorizontal, Globe, Lock, FileText, Eye } from 'lucide-react';
+import { TrendingUp, Clock, MessageSquare, ThumbsUp, ThumbsDown, CheckCircle2, MoreHorizontal, Globe, Lock, FileText, Eye } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { cn } from '@/lib/utils';
@@ -15,6 +15,8 @@ interface IssueCardProps {
   engagement?: {
     comments: number;
     commentLikes: number;
+    upvotes?: number;
+    downvotes?: number;
   };
   onSetVisibility: (id: string, visibility: IssueVisibility) => void;
   onAddProgress?: (issue: Issue) => void;
@@ -169,24 +171,29 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onAddPro
 
           {/* Engagement Metrics */}
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mb-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1" title="Supports (net votes)">
-              <TrendingUp className="h-3 w-3" /> {issue.votes}
-            </span>
+            {isFirebaseConfigured && engagement && (
+              <>
+                <span className="flex items-center gap-1" title="Upvotes">
+                  <ThumbsUp className="h-3 w-3 text-green-600" /> {engagement.upvotes || 0}
+                </span>
+                <span className="flex items-center gap-1" title="Downvotes">
+                  <ThumbsDown className="h-3 w-3 text-red-600" /> {engagement.downvotes || 0}
+                </span>
+                <span className="flex items-center gap-1" title="Comments on this issue">
+                  <MessageSquare className="h-3 w-3 text-blue-600" /> {engagement.comments}
+                </span>
+              </>
+            )}
+            {(!isFirebaseConfigured || !engagement) && (
+              <span className="flex items-center gap-1" title="Net votes">
+                <TrendingUp className="h-3 w-3" /> {issue.votes}
+              </span>
+            )}
             {issue.progressUpdates?.length ? (
               <span className="flex items-center gap-1" title="Progress updates">
                 <Clock className="h-3 w-3" /> {issue.progressUpdates.length}
               </span>
             ) : null}
-            {isFirebaseConfigured && engagement && (
-              <>
-                <span className="flex items-center gap-1" title="Comments on this issue">
-                  <MessageSquare className="h-3 w-3" /> {engagement.comments}
-                </span>
-                <span className="flex items-center gap-1" title="Total likes across all comments">
-                  <ThumbsUp className="h-3 w-3" /> {engagement.commentLikes}
-                </span>
-              </>
-            )}
           </div>
 
           {/* Actions */}

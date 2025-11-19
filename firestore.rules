@@ -89,33 +89,41 @@ service cloud.firestore {
       // Anyone can read comments
       allow read: if true;
       
-      // Only authenticated users can create comments
-      // Limit to 2 top-level comments per user per issue (no parentId field)
-      // Unlimited replies allowed (has parentId field)
-      // Allow commenting on anonymous issues (including by creator)
+      // Create comments (updated):
+      // - Authenticated users can always create comments on anonymous issues
+      // - Non-owners can create top-level or reply comments on non-anonymous issues
+      // - Issue owner may ONLY create reply comments (must have parentId)
       allow create: if isSignedIn()
         && request.resource.data.keys().hasAll(['issueId','userId','userName','content','createdAt','likes'])
         && request.resource.data.likes == 0
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 2000
         && (
-          // If issue is anonymous, anyone can comment
+          // Anonymous issue: anyone can comment (top-level or reply)
           get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.anonymous == true
-          // If not anonymous, only non-owners can comment
-          || get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data.createdBy != request.auth.uid
-        )
-        && (
-          // If it's a reply (has parentId), allow unlimited
-          ('parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
-          // If it's a top-level comment (no parentId or empty), client must verify count
-          || !('parentId' in request.resource.data) || request.resource.data.parentId == null || request.resource.data.parentId == ''
+          || (
+            // Non-anonymous issue logic
+            let issue = get(/databases/$(database)/documents/issues/$(request.resource.data.issueId)).data;
+            // Non-owner commenting (top-level or reply)
+            issue.createdBy != request.auth.uid
+            // Owner replying only (must have parentId)
+            || (issue.createdBy == request.auth.uid && 'parentId' in request.resource.data && request.resource.data.parentId != null && request.resource.data.parentId != '')
+          )
         );
       
-      // Users can update their own comments (for likes count updates)
-      allow update: if isSignedIn() 
-        && (resource.data.userId == request.auth.uid
-            // Allow system to update likes count
-            || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes'])));
+      // Update comments (extended):
+      // - Author can update own comment (full edits currently limited client-side)
+      // - Likes count may be updated optimistically
+      // - Issue owner can pin/unpin ANY comment on their issue (pinnedAt/pinnedBy only)
+      allow update: if isSignedIn() && (
+          resource.data.userId == request.auth.uid
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likes']))
+          || (
+            // Pin/unpin: only issue owner and only pinnedAt/pinnedBy fields
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pinnedAt','pinnedBy'])
+            && get(/databases/$(database)/documents/issues/$(resource.data.issueId)).data.createdBy == request.auth.uid
+          )
+        );
       
       // Users can delete their own comments
       allow delete: if isSignedIn() 
