@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -91,12 +92,23 @@ export default function IssueDetailDialog({
         <DialogHeader className="px-6 pt-6 pb-4 space-y-3">
           {/* User info header */}
           <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-orange-500/20">
-              <AvatarImage src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} />
-              <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm font-semibold">
-                <img src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} alt="" className="w-full h-full" />
-              </AvatarFallback>
-            </Avatar>
+            {isAnonymous ? (
+              <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-orange-500/20">
+                <AvatarImage src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} />
+                <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm font-semibold">
+                  <img src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} alt="" className="w-full h-full" />
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <Link to={`/u/${issue.createdBy}`} onClick={(e) => e.stopPropagation()}>
+                <Avatar className="h-12 w-12 flex-shrink-0 border-2 border-orange-500/20">
+                  <AvatarImage src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} />
+                  <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white text-sm font-semibold">
+                    <img src={issue.createdByPhotoURL || getUserAvatarUrl(issue.createdBy)} alt="" className="w-full h-full" />
+                  </AvatarFallback>
+                </Avatar>
+              </Link>
+            )}
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-lg font-display font-semibold truncate">
                 {issue.createdByName ?? "Anonymous"}

@@ -13,6 +13,7 @@ import { getUserAvatarUrl } from '@/lib/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Link } from 'react-router-dom';
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 import IssueDetailDialog from "@/components/IssueDetailDialog";
 
@@ -174,12 +175,23 @@ export default function Issues() {
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
-                      <AvatarFallback className="bg-orange-500 text-white text-xs">
-                        <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
-                      </AvatarFallback>
-                    </Avatar>
+                    {i.anonymous ? (
+                      <Avatar className="h-10 w-10 flex-shrink-0">
+                        <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
+                        <AvatarFallback className="bg-orange-500 text-white text-xs">
+                          <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
+                        </AvatarFallback>
+                      </Avatar>
+                    ) : (
+                      <Link to={`/u/${i.createdBy}`} onClick={(e) => e.stopPropagation()}>
+                        <Avatar className="h-10 w-10 flex-shrink-0">
+                          <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
+                          <AvatarFallback className="bg-orange-500 text-white text-xs">
+                            <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
+                    )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{i.createdByName ?? "Anonymous"}</p>
                       <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>

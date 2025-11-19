@@ -48,17 +48,14 @@ export default function Navbar() {
             <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
           )}
           {user ? (
-            <button
-              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full"
-              onClick={() => window.location.assign('/dashboard')}
-            >
+            <Link to={`/u/${user.uid}`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
                 <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
                   <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
                 </AvatarFallback>
               </Avatar>
-            </button>
+            </Link>
           ) : (
             <Link to="/auth">
               <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
