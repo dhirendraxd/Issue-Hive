@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import Navbar from '@/components/Navbar';
@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp } from 'lucide-react';
+import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { updateUserDisplayName } from '@/integrations/firebase/profile';
 import ProfileVisibilitySettings from '@/components/ProfileVisibilitySettings';
@@ -37,6 +38,10 @@ export default function UserProfile() {
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
   const { data: ownerProfile } = useUserProfile(uid);
+  
+  // Fetch engagement metrics for all owned issues
+  const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
+  const { data: engagementMap = {} } = useIssueEngagement(ownedIssueIds);
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
     const vis = (i as unknown as WithVisibility).visibility;
@@ -48,6 +53,36 @@ export default function UserProfile() {
     : [];
   const privateCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'private').length;
   const draftCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'draft').length;
+  
+  // Calculate total analytics from engagement data
+  const analytics = useMemo(() => {
+    let totalUpvotes = 0;
+    let totalDownvotes = 0;
+    let totalComments = 0;
+    let totalSupports = 0;
+    
+    owned.forEach(issue => {
+      const engagement = engagementMap[issue.id];
+      if (engagement) {
+        totalUpvotes += engagement.upvotes;
+        totalDownvotes += engagement.downvotes;
+        totalComments += engagement.comments;
+      }
+      totalSupports += issue.votes || 0;
+    });
+    
+    const totalEngagement = totalUpvotes + totalDownvotes + totalComments;
+    
+    return {
+      totalIssues: owned.length,
+      totalUpvotes,
+      totalDownvotes,
+      totalComments,
+      totalSupports,
+      totalEngagement,
+      resolvedIssues: owned.filter(i => i.status === 'resolved').length,
+    };
+  }, [owned, engagementMap]);
 
   const handleSaveDisplayName = async () => {
     if (!user || !newDisplayName.trim()) return;
@@ -222,7 +257,7 @@ export default function UserProfile() {
           ) : (
             <>
               {/* Public Profile View for Other Users */}
-              <div className="mb-10 flex flex-col md:flex-row md:items-end gap-4 justify-between">
+              <div className="mb-6 flex flex-col md:flex-row md:items-end gap-4 justify-between">
                 <div>
                   <h1 className="text-3xl font-semibold tracking-tight font-display">{ownerProfile?.displayName || 'User Profile'}</h1>
                   {ownerProfile?.bio && (
@@ -238,15 +273,6 @@ export default function UserProfile() {
                     )}
                     {ownerProfile?.location && (
                       <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {ownerProfile.location}</span>
-                    )}
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
-                    <span><strong>{publicIssues.length}</strong> public issues</span>
-                    {followerPrivateIssues.length > 0 && (
-                      <span><strong>{followerPrivateIssues.length}</strong> private (shared)</span>
-                    )}
-                    {(privateCount > 0 || draftCount > 0) && followerPrivateIssues.length === 0 && (
-                      <span className="italic">(private/draft issues hidden)</span>
                     )}
                   </div>
                 </div>
@@ -306,6 +332,48 @@ export default function UserProfile() {
                 </div>
               </div>
 
+              {/* User Analytics Card */}
+              {!isLoading && owned.length > 0 && (
+                <Card className="mb-6 rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-orange-600" />
+                      <CardTitle className="text-lg">Profile Analytics</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200/40">
+                        <div className="text-2xl font-bold text-orange-600">{analytics.totalIssues}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Total Issues</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200/40">
+                        <div className="text-2xl font-bold text-green-600">{analytics.totalUpvotes}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Upvotes Received</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-200/40">
+                        <div className="text-2xl font-bold text-blue-600">{analytics.totalComments}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Comments</div>
+                      </div>
+                      <div className="text-center p-3 rounded-lg bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200/40">
+                        <div className="text-2xl font-bold text-purple-600">{analytics.resolvedIssues}</div>
+                        <div className="text-xs text-muted-foreground mt-1">Resolved</div>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-4 border-t border-stone-200/60 flex justify-center gap-6 text-sm">
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <TrendingUp className="h-4 w-4 text-orange-600" />
+                        <span><strong className="text-stone-900">{analytics.totalEngagement}</strong> total engagement</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <ThumbsDown className="h-4 w-4 text-red-600" />
+                        <span><strong className="text-stone-900">{analytics.totalDownvotes}</strong> downvotes</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {isLoading && (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {Array.from({ length: 6 }).map((_, i) => (
@@ -324,6 +392,7 @@ export default function UserProfile() {
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {[...publicIssues, ...followerPrivateIssues].map(issue => {
                     const vis = (issue as unknown as WithVisibility).visibility;
+                    const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
                     return (
                       <Card key={issue.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all">
                         <CardHeader className="pb-3">
@@ -337,7 +406,21 @@ export default function UserProfile() {
                           <div className="flex flex-wrap gap-2 mt-auto">
                             <Badge variant="outline" className="text-xs">{issue.category}</Badge>
                             <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
-                            <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                          </div>
+                          {/* Engagement Metrics */}
+                          <div className="flex flex-wrap gap-3 pt-2 border-t border-stone-200/60 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <ThumbsUp className="h-3.5 w-3.5 text-green-600" />
+                              <span className="font-medium text-stone-900">{engagement.upvotes}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <ThumbsDown className="h-3.5 w-3.5 text-red-600" />
+                              <span className="font-medium text-stone-900">{engagement.downvotes}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
+                              <span className="font-medium text-stone-900">{engagement.comments}</span>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>

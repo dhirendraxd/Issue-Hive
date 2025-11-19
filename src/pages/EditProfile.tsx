@@ -45,7 +45,7 @@ export default function EditProfile() {
   const [location, setLocation] = useState('');
   const [social, setSocial] = useState<SocialLinks>({});
   const [previewOpen, setPreviewOpen] = useState(false);
-  const { data: issues } = useIssuesFirebase();
+  const { data: issues, setVisibility } = useIssuesFirebase();
   const ownedIssues: Issue[] = useMemo(() => {
     const list = (issues as Issue[]) || [];
     return user ? list.filter(i => i.createdBy === user.uid) : [];
@@ -320,6 +320,30 @@ export default function EditProfile() {
 
           {/* Visibility & Privacy */}
           <ProfileVisibilitySettings />
+
+          {/* Manage Issues Visibility */}
+          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="font-semibold text-lg">Manage Issues Visibility</h3>
+                <p className="text-sm text-muted-foreground">Choose which of your issues are visible on your public profile.</p>
+              </div>
+            </div>
+            {ownedIssues.length === 0 ? (
+              <p className="text-sm text-muted-foreground">You don't have any issues yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {ownedIssues.map((issue) => (
+                  <Card key={issue.id} className="glass-card">
+                    <IssueCard
+                      issue={issue}
+                      onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                    />
+                  </Card>
+                ))}
+              </div>
+            )}
+          </Card>
         </div>
       </main>
     </div>
