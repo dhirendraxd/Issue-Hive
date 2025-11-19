@@ -9,6 +9,16 @@ export interface UserProfileDoc {
   updatedAt?: number;
   displayName?: string;
   photoURL?: string;
+  coverUrl?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  social?: {
+    website?: string | null;
+    twitter?: string | null;
+    github?: string | null;
+    linkedin?: string | null;
+    instagram?: string | null;
+  };
 }
 
 export function useUserProfile(userId?: string) {

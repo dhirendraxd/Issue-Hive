@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, X, Loader2 } from 'lucide-react';
+import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram } from 'lucide-react';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { updateUserDisplayName } from '@/integrations/firebase/profile';
 import ProfileVisibilitySettings from '@/components/ProfileVisibilitySettings';
@@ -21,6 +21,7 @@ import ParticlesBackground from '@/components/ParticlesBackground';
 
 export default function UserProfile() {
   const { uid } = useParams();
+  const [search] = useSearchParams();
   const { user } = useAuth();
   const { data: issues, isLoading } = useIssuesFirebase();
   const [editingName, setEditingName] = useState(false);
@@ -29,11 +30,13 @@ export default function UserProfile() {
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
-  const isOwner = user?.uid === uid;
+  const previewVisitor = search.get('previewVisitor') === '1' || search.get('as') === 'visitor';
+  const rawIsOwner = user?.uid === uid;
+  const isOwner = previewVisitor ? false : rawIsOwner;
   const { data: isFollowing = false } = useIsFollowing(!isOwner ? uid : undefined);
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
-  const { data: ownerProfile } = useUserProfile(!isOwner ? uid : undefined);
+  const { data: ownerProfile } = useUserProfile(uid);
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
     const vis = (i as unknown as WithVisibility).visibility;
@@ -68,7 +71,15 @@ export default function UserProfile() {
     <div className="min-h-screen bg-stone-50">
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <Navbar />
-        <main className="scroll-mt-20 pt-32 pb-24 px-4 mx-auto max-w-5xl">
+        {/* Cover banner */}
+        {ownerProfile?.coverUrl && (
+          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-24">
+            <div className="w-full h-40 md:h-56 rounded-2xl overflow-hidden border border-white/40 bg-white/60 backdrop-blur-lg">
+              <img src={ownerProfile.coverUrl} alt="Profile cover" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        )}
+        <main className="scroll-mt-20 pt-10 pb-24 px-4 mx-auto max-w-5xl">
           {isOwner ? (
             <Tabs defaultValue="profile" className="space-y-8">
               <TabsList className="inline-flex rounded-full bg-white/60 backdrop-blur-lg border border-white/40">
@@ -213,8 +224,22 @@ export default function UserProfile() {
               {/* Public Profile View for Other Users */}
               <div className="mb-10 flex flex-col md:flex-row md:items-end gap-4 justify-between">
                 <div>
-                  <h1 className="text-3xl font-semibold tracking-tight font-display">User Profile</h1>
-                  <p className="text-sm text-muted-foreground">Issues created by this user</p>
+                  <h1 className="text-3xl font-semibold tracking-tight font-display">{ownerProfile?.displayName || 'User Profile'}</h1>
+                  {ownerProfile?.bio && (
+                    <p className="text-sm text-stone-700 mt-1 max-w-2xl">{ownerProfile.bio}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground items-center">
+                    <span><strong>{publicIssues.length}</strong> public issues</span>
+                    {followerPrivateIssues.length > 0 && (
+                      <span><strong>{followerPrivateIssues.length}</strong> private (shared)</span>
+                    )}
+                    {(privateCount > 0 || draftCount > 0) && followerPrivateIssues.length === 0 && (
+                      <span className="italic">(private/draft issues hidden)</span>
+                    )}
+                    {ownerProfile?.location && (
+                      <span className="inline-flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {ownerProfile.location}</span>
+                    )}
+                  </div>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                     <span><strong>{publicIssues.length}</strong> public issues</span>
                     {followerPrivateIssues.length > 0 && (
@@ -226,6 +251,37 @@ export default function UserProfile() {
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
+                                {(ownerProfile?.social && (
+                                  ownerProfile.social.website || ownerProfile.social.github || ownerProfile.social.twitter || ownerProfile.social.linkedin || ownerProfile.social.instagram
+                                )) ? (
+                                  <div className="mb-8 flex flex-wrap gap-3 text-sm">
+                                    {ownerProfile.social.website && (
+                                      <a href={ownerProfile.social.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur hover:bg-white">
+                                        <Globe className="h-4 w-4" /> Website
+                                      </a>
+                                    )}
+                                    {ownerProfile.social.github && (
+                                      <a href={ownerProfile.social.github} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur hover:bg-white">
+                                        <Github className="h-4 w-4" /> GitHub
+                                      </a>
+                                    )}
+                                    {ownerProfile.social.twitter && (
+                                      <a href={ownerProfile.social.twitter} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur hover:bg-white">
+                                        <Twitter className="h-4 w-4" /> Twitter
+                                      </a>
+                                    )}
+                                    {ownerProfile.social.linkedin && (
+                                      <a href={ownerProfile.social.linkedin} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur hover:bg-white">
+                                        <Linkedin className="h-4 w-4" /> LinkedIn
+                                      </a>
+                                    )}
+                                    {ownerProfile.social.instagram && (
+                                      <a href={ownerProfile.social.instagram} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur hover:bg-white">
+                                        <Instagram className="h-4 w-4" /> Instagram
+                                      </a>
+                                    )}
+                                  </div>
+                                ) : null}
                   <Link to="/issues"><Button variant="outline" className="rounded-full">Back to Issues</Button></Link>
                   {user && !isOwner && (
                     isFollowing ? (

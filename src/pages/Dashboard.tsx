@@ -164,13 +164,20 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
         {/* Welcome Section */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-semibold tracking-tight">
-            Welcome back, {user.displayName || user.email?.split('@')[0]}!
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your issues and track community reports
-          </p>
+        <div className="mb-8 flex items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-display font-semibold tracking-tight">
+              Welcome back, {user.displayName || user.email?.split('@')[0]}!
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Manage your issues and track community reports
+            </p>
+          </div>
+          <Link to="/settings/profile" className="shrink-0">
+            <Button className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500" size="sm">
+              <Edit2 className="h-4 w-4 mr-2" /> Edit Public Profile
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}

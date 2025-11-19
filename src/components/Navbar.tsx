@@ -48,7 +48,7 @@ export default function Navbar() {
             <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
           )}
           {user ? (
-            <Link to={`/u/${user.uid}`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
+            <Link to={`/dashboard`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
                 <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
