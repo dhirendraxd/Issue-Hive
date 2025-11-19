@@ -1,0 +1,24 @@
+import { useQuery } from '@tanstack/react-query';
+import { db } from '@/integrations/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
+
+export interface UserProfileDoc {
+  profileVisibility?: 'public' | 'followers' | 'private';
+  showPrivateToFollowers?: boolean;
+  allowMessages?: boolean;
+  updatedAt?: number;
+  displayName?: string;
+  photoURL?: string;
+}
+
+export function useUserProfile(userId?: string) {
+  return useQuery({
+    queryKey: ['user-profile', userId],
+    enabled: !!userId && !!db,
+    queryFn: async () => {
+      if (!userId || !db) return null as UserProfileDoc | null;
+      const snap = await getDoc(doc(db, 'users', userId));
+      return snap.exists() ? (snap.data() as UserProfileDoc) : null;
+    },
+  });
+}

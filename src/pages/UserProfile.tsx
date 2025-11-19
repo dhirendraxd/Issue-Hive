@@ -13,6 +13,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Edit2, Check, X, Loader2 } from 'lucide-react';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { updateUserDisplayName } from '@/integrations/firebase/profile';
+import ProfileVisibilitySettings from '@/components/ProfileVisibilitySettings';
+import { useIsFollowing, useFollowUser, useUnfollowUser } from '@/hooks/use-follow';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 
@@ -27,11 +30,19 @@ export default function UserProfile() {
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
   const isOwner = user?.uid === uid;
+  const { data: isFollowing = false } = useIsFollowing(!isOwner ? uid : undefined);
+  const followMutation = useFollowUser();
+  const unfollowMutation = useUnfollowUser();
+  const { data: ownerProfile } = useUserProfile(!isOwner ? uid : undefined);
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
     const vis = (i as unknown as WithVisibility).visibility;
-    return vis !== 'private' && vis !== 'draft';
+    return vis === 'public';
   });
+  // Private issues visible to follower if owner opted in
+  const followerPrivateIssues = !isOwner && isFollowing && ownerProfile?.showPrivateToFollowers
+    ? owned.filter(i => (i as unknown as WithVisibility).visibility === 'private')
+    : [];
   const privateCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'private').length;
   const draftCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'draft').length;
 
@@ -131,6 +142,9 @@ export default function UserProfile() {
 
                 {/* Profile Picture Editor */}
                 <ProfilePictureEditor />
+
+                {/* Visibility & Privacy Settings */}
+                <ProfileVisibilitySettings />
               </TabsContent>
 
               {/* My Issues Tab */}
@@ -203,12 +217,37 @@ export default function UserProfile() {
                   <p className="text-sm text-muted-foreground">Issues created by this user</p>
                   <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                     <span><strong>{publicIssues.length}</strong> public issues</span>
-                    {(privateCount > 0 || draftCount > 0) && (
+                    {followerPrivateIssues.length > 0 && (
+                      <span><strong>{followerPrivateIssues.length}</strong> private (shared)</span>
+                    )}
+                    {(privateCount > 0 || draftCount > 0) && followerPrivateIssues.length === 0 && (
                       <span className="italic">(private/draft issues hidden)</span>
                     )}
                   </div>
                 </div>
-                <Link to="/issues"><Button variant="outline" className="rounded-full">Back to Issues</Button></Link>
+                <div className="flex gap-2 items-center">
+                  <Link to="/issues"><Button variant="outline" className="rounded-full">Back to Issues</Button></Link>
+                  {user && !isOwner && (
+                    isFollowing ? (
+                      <Button
+                        variant="secondary"
+                        className="rounded-full"
+                        disabled={unfollowMutation.isPending}
+                        onClick={() => unfollowMutation.mutate(uid!)}
+                      >
+                        {unfollowMutation.isPending ? 'Unfollowing...' : 'Unfollow'}
+                      </Button>
+                    ) : (
+                      <Button
+                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
+                        disabled={followMutation.isPending}
+                        onClick={() => followMutation.mutate(uid!)}
+                      >
+                        {followMutation.isPending ? 'Following...' : 'Follow'}
+                      </Button>
+                    )
+                  )}
+                </div>
               </div>
 
               {isLoading && (
@@ -219,29 +258,35 @@ export default function UserProfile() {
                 </div>
               )}
 
-              {!isLoading && publicIssues.length === 0 && (
+              {!isLoading && publicIssues.length === 0 && followerPrivateIssues.length === 0 && (
                 <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
                   <p className="text-muted-foreground">No public issues yet.</p>
                 </Card>
               )}
 
-              {!isLoading && publicIssues.length > 0 && (
+              {!isLoading && (publicIssues.length > 0 || followerPrivateIssues.length > 0) && (
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {publicIssues.map(issue => (
-                    <Card key={issue.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all">
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex flex-col gap-3 text-sm flex-1">
-                        <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
-                        <div className="flex flex-wrap gap-2 mt-auto">
-                          <Badge variant="outline" className="text-xs">{issue.category}</Badge>
-                          <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
-                          <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {[...publicIssues, ...followerPrivateIssues].map(issue => {
+                    const vis = (issue as unknown as WithVisibility).visibility;
+                    return (
+                      <Card key={issue.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
+                            {vis === 'private' && <Badge variant="outline" className="text-xs capitalize">private</Badge>}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-3 text-sm flex-1">
+                          <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
+                          <div className="flex flex-wrap gap-2 mt-auto">
+                            <Badge variant="outline" className="text-xs">{issue.category}</Badge>
+                            <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
+                            <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
             </>

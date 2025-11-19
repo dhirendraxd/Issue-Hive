@@ -14,16 +14,27 @@ service cloud.firestore {
     function getIssue(issueId) {
       return get(/databases/$(database)/documents/issues/$(issueId)).data;
     }
+    function isFollowerOf(userId) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(userId)/followers/$(request.auth.uid));
+    }
     
     // Issues collection
     match /issues/{issueId} {
-      // Read access:
-      // - Public issues: anyone can read
-      // - Private issues: only owner can read
-      // - Draft issues: only owner can read
-      allow read: if true || // Allow all for now (filtering done client-side)
-        resource.data.visibility == 'public' ||
-        (isSignedIn() && resource.data.createdBy == request.auth.uid);
+      // Visibility logic:
+      // public: everyone
+      // private: owner, or followers if showPrivateToFollowers == true
+      // draft: owner only
+      allow read: if (
+          // Legacy documents without visibility field treated as public
+          !('visibility' in resource.data)
+          || resource.data.visibility == 'public'
+          || isOwner(resource.data.createdBy)
+          || (
+            resource.data.visibility == 'private'
+            && isFollowerOf(resource.data.createdBy)
+            && get(/databases/$(database)/documents/users/$(resource.data.createdBy)).data.showPrivateToFollowers == true
+          )
+        );
       
       // Only authenticated users can create issues
       allow create: if isSignedIn() 
@@ -85,6 +96,22 @@ service cloud.firestore {
       
       // Users can only write their own profile
       allow write: if isOwner(userId);
+
+      // Followers subcollection
+      match /followers/{followerId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.auth.uid == followerId;
+        allow delete: if isSignedIn() && request.auth.uid == followerId;
+        allow update: if false; // no updates, just create/delete doc
+      }
+
+      // Following subcollection (mirrors for quick lookups)
+      match /following/{targetId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.auth.uid == userId; // user adds someone they follow
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+        allow update: if false;
+      }
     }
     
     // Comments collection
@@ -139,6 +166,27 @@ service cloud.firestore {
         // Users can only create/update/delete their own like
         allow create, update: if isSignedIn() && request.auth.uid == userId;
         allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // Conversations (private messages between users)
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn() && request.resource.data.participants is list
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.participants.size() == 2; // two-user DM for now
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow delete: if false; // retain history
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasAll(['senderId','content','createdAt'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.content.size() > 0 && request.resource.data.content.size() <= 4000
+          && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow update: if false;
+        allow delete: if false;
       }
     }
   }
