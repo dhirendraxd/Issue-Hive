@@ -17,6 +17,7 @@ export default function ProfileVisibilitySettings() {
   const [visibility, setVisibility] = useState<ProfileVisibility>('public');
   const [sharePrivateIssues, setSharePrivateIssues] = useState(false);
   const [allowMessages, setAllowMessages] = useState(true);
+  const [hideDislikeCounts, setHideDislikeCounts] = useState(false);
 
   async function load() {
     if (!user || !db) return;
@@ -27,6 +28,7 @@ export default function ProfileVisibilitySettings() {
       if (data.profileVisibility) setVisibility(data.profileVisibility);
       if (typeof data.showPrivateToFollowers === 'boolean') setSharePrivateIssues(data.showPrivateToFollowers);
       if (typeof data.allowMessages === 'boolean') setAllowMessages(data.allowMessages);
+      if (typeof data.hideDislikeCounts === 'boolean') setHideDislikeCounts(data.hideDislikeCounts);
     }
   }
 
@@ -38,6 +40,7 @@ export default function ProfileVisibilitySettings() {
         profileVisibility: visibility,
         showPrivateToFollowers: sharePrivateIssues,
         allowMessages,
+        hideDislikeCounts,
         updatedAt: Date.now()
       }, { merge: true });
       toast.success('Profile visibility updated');
@@ -75,6 +78,10 @@ export default function ProfileVisibilitySettings() {
         <div className="flex items-center justify-between py-2">
           <Label htmlFor="messages" className="text-sm">Allow direct messages</Label>
           <Switch id="messages" checked={allowMessages} onCheckedChange={setAllowMessages} />
+        </div>
+        <div className="flex items-center justify-between py-2">
+          <Label htmlFor="hideDislikes" className="text-sm">Hide dislike counts on my issues</Label>
+          <Switch id="hideDislikes" checked={hideDislikeCounts} onCheckedChange={setHideDislikeCounts} />
         </div>
       </div>
       <Button disabled={loading} onClick={save} className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500">

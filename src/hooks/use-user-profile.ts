@@ -6,6 +6,7 @@ export interface UserProfileDoc {
   profileVisibility?: 'public' | 'followers' | 'private';
   showPrivateToFollowers?: boolean;
   allowMessages?: boolean;
+  hideDislikeCounts?: boolean;
   updatedAt?: number;
   displayName?: string;
   photoURL?: string;

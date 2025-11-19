@@ -365,10 +365,12 @@ export default function UserProfile() {
                         <TrendingUp className="h-4 w-4 text-orange-600" />
                         <span><strong className="text-stone-900">{analytics.totalEngagement}</strong> total engagement</span>
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ThumbsDown className="h-4 w-4 text-red-600" />
-                        <span><strong className="text-stone-900">{analytics.totalDownvotes}</strong> downvotes</span>
-                      </div>
+                      {!ownerProfile?.hideDislikeCounts && (
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <ThumbsDown className="h-4 w-4 text-red-600" />
+                          <span><strong className="text-stone-900">{analytics.totalDownvotes}</strong> downvotes</span>
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -413,10 +415,12 @@ export default function UserProfile() {
                               <ThumbsUp className="h-3.5 w-3.5 text-green-600" />
                               <span className="font-medium text-stone-900">{engagement.upvotes}</span>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <ThumbsDown className="h-3.5 w-3.5 text-red-600" />
-                              <span className="font-medium text-stone-900">{engagement.downvotes}</span>
-                            </div>
+                            {!ownerProfile?.hideDislikeCounts && (
+                              <div className="flex items-center gap-1">
+                                <ThumbsDown className="h-3.5 w-3.5 text-red-600" />
+                                <span className="font-medium text-stone-900">{engagement.downvotes}</span>
+                              </div>
+                            )}
                             <div className="flex items-center gap-1">
                               <MessageSquare className="h-3.5 w-3.5 text-blue-600" />
                               <span className="font-medium text-stone-900">{engagement.comments}</span>
