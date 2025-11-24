@@ -1040,11 +1040,30 @@ export default function UserProfile() {
                           <Skeleton key={i} className="h-16 rounded-xl" />
                         ))}
                       </div>
-                    ) : userActivity && (userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || userActivity.likedComments.length > 0) ? (
+                    ) : userActivity ? (
                       <div className="space-y-4">
+                        {/* Activity Summary - Always show */}
                         <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
                           <h3 className="font-semibold text-lg mb-4">Activity Summary</h3>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            <div className="text-center p-3 rounded-lg bg-orange-50 border border-orange-200">
+                              <div className="text-2xl font-bold text-orange-600">{owned.length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Total Issues</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
+                              <div className="text-2xl font-bold text-blue-600">{followCounts.followers}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Followers</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-indigo-50 border border-indigo-200">
+                              <div className="text-2xl font-bold text-indigo-600">{followCounts.following}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Following</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-purple-50 border border-purple-200">
+                              <div className="text-2xl font-bold text-purple-600">{userActivity.likedComments.length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Likes Given</div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200">
                               <div className="text-2xl font-bold text-green-600">{userActivity.votedIssues.filter(v => v.vote === 1).length}</div>
                               <div className="text-xs text-muted-foreground mt-1">Upvotes</div>
@@ -1053,42 +1072,128 @@ export default function UserProfile() {
                               <div className="text-2xl font-bold text-red-600">{userActivity.votedIssues.filter(v => v.vote === -1).length}</div>
                               <div className="text-xs text-muted-foreground mt-1">Downvotes</div>
                             </div>
-                            <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
-                              <div className="text-2xl font-bold text-blue-600">{userActivity.comments.length}</div>
+                            <div className="text-center p-3 rounded-lg bg-sky-50 border border-sky-200">
+                              <div className="text-2xl font-bold text-sky-600">{userActivity.comments.length}</div>
                               <div className="text-xs text-muted-foreground mt-1">Comments</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-purple-50 border border-purple-200">
-                              <div className="text-2xl font-bold text-purple-600">{userActivity.likedComments.length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Likes Given</div>
                             </div>
                           </div>
                         </Card>
                         
-                        {userActivity.comments.length > 0 && (
-                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
-                            <CardHeader>
-                              <CardTitle className="text-lg">Recent Comments</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                              <div className="divide-y divide-stone-200/60">
-                                {userActivity.comments.slice(0, 5).map((comment, idx) => (
-                                  <div key={idx} className="p-4 hover:bg-white/40 transition-colors">
-                                    <p className="text-sm text-stone-900 line-clamp-2">{comment.content || ''}</p>
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {formatRelativeTime(comment.createdAt?.toDate?.() || new Date())}
-                                      {comment.likes ? ` • ${comment.likes} likes` : ''}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </CardContent>
+                        {/* Activity Feed - Only show if there's activity */}
+                        {(userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || owned.length > 0) ? (
+                        <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
+                          <CardHeader>
+                            <CardTitle className="text-lg">Activity Feed</CardTitle>
+                            <p className="text-xs text-muted-foreground">Recent updates on your issues and interactions</p>
+                          </CardHeader>
+                          <CardContent className="p-0">
+                            <div className="divide-y divide-stone-200/60">
+                              {(() => {
+                                // Combine all activities with timestamps
+                                const activities: Array<{
+                                  type: 'comment' | 'upvote' | 'downvote' | 'issue_created' | 'issue_resolved';
+                                  content: string;
+                                  timestamp: Date;
+                                  icon: typeof MessageSquare;
+                                  color: string;
+                                }> = [];
+
+                                // Add comments
+                                userActivity.comments.forEach(comment => {
+                                  activities.push({
+                                    type: 'comment',
+                                    content: `You commented: "${comment.content?.slice(0, 80)}${comment.content && comment.content.length > 80 ? '...' : ''}"`,
+                                    timestamp: comment.createdAt?.toDate?.() || new Date(),
+                                    icon: MessageSquare,
+                                    color: 'text-sky-600'
+                                  });
+                                });
+
+                                // Add upvotes
+                                userActivity.votedIssues.filter(v => v.vote === 1).forEach(vote => {
+                                  const issue = issues?.find(i => i.id === vote.issueId);
+                                  if (issue) {
+                                    activities.push({
+                                      type: 'upvote',
+                                      content: `You upvoted: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
+                                      timestamp: new Date(issue.createdAt || Date.now()),
+                                      icon: ThumbsUp,
+                                      color: 'text-green-600'
+                                    });
+                                  }
+                                });
+
+                                // Add downvotes
+                                userActivity.votedIssues.filter(v => v.vote === -1).forEach(vote => {
+                                  const issue = issues?.find(i => i.id === vote.issueId);
+                                  if (issue) {
+                                    activities.push({
+                                      type: 'downvote',
+                                      content: `You downvoted: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
+                                      timestamp: new Date(issue.createdAt || Date.now()),
+                                      icon: ThumbsDown,
+                                      color: 'text-red-600'
+                                    });
+                                  }
+                                });
+
+                                // Add user's issues created
+                                owned.forEach(issue => {
+                                  activities.push({
+                                    type: 'issue_created',
+                                    content: `You created issue: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
+                                    timestamp: new Date(issue.createdAt || Date.now()),
+                                    icon: Plus,
+                                    color: 'text-orange-600'
+                                  });
+                                });
+
+                                // Add resolved issues
+                                owned.filter(i => i.status === 'resolved').forEach(issue => {
+                                  activities.push({
+                                    type: 'issue_resolved',
+                                    content: `You resolved: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
+                                    timestamp: new Date(issue.createdAt || Date.now()),
+                                    icon: Check,
+                                    color: 'text-emerald-600'
+                                  });
+                                });
+
+                                // Sort by timestamp (most recent first)
+                                activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+
+                                // Show top 15 activities
+                                return activities.slice(0, 15).map((activity, idx) => {
+                                  const Icon = activity.icon;
+                                  return (
+                                    <div key={idx} className="p-4 hover:bg-white/40 transition-colors flex gap-3">
+                                      <div className={`flex-shrink-0 ${activity.color}`}>
+                                        <Icon className="h-5 w-5" />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm text-stone-900 line-clamp-2">{activity.content}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">
+                                          {formatRelativeTime(activity.timestamp)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </CardContent>
+                        </Card>
+                        ) : (
+                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+                            <p className="text-muted-foreground">No recent activity to show</p>
                           </Card>
                         )}
                       </div>
                     ) : (
                       <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
                         <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                        <p className="text-muted-foreground">No recent activity</p>
+                        <p className="text-muted-foreground">No activity data available</p>
                       </Card>
                     )}
                   </div>

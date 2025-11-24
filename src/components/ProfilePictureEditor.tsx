@@ -13,9 +13,11 @@ import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl, getUserAvatarUrl } from '@/
 import type { AvatarStyleId } from '@/lib/avatar';
 import { toast } from 'sonner';
 import ImageCropDialog from './ImageCropDialog';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -100,8 +102,8 @@ export default function ProfilePictureEditor() {
       setPreviewUrl(null);
       setCroppedImage(null);
       
-      // Small delay before reload to ensure Firebase sync
-      setTimeout(() => window.location.reload(), 800);
+      // Invalidate queries to refetch updated profile
+      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
       console.error('Upload error:', err);
@@ -132,8 +134,8 @@ export default function ProfilePictureEditor() {
       setSelectedStyle(style);
       toast.success('Profile picture updated!');
       
-      // Reload to reflect changes
-      setTimeout(() => window.location.reload(), 800);
+      // Invalidate queries to refetch updated profile
+      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set default avatar';
       console.error('Avatar update error:', err);
