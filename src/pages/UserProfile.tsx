@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
@@ -71,9 +71,19 @@ export default function UserProfile() {
   
   // Initialize state after ownerProfile is available
   const [editingBio, setEditingBio] = useState(false);
-  const [bio, setBio] = useState(ownerProfile?.bio || '');
-  const [location, setLocation] = useState(ownerProfile?.location || '');
-  const [website, setWebsite] = useState(ownerProfile?.social?.website || '');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [website, setWebsite] = useState('');
+  
+  // Sync state with ownerProfile when it loads
+  useEffect(() => {
+    if (ownerProfile) {
+      setBio(ownerProfile.bio || '');
+      setLocation(ownerProfile.location || '');
+      setWebsite(ownerProfile.social?.website || '');
+    }
+  }, [ownerProfile]);
+  
   const { data: followCounts = { followers: 0, following: 0 } } = useFollowCounts(uid);
   
   // Fetch engagement metrics for all owned issues
@@ -206,8 +216,9 @@ export default function UserProfile() {
           updatedAt: new Date()
         });
         
+        // Invalidate queries to refetch updated data
+        queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
         toast.success('Cover photo updated!');
-        setTimeout(() => window.location.reload(), 500);
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -231,9 +242,10 @@ export default function UserProfile() {
         updatedAt: new Date()
       });
       
+      // Invalidate queries to refetch updated data
+      queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
       toast.success('Profile updated!');
       setEditingBio(false);
-      setTimeout(() => window.location.reload(), 500);
     } catch (error) {
       toast.error('Failed to update profile');
     }
@@ -685,7 +697,11 @@ export default function UserProfile() {
                       const vis = (issue as unknown as WithVisibility).visibility;
                       const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
                       return (
-                        <Card key={issue.id} className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all">
+                        <Card 
+                          key={issue.id} 
+                          className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
+                          onClick={() => handleViewDetails(issue)}
+                        >
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-2">
                               <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
@@ -696,7 +712,12 @@ export default function UserProfile() {
                                 {isOwner && (
                                   <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 w-8 p-0"
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
                                         <MoreVertical className="h-4 w-4" />
                                       </Button>
                                     </DropdownMenuTrigger>
@@ -709,24 +730,28 @@ export default function UserProfile() {
                                         <TrendingUp className="mr-2 h-4 w-4" />
                                         Analytics
                                       </DropdownMenuItem>
-                                      {issue.status !== 'resolved' && (
-                                        <DropdownMenuItem onClick={() => handleResolve(issue)}>
-                                          <Check className="mr-2 h-4 w-4" />
-                                          Mark Resolved
-                                        </DropdownMenuItem>
-                                      )}
-                                      <DropdownMenuItem onClick={() => handleAddProgress(issue)}>
-                                        <Plus className="mr-2 h-4 w-4" />
-                                        Add Progress
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'public')}>
+                                      <DropdownMenuItem 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleVisibilityChange(issue.id, 'public');
+                                        }}
+                                      >
                                         Set Public
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'private')}>
+                                      <DropdownMenuItem 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleVisibilityChange(issue.id, 'private');
+                                        }}
+                                      >
                                         Set Private
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'draft')}>
+                                      <DropdownMenuItem 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleVisibilityChange(issue.id, 'draft');
+                                        }}
+                                      >
                                         Set Draft
                                       </DropdownMenuItem>
                                     </DropdownMenuContent>

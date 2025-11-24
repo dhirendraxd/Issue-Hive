@@ -5,7 +5,8 @@ import { Link } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ThumbsUp, ThumbsDown, Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -20,10 +21,7 @@ interface IssueDetailDialogProps {
   issue: Issue | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onUpvote?: (id: string) => void;
-  onDownvote?: (id: string) => void;
-  isUpvoting?: boolean;
-  isDownvoting?: boolean;
+  onVisibilityChange?: (issueId: string, visibility: 'public' | 'private' | 'draft') => void;
   enablePin?: boolean; // allow pin UI in comments for this context
 }
 
@@ -31,10 +29,7 @@ export default function IssueDetailDialog({
   issue,
   open,
   onOpenChange,
-  onUpvote,
-  onDownvote,
-  isUpvoting,
-  isDownvoting,
+  onVisibilityChange,
   enablePin = false,
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
@@ -200,46 +195,63 @@ export default function IssueDetailDialog({
 
             <Separator />
 
-            {/* Voting Section */}
-            <div className="rounded-lg bg-stone-50 p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <ThumbsUp className="h-5 w-5 text-orange-500" />
-                  <span className="text-lg font-semibold">
-                    {issue.votes} {issue.votes === 1 ? 'Support' : 'Supports'}
-                  </span>
+            {/* Issue Details Section */}
+            <div className="rounded-lg bg-stone-50 p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Category</p>
+                  <Badge variant="outline" className="text-xs">{issue.category}</Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="icon"
-                    variant={hasDownvoted ? "default" : "outline"}
-                    className={cn(
-                      "rounded-full",
-                      hasDownvoted && "bg-orange-500 text-white hover:bg-orange-600"
-                    )}
-                    onClick={() => onDownvote?.(issue.id)}
-                    disabled={(isOwner && !isAnonymous) || isDownvoting || !onDownvote}
-                    title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
-                    aria-label={hasDownvoted ? 'Remove downvote' : 'Downvote this issue'}
-                  >
-                    <ThumbsDown className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant={hasUpvoted ? "default" : "outline"}
-                    className={cn(
-                      "rounded-full",
-                      hasUpvoted ? "bg-orange-500 text-white hover:bg-orange-600" : "bg-black text-white hover:bg-orange-400/90"
-                    )}
-                    onClick={() => onUpvote?.(issue.id)}
-                    disabled={(isOwner && !isAnonymous) || isUpvoting || !onUpvote}
-                    title={(isOwner && !isAnonymous) ? 'You cannot vote on your own issue' : hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
-                    aria-label={hasUpvoted ? 'Remove upvote' : 'Upvote this issue'}
-                  >
-                    <ThumbsUp className="h-5 w-5" />
-                  </Button>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Status</p>
+                  <Badge className={cn("text-xs capitalize", getStatusColor(issue.status))}>
+                    {issue.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Supports</p>
+                  <p className="text-sm font-semibold">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">Created</p>
+                  <p className="text-sm">{formatRelativeTime(issue.createdAt)}</p>
                 </div>
               </div>
+              
+              {/* Visibility Control for Owner */}
+              {isOwner && onVisibilityChange && (
+                <div className="pt-3 border-t border-stone-200">
+                  <p className="text-xs text-muted-foreground mb-2">Visibility</p>
+                  <Select
+                    value={(issue as Issue & { visibility?: string }).visibility || 'public'}
+                    onValueChange={(value) => onVisibilityChange(issue.id, value as 'public' | 'private' | 'draft')}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-4 w-4" />
+                          <span>Public - Everyone can see</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="private">
+                        <div className="flex items-center gap-2">
+                          <EyeOff className="h-4 w-4" />
+                          <span>Private - Only followers can see</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="draft">
+                        <div className="flex items-center gap-2">
+                          <FileEdit className="h-4 w-4" />
+                          <span>Draft - Only you can see</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             {/* Resolution Section */}
