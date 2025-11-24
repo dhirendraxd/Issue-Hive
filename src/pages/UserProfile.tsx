@@ -259,22 +259,41 @@ export default function UserProfile() {
   };
 
   const handleSaveUsername = async () => {
-    if (!user || !username.trim() || username === ownerProfile?.username) return;
+    if (!user || !username.trim()) {
+      console.log('Cannot save: missing user or empty username');
+      return;
+    }
+    
+    const trimmedUsername = username.trim();
+    if (trimmedUsername === ownerProfile?.username) {
+      console.log('Username unchanged, skipping save');
+      toast.info('Username is already set to that value');
+      setEditingUsername(false);
+      return;
+    }
     
     setSavingUsername(true);
     try {
       const { doc, updateDoc } = await import('firebase/firestore');
       const { db } = await import('@/integrations/firebase/config');
       
+      console.log('Updating username from:', ownerProfile?.username, 'to:', trimmedUsername, 'for user:', user.uid);
+      
       await updateDoc(doc(db, 'users', user.uid), {
-        username: username.trim(),
+        username: trimmedUsername,
         updatedAt: new Date()
       });
       
-      queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      console.log('Username updated in Firestore, invalidating query for uid:', uid);
+      
+      // Invalidate and refetch the query for the current profile being viewed
+      await queryClient.invalidateQueries({ queryKey: ['userProfile', uid] });
+      await queryClient.refetchQueries({ queryKey: ['userProfile', uid] });
+      
       toast.success('Username updated!');
       setEditingUsername(false);
     } catch (error) {
+      console.error('Failed to update username:', error);
       toast.error('Failed to update username');
     } finally {
       setSavingUsername(false);
@@ -391,6 +410,67 @@ export default function UserProfile() {
                                 <div>
                                   <p className="text-base font-medium">{user?.displayName || 'Not set'}</p>
                                   <p className="text-xs text-muted-foreground mt-1">Current full name</p>
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+
+                          {/* Username */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-base">@Username</h3>
+                                  <p className="text-xs text-muted-foreground">Your unique handle</p>
+                                </div>
+                                {!editingUsername && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingUsername(true);
+                                      setUsername(ownerProfile?.username || '');
+                                    }}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                )}
+                              </div>
+
+                              {editingUsername ? (
+                                <div className="flex gap-2">
+                                  <div className="flex items-center flex-1">
+                                    <span className="text-muted-foreground mr-1">@</span>
+                                    <Input
+                                      value={username}
+                                      onChange={(e) => setUsername(e.target.value)}
+                                      placeholder="username"
+                                      disabled={savingUsername}
+                                      className="flex-1"
+                                      maxLength={32}
+                                    />
+                                  </div>
+                                  <Button
+                                    onClick={handleSaveUsername}
+                                    disabled={savingUsername || !username.trim()}
+                                    size="sm"
+                                    className="bg-gradient-to-r from-orange-500 to-amber-500"
+                                  >
+                                    {savingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                  </Button>
+                                  <Button
+                                    onClick={() => setEditingUsername(false)}
+                                    disabled={savingUsername}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div>
+                                  <p className="text-base font-medium">@{ownerProfile?.username || 'Not set'}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Current username</p>
                                 </div>
                               )}
                             </div>
