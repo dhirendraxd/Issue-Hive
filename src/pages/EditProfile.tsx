@@ -12,7 +12,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import ProfileVisibilitySettings from '@/components/ProfileVisibilitySettings';
-import { Loader2, Upload, X, MapPin, Globe, Github, Twitter, Linkedin, Instagram, Eye } from 'lucide-react';
+import { Loader2, Upload, X, MapPin, Globe, Github, Twitter, Linkedin, Instagram, Eye, Link2, Calendar } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserAvatarUrl } from '@/lib/avatar';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
@@ -159,92 +159,142 @@ export default function EditProfile() {
 
         <div className="grid grid-cols-1 gap-6">
           {previewOpen && (
-            <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-0 overflow-hidden">
-              {/* Preview Cover */}
-              {coverPreview ? (
-                <div className="w-full h-40 md:h-56">
-                  <img src={coverPreview} alt="Cover preview" className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div className="w-full h-24 bg-gradient-to-r from-orange-50 to-amber-50 border-b" />
-              )}
-              {/* Preview Header */}
-              <div className="p-6">
-                <div className="flex items-center gap-4">
-                  {user && (
-                    <Avatar className="w-16 h-16 border-2 border-orange-200">
-                      <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || 'User'} />
-                      <AvatarFallback className="bg-orange-100 text-orange-900">
-                        {(user.displayName || user.email || 'U')?.[0]}
+            <div className="rounded-2xl border border-orange-300 bg-white/80 backdrop-blur-lg overflow-hidden">
+              <div className="p-4 bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
+                <p className="text-sm font-medium text-orange-900 flex items-center gap-2">
+                  <Eye className="h-4 w-4" /> Visitor Preview Mode
+                </p>
+              </div>
+              
+              {/* Twitter/X Style Preview */}
+              <div className="max-w-4xl mx-auto">
+                {/* Cover Image */}
+                <div className="relative">
+                  <div className="h-48 md:h-64 w-full bg-gradient-to-br from-orange-100 via-amber-50 to-orange-50">
+                    {coverPreview ? (
+                      <img src={coverPreview} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-orange-400/20 via-amber-400/10 to-orange-300/20" />
+                    )}
+                  </div>
+                  
+                  {/* Profile Picture Overlay */}
+                  <div className="absolute -bottom-16 left-6">
+                    <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
+                      <AvatarImage src={user?.photoURL || getUserAvatarUrl(user?.uid || 'preview')} />
+                      <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+                        {user?.displayName?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                  )}
-                  <div className="min-w-0">
-                    <h2 className="text-xl font-semibold truncate">{user?.displayName || 'IssueHive User'}</h2>
-                    {location && (
-                      <div className="text-xs text-stone-600 flex items-center gap-1 mt-0.5">
-                        <MapPin className="h-3.5 w-3.5" /> {location}
-                      </div>
-                    )}
                   </div>
                 </div>
-                {bio && (
-                  <p className="mt-3 text-sm text-stone-700 whitespace-pre-wrap">{bio}</p>
-                )}
-                {/* Socials */}
-                {(social.website || social.github || social.twitter || social.linkedin || social.instagram) && (
-                  <div className="mt-4 flex flex-wrap gap-3 text-sm">
+                
+                {/* Profile Info Section */}
+                <div className="mt-20 px-6 pb-4 border-b border-stone-200/60">
+                  <div className="mb-3">
+                    <h1 className="text-2xl font-bold tracking-tight">{user?.displayName || 'User'}</h1>
+                    <p className="text-sm text-muted-foreground">@{user?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                  </div>
+                  
+                  {bio && (
+                    <p className="text-sm text-stone-900 mb-3 leading-relaxed">{bio}</p>
+                  )}
+                  
+                  {/* Meta Info */}
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+                    {location && (
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" /> {location}
+                      </span>
+                    )}
                     {social.website && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur">
-                        <Globe className="h-4 w-4" /> Website
+                      <span className="inline-flex items-center gap-1.5">
+                        <Link2 className="h-4 w-4" /> 
+                        {social.website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
                       </span>
                     )}
-                    {social.github && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur">
-                        <Github className="h-4 w-4" /> GitHub
-                      </span>
-                    )}
-                    {social.twitter && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur">
-                        <Twitter className="h-4 w-4" /> Twitter
-                      </span>
-                    )}
-                    {social.linkedin && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur">
-                        <Linkedin className="h-4 w-4" /> LinkedIn
-                      </span>
-                    )}
-                    {social.instagram && (
-                      <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border bg-white/60 backdrop-blur">
-                        <Instagram className="h-4 w-4" /> Instagram
-                      </span>
-                    )}
+                    <span className="inline-flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4" /> Joined April 2025
+                    </span>
                   </div>
-                )}
-              </div>
-
-              {/* Issues preview as seen by visitors */}
-              <div className="px-6 pb-6">
-                <h3 className="font-semibold text-lg mb-3">Issues (visitor view)</h3>
-                {publicIssues.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No public issues yet.</p>
-                ) : (
-                  <div className="space-y-3">
-                    {publicIssues.slice(0, 6).map((issue) => (
-                      <div key={issue.id} className="pointer-events-none">
-                        <IssueCard
-                          issue={issue}
-                          onSetVisibility={() => { /* disabled in preview */ }}
-                        />
-                      </div>
-                    ))}
-                    {publicIssues.length > 6 && (
-                      <p className="text-xs text-muted-foreground mt-1">Showing first 6 issues</p>
-                    )}
+                  
+                  {/* Social Links */}
+                  {(social.github || social.twitter || social.linkedin || social.instagram) && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {social.github && (
+                        <span className="text-muted-foreground" title="GitHub">
+                          <Github className="h-5 w-5" />
+                        </span>
+                      )}
+                      {social.twitter && (
+                        <span className="text-muted-foreground" title="Twitter">
+                          <Twitter className="h-5 w-5" />
+                        </span>
+                      )}
+                      {social.linkedin && (
+                        <span className="text-muted-foreground" title="LinkedIn">
+                          <Linkedin className="h-5 w-5" />
+                        </span>
+                      )}
+                      {social.instagram && (
+                        <span className="text-muted-foreground" title="Instagram">
+                          <Instagram className="h-5 w-5" />
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {/* Follower Counts */}
+                  <div className="flex gap-4 text-sm">
+                    <span>
+                      <span className="font-semibold text-stone-900">0</span>
+                      <span className="text-muted-foreground ml-1">Following</span>
+                    </span>
+                    <span>
+                      <span className="font-semibold text-stone-900">0</span>
+                      <span className="text-muted-foreground ml-1">Followers</span>
+                    </span>
                   </div>
-                )}
+                </div>
+                
+                {/* Tabs Preview */}
+                <div className="border-b border-stone-200">
+                  <div className="flex gap-8 px-6">
+                    <button className="py-4 border-b-2 border-orange-500 text-sm font-medium">
+                      Issues
+                    </button>
+                    <button className="py-4 border-b-2 border-transparent text-sm font-medium text-muted-foreground">
+                      Analytics
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Issues preview */}
+                <div className="p-6">
+                  {publicIssues.length === 0 ? (
+                    <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                      <p className="text-muted-foreground">No public issues yet.</p>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {publicIssues.slice(0, 6).map((issue) => (
+                        <div key={issue.id} className="pointer-events-none opacity-90">
+                          <IssueCard
+                            issue={issue}
+                            onSetVisibility={() => { /* disabled in preview */ }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {publicIssues.length > 6 && (
+                    <p className="text-xs text-muted-foreground mt-4 text-center">
+                      Showing first 6 of {publicIssues.length} public issues
+                    </p>
+                  )}
+                </div>
               </div>
-            </Card>
+            </div>
           )}
           {/* Cover Image */}
           <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
