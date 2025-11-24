@@ -111,6 +111,8 @@ export default function EditProfile() {
     setSaving(true);
     try {
       const payload = {
+        displayName: user.displayName || null,
+        photoURL: user.photoURL || null,
         coverUrl: coverUrl || null,
         bio: bio?.trim() || null,
         location: location?.trim() || null,

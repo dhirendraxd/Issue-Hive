@@ -46,7 +46,7 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
 }
 
 /**
- * Update user's profile picture in Firebase Auth
+ * Update user's profile picture in Firebase Auth and Firestore
  * @param user - The current user
  * @param photoURL - The new photo URL
  */
@@ -56,6 +56,16 @@ export async function updateUserProfilePicture(user: User, photoURL: string): Pr
   }
 
   await updateProfile(user, { photoURL });
+  
+  // Also sync to Firestore
+  const { db } = await import('./config');
+  if (db) {
+    const { doc, setDoc } = await import('firebase/firestore');
+    await setDoc(doc(db, 'users', user.uid), { 
+      photoURL,
+      updatedAt: Date.now() 
+    }, { merge: true });
+  }
 }
 
 /**
@@ -93,4 +103,14 @@ export async function updateUserDisplayName(user: User, displayName: string): Pr
   }
 
   await updateProfile(user, { displayName });
+  
+  // Also sync to Firestore
+  const { db } = await import('./config');
+  if (db) {
+    const { doc, setDoc } = await import('firebase/firestore');
+    await setDoc(doc(db, 'users', user.uid), { 
+      displayName,
+      updatedAt: Date.now() 
+    }, { merge: true });
+  }
 }
