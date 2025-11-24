@@ -2,10 +2,8 @@ import { useMemo, useState } from "react";
 import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
-import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useIssueEngagement } from "@/hooks/use-issue-engagement";
-import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
 import { formatRelativeTime } from '@/lib/utils';
@@ -19,13 +17,7 @@ import IssueDetailDialog from "@/components/IssueDetailDialog";
 
 export default function Issues() {
   const { user } = useAuth();
-  // Choose backend: Firebase when configured, otherwise local storage
-  const local = useIssues();
-  const cloud = useIssuesFirebase();
-  const useCloud = isFirebaseConfigured;
-
-  const upvote = useCloud ? cloud.upvote : local.upvote;
-  const downvote = useCloud ? cloud.downvoteIssue : local.downvote;
+  const { data, upvote, downvoteIssue } = useIssuesFirebase();
 
   // Modal state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -51,7 +43,7 @@ export default function Issues() {
   const [statuses, setStatuses] = useState<IssueStatus[]>([]);
   const [sort, setSort] = useState<SortKey>("new");
   const visibleIssues = useMemo(() => {
-    const base = (useCloud ? cloud.data : local.data) ?? [];
+    const base = data ?? [];
     // Hide draft issues completely; hide private issues unless owned by current user
     type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
     let arr = base.filter((i) => {
@@ -86,7 +78,7 @@ export default function Issues() {
     else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
     else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
     return arr;
-  }, [useCloud, cloud.data, local.data, categories, q, statuses, sort, user?.uid]);
+  }, [data, categories, q, statuses, sort, user?.uid]);
 
   // Fetch engagement metrics for visible issues
   const visibleIssueIds = useMemo(() => visibleIssues.map(i => i.id), [visibleIssues]);
@@ -250,7 +242,7 @@ export default function Issues() {
                   {/* Footer: Votes & Engagement */}
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {isFirebaseConfigured && engagement?.[i.id] ? (
+                      {engagement?.[i.id] ? (
                         <>
                           <div className="flex items-center gap-1" title="Upvotes">
                             <ThumbsUp className="h-4 w-4 text-green-600" />

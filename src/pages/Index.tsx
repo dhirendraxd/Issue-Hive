@@ -8,9 +8,7 @@ import HiveHexParticles from "@/components/HiveHexParticles";
 import CommunityNodes from "@/components/CommunityNodes";
 import AmbientDust from "@/components/AmbientDust";
 import BubbleParticles from "@/components/BubbleParticles";
-import { useIssues } from "@/hooks/use-issues";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
-import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
@@ -127,9 +125,7 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
 }
 
 const Index = () => {
-  const local = useIssues();
-  const cloud = useIssuesFirebase();
-  const stats = isFirebaseConfigured ? cloud.stats : local.stats;
+  const { stats } = useIssuesFirebase();
 
   return (
     <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">

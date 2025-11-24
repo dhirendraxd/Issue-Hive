@@ -31,7 +31,6 @@ import { Separator } from '@/components/ui/separator';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { updateUserDisplayName } from '@/integrations/firebase/profile';
-import ProfileVisibilitySettings from '@/components/ProfileVisibilitySettings';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts } from '@/hooks/use-follow';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { toast } from 'sonner';
@@ -377,10 +376,9 @@ export default function UserProfile() {
                       </SheetHeader>
                       
                       <Tabs defaultValue="basic" className="mt-6">
-                        <TabsList className="grid w-full grid-cols-3">
+                        <TabsList className="grid w-full grid-cols-2">
                           <TabsTrigger value="basic">Basic Info</TabsTrigger>
                           <TabsTrigger value="photos">Photos</TabsTrigger>
-                          <TabsTrigger value="privacy">Privacy</TabsTrigger>
                         </TabsList>
                         
                         {/* Basic Info Tab */}
@@ -642,11 +640,6 @@ export default function UserProfile() {
 
                           {/* Profile Picture */}
                           <ProfilePictureEditor />
-                        </TabsContent>
-
-                        {/* Privacy Tab */}
-                        <TabsContent value="privacy" className="space-y-6 mt-6">
-                          <ProfileVisibilitySettings />
                         </TabsContent>
                       </Tabs>
                     </SheetContent>
