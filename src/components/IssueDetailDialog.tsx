@@ -15,7 +15,7 @@ import { useUserVote } from "@/hooks/use-user-vote";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface IssueDetailDialogProps {
   issue: Issue | null;
@@ -35,6 +35,15 @@ export default function IssueDetailDialog({
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
   const [commentsExpanded, setCommentsExpanded] = useState(true);
+  const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
+  
+  // Sync visibility state with issue prop
+  useEffect(() => {
+    if (issue) {
+      const issueVisibility = (issue as Issue & { visibility?: 'public' | 'private' | 'draft' }).visibility || 'public';
+      setVisibility(issueVisibility);
+    }
+  }, [issue]);
 
   if (!issue) return null;
 
@@ -223,8 +232,12 @@ export default function IssueDetailDialog({
                 <div className="pt-3 border-t border-stone-200">
                   <p className="text-xs text-muted-foreground mb-2">Visibility</p>
                   <Select
-                    value={(issue as Issue & { visibility?: string }).visibility || 'public'}
-                    onValueChange={(value) => onVisibilityChange(issue.id, value as 'public' | 'private' | 'draft')}
+                    value={visibility}
+                    onValueChange={(value) => {
+                      const newVisibility = value as 'public' | 'private' | 'draft';
+                      setVisibility(newVisibility);
+                      onVisibilityChange(issue.id, newVisibility);
+                    }}
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />

@@ -181,7 +181,10 @@ export default function UserProfile() {
 
   const handleVisibilityChange = async (issueId: string, newVisibility: string) => {
     try {
-      setVisibility.mutate({ id: issueId, visibility: newVisibility as 'public' | 'private' | 'draft' });
+      await setVisibility.mutateAsync({ id: issueId, visibility: newVisibility as 'public' | 'private' | 'draft' });
+      // Invalidate queries to ensure UI updates immediately
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      queryClient.invalidateQueries({ queryKey: ['issueEngagement'] });
       toast.success(`Issue visibility updated to ${newVisibility}`);
     } catch (error) {
       toast.error('Failed to update visibility');
@@ -659,133 +662,199 @@ export default function UserProfile() {
               
               {/* Issues Tab */}
               <TabsContent value="issues" className="mt-6">
-                {isOwner && (
-                  <div className="mb-4 flex flex-wrap gap-3 text-xs text-muted-foreground bg-white/60 backdrop-blur-lg border border-white/40 rounded-full px-4 py-2 w-fit">
-                    <span><strong>{owned.length}</strong> total</span>
-                    <span><strong>{publicIssues.length}</strong> public</span>
-                    <span><strong>{privateCount}</strong> private</span>
-                    <span><strong>{draftCount}</strong> draft</span>
-                  </div>
-                )}
+                {isOwner ? (
+                  <Tabs defaultValue="all" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 mb-6">
+                      <TabsTrigger value="all">All ({owned.length})</TabsTrigger>
+                      <TabsTrigger value="public">Public ({publicIssues.length})</TabsTrigger>
+                      <TabsTrigger value="private">Private ({privateCount})</TabsTrigger>
+                      <TabsTrigger value="draft">Draft ({draftCount})</TabsTrigger>
+                    </TabsList>
 
-                {isLoading && (
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {Array.from({ length: 6 }).map((_, i) => (
-                      <Skeleton key={i} className="h-40 rounded-2xl" />
+                    {/* Helper function to render issue cards */}
+                    {[
+                      { key: 'all', issues: owned, emptyText: 'No issues yet. Create your first issue to get started!' },
+                      { key: 'public', issues: publicIssues, emptyText: 'No public issues yet.' },
+                      { key: 'private', issues: owned.filter(i => (i as unknown as WithVisibility).visibility === 'private'), emptyText: 'No private issues yet.' },
+                      { key: 'draft', issues: owned.filter(i => (i as unknown as WithVisibility).visibility === 'draft'), emptyText: 'No draft issues yet.' }
+                    ].map(({ key, issues, emptyText }) => (
+                      <TabsContent key={key} value={key}>
+                        {isLoading && (
+                          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                              <Skeleton key={i} className="h-40 rounded-2xl" />
+                            ))}
+                          </div>
+                        )}
+                        {!isLoading && issues.length === 0 && (
+                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                            <p className="text-muted-foreground">{emptyText}</p>
+                            {key === 'all' && (
+                              <Link to="/raise-issue">
+                                <Button className="mt-4 rounded-full bg-gradient-to-r from-orange-500 to-amber-500">
+                                  Create Your First Issue
+                                </Button>
+                              </Link>
+                            )}
+                          </Card>
+                        )}
+                        {!isLoading && issues.length > 0 && (
+                          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                            {issues.map(issue => {
+                              const vis = (issue as unknown as WithVisibility).visibility;
+                              const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
+                              return (
+                                <Card 
+                                  key={issue.id} 
+                                  className="rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/30 backdrop-blur-lg flex flex-col hover:shadow-xl hover:shadow-orange-400/30 hover:border-orange-300/60 hover:scale-[1.02] transition-all cursor-pointer"
+                                  onClick={() => handleViewDetails(issue)}
+                                >
+                                  <CardHeader className="pb-3">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
+                                      <div className="flex items-center gap-2">
+                                        {vis && vis !== 'public' && (
+                                          <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
+                                        )}
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button 
+                                              variant="ghost" 
+                                              size="sm" 
+                                              className="h-8 w-8 p-0"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleViewDetails(issue)}>
+                                              <Eye className="mr-2 h-4 w-4" />
+                                              View Details
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleViewAnalytics(issue)}>
+                                              <TrendingUp className="mr-2 h-4 w-4" />
+                                              Analytics
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVisibilityChange(issue.id, 'public');
+                                              }}
+                                            >
+                                              Set Public
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVisibilityChange(issue.id, 'private');
+                                              }}
+                                            >
+                                              Set Private
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleVisibilityChange(issue.id, 'draft');
+                                              }}
+                                            >
+                                              Set Draft
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent className="flex flex-col gap-3 text-sm flex-1">
+                                    <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
+                                    <div className="flex flex-wrap gap-2 mt-auto">
+                                      <Badge variant="outline" className="text-xs">{issue.category}</Badge>
+                                      <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
+                                      <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                                    </div>
+                                    <div className="flex gap-3 text-xs text-muted-foreground pt-2 border-t border-stone-200/60">
+                                      <span className="flex items-center gap-1">
+                                        <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
+                                      </span>
+                                      {!ownerProfile?.hideDislikeCounts && (
+                                        <span className="flex items-center gap-1">
+                                          <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
+                                        </span>
+                                      )}
+                                      <span className="flex items-center gap-1">
+                                        <MessageSquare className="h-3 w-3" /> {engagement.comments}
+                                      </span>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </TabsContent>
                     ))}
-                  </div>
-                )}
-
-                {!isLoading && (isOwner ? owned.length === 0 : publicIssues.length === 0 && followerPrivateIssues.length === 0) && (
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
-                    <p className="text-muted-foreground">
-                      {isOwner ? 'No issues yet. Create your first issue to get started!' : 'No public issues yet.'}
-                    </p>
-                    {isOwner && (
-                      <Link to="/raise-issue">
-                        <Button className="mt-4 rounded-full bg-gradient-to-r from-orange-500 to-amber-500">
-                          Create Your First Issue
-                        </Button>
-                      </Link>
+                  </Tabs>
+                ) : (
+                  /* Visitor view - show public and follower-accessible private issues */
+                  <>
+                    {isLoading && (
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <Skeleton key={i} className="h-40 rounded-2xl" />
+                        ))}
+                      </div>
                     )}
-                  </Card>
-                )}
-
-                {!isLoading && (isOwner ? owned.length > 0 : (publicIssues.length > 0 || followerPrivateIssues.length > 0)) && (
-                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    {(isOwner ? owned : [...publicIssues, ...followerPrivateIssues]).map(issue => {
-                      const vis = (issue as unknown as WithVisibility).visibility;
-                      const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
-                      return (
-                        <Card 
-                          key={issue.id} 
-                          className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
-                          onClick={() => handleViewDetails(issue)}
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
-                              <div className="flex items-center gap-2">
-                                {vis && vis !== 'public' && (
-                                  <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
-                                )}
-                                {isOwner && (
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="sm" 
-                                        className="h-8 w-8 p-0"
-                                        onClick={(e) => e.stopPropagation()}
-                                      >
-                                        <MoreVertical className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleViewDetails(issue)}>
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Details
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleViewAnalytics(issue)}>
-                                        <TrendingUp className="mr-2 h-4 w-4" />
-                                        Analytics
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleVisibilityChange(issue.id, 'public');
-                                        }}
-                                      >
-                                        Set Public
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleVisibilityChange(issue.id, 'private');
-                                        }}
-                                      >
-                                        Set Private
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem 
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleVisibilityChange(issue.id, 'draft');
-                                        }}
-                                      >
-                                        Set Draft
-                                      </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="flex flex-col gap-3 text-sm flex-1">
-                            <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
-                            <div className="flex flex-wrap gap-2 mt-auto">
-                              <Badge variant="outline" className="text-xs">{issue.category}</Badge>
-                              <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
-                              <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
-                            </div>
-                            {/* Engagement Metrics */}
-                            <div className="flex gap-3 text-xs text-muted-foreground pt-2 border-t border-stone-200/60">
-                              <span className="flex items-center gap-1">
-                                <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
-                              </span>
-                              {!ownerProfile?.hideDislikeCounts && (
-                                <span className="flex items-center gap-1">
-                                  <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
-                                </span>
-                              )}
-                              <span className="flex items-center gap-1">
-                                <MessageSquare className="h-3 w-3" /> {engagement.comments}
-                              </span>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
+                    {!isLoading && publicIssues.length === 0 && followerPrivateIssues.length === 0 && (
+                      <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                        <p className="text-muted-foreground">No public issues yet.</p>
+                      </Card>
+                    )}
+                    {!isLoading && (publicIssues.length > 0 || followerPrivateIssues.length > 0) && (
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {[...publicIssues, ...followerPrivateIssues].map(issue => {
+                          const vis = (issue as unknown as WithVisibility).visibility;
+                          const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
+                          return (
+                            <Card 
+                              key={issue.id} 
+                              className="rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/30 backdrop-blur-lg flex flex-col hover:shadow-xl hover:shadow-orange-400/30 hover:border-orange-300/60 hover:scale-[1.02] transition-all cursor-pointer"
+                              onClick={() => handleViewDetails(issue)}
+                            >
+                              <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
+                                  {vis && vis !== 'public' && (
+                                    <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
+                                  )}
+                                </div>
+                              </CardHeader>
+                              <CardContent className="flex flex-col gap-3 text-sm flex-1">
+                                <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
+                                <div className="flex flex-wrap gap-2 mt-auto">
+                                  <Badge variant="outline" className="text-xs">{issue.category}</Badge>
+                                  <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
+                                  <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                                </div>
+                                <div className="flex gap-3 text-xs text-muted-foreground pt-2 border-t border-stone-200/60">
+                                  <span className="flex items-center gap-1">
+                                    <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
+                                  </span>
+                                  {!ownerProfile?.hideDislikeCounts && (
+                                    <span className="flex items-center gap-1">
+                                      <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
+                                    </span>
+                                  )}
+                                  <span className="flex items-center gap-1">
+                                    <MessageSquare className="h-3 w-3" /> {engagement.comments}
+                                  </span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
                 )}
               </TabsContent>
               
@@ -1044,6 +1113,7 @@ export default function UserProfile() {
               open={detailDialogOpen}
               onOpenChange={setDetailDialogOpen}
               issue={selectedIssue}
+              onVisibilityChange={handleVisibilityChange}
             />
             <IssueAnalyticsDialog
               open={analyticsDialogOpen}
