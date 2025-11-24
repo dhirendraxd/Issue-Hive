@@ -10,6 +10,7 @@ import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
 import { Loader2, Mail } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import { sanitizeEmail, limitLength } from '@/lib/sanitize';
 
 interface FirebaseError {
   code?: string;
@@ -27,6 +28,13 @@ export default function Auth() {
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Sanitize and validate email
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+    
     if (!isLogin && password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -37,13 +45,18 @@ export default function Auth() {
       return;
     }
 
+    if (password.length > 128) {
+      toast.error('Password is too long (max 128 characters)');
+      return;
+    }
+
     setLoading(true);
     try {
       if (isLogin) {
-        await signIn(email, password);
+        await signIn(sanitizedEmail, password);
         toast.success('Welcome back!');
       } else {
-        await signUp(email, password);
+        await signUp(sanitizedEmail, password);
         toast.success('Account created successfully!');
       }
       navigate('/raise-issue');

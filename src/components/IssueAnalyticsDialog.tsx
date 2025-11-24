@@ -91,7 +91,12 @@ export default function IssueAnalyticsDialog({
         count++;
         if (count > max) {
           max = count;
-          maxTime = v.createdAt?.toDate ? v.createdAt.toDate().toISOString() : undefined;
+          const timestamp = typeof v.createdAt === 'number'
+            ? new Date(v.createdAt).toISOString()
+            : v.createdAt?.toDate?.()
+              ? v.createdAt.toDate().toISOString()
+              : new Date().toISOString();
+          maxTime = timestamp;
         }
       }
     });

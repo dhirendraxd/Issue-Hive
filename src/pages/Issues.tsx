@@ -310,10 +310,6 @@ export default function Issues() {
         issue={selectedIssue}
         open={dialogOpen}
         onOpenChange={handleDialogClose}
-        onUpvote={(id) => upvote.mutate(id)}
-        onDownvote={(id) => downvote.mutate(id)}
-        isUpvoting={upvote.isPending}
-        isDownvoting={downvote.isPending}
         enablePin={selectedIssue ? selectedIssue.createdBy === user?.uid : false}
       />
     </div>

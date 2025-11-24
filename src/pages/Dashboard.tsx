@@ -176,7 +176,7 @@ export default function Dashboard() {
               Manage your issues and track community reports
             </p>
           </div>
-          <Link to="/settings/profile" className="shrink-0">
+          <Link to={`/profile/${user?.uid}`} className="shrink-0">
             <Button className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500" size="sm">
               <Edit2 className="h-4 w-4 mr-2" /> Edit Public Profile
             </Button>

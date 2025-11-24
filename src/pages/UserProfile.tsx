@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserAvatarUrl } from '@/lib/avatar';
+import { sanitizeText, sanitizeURL, limitLength, sanitizeEmail } from '@/lib/sanitize';
 
 export default function UserProfile() {
   const { uid } = useParams();
@@ -140,7 +141,15 @@ export default function UserProfile() {
 
     setSavingName(true);
     try {
-      await updateUserDisplayName(user, newDisplayName.trim());
+      // Sanitize display name
+      const sanitizedName = limitLength(sanitizeText(newDisplayName), 100);
+      if (!sanitizedName) {
+        toast.error('Invalid display name');
+        setSavingName(false);
+        return;
+      }
+      
+      await updateUserDisplayName(user, sanitizedName);
       toast.success('Display name updated!');
       setEditingName(false);
       // Reload to reflect changes
@@ -242,10 +251,21 @@ export default function UserProfile() {
       const { doc, updateDoc } = await import('firebase/firestore');
       const { db } = await import('@/integrations/firebase/config');
       
+      // Sanitize all inputs
+      const sanitizedBio = limitLength(sanitizeText(bio), 160);
+      const sanitizedLocation = limitLength(sanitizeText(location), 100);
+      const sanitizedWebsite = sanitizeURL(website);
+      
+      // Validate website if provided
+      if (website && !sanitizedWebsite) {
+        toast.error('Invalid website URL');
+        return;
+      }
+      
       await updateDoc(doc(db, 'users', user.uid), {
-        bio: bio.trim(),
-        location: location.trim(),
-        'social.website': website.trim(),
+        bio: sanitizedBio,
+        location: sanitizedLocation,
+        'social.website': sanitizedWebsite,
         updatedAt: new Date()
       });
       
@@ -264,7 +284,14 @@ export default function UserProfile() {
       return;
     }
     
-    const trimmedUsername = username.trim();
+    // Sanitize and validate username
+    const sanitizedUsername = sanitizeText(username).toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!sanitizedUsername || sanitizedUsername.length < 3 || sanitizedUsername.length > 32) {
+      toast.error('Username must be 3-32 characters (letters, numbers, _ or - only)');
+      return;
+    }
+    
+    const trimmedUsername = sanitizedUsername.trim();
     if (trimmedUsername === ownerProfile?.username) {
       console.log('Username unchanged, skipping save');
       toast.info('Username is already set to that value');
@@ -476,12 +503,25 @@ export default function UserProfile() {
                             </div>
                           </Card>
 
-                          {/* Bio */}
+                          {/* Email (Read-only) */}
                           <Card className="rounded-xl border border-stone-200 p-5">
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold text-base">Bio</h3>
+                                  <h3 className="font-semibold text-base">Email</h3>
+                                  <p className="text-xs text-muted-foreground">Your account email (managed in Firebase Auth)</p>
+                                </div>
+                                <Badge variant="outline" className="text-xs">Read-only</Badge>
+                              </div>
+                              <div>
+                                <p className="text-base font-medium">{user?.email || 'Not set'}</p>
+                                <p className="text-xs text-muted-foreground mt-1">Current email address</p>
+                              </div>
+                            </div>
+                          </Card>
+
+                          {/* Bio */}
+                          <Card className="rounded-xl border border-stone-200 p-5">\n                            <div className="space-y-4">\n                              <div className="flex items-center justify-between">\n                                <div>\n                                  <h3 className="font-semibold text-base">Bio</h3>
                                   <p className="text-xs text-muted-foreground">Tell others about yourself</p>
                                 </div>
                                 {!editingBio && (

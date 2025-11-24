@@ -14,6 +14,7 @@ import type { AvatarStyleId } from '@/lib/avatar';
 import { toast } from 'sonner';
 import ImageCropDialog from './ImageCropDialog';
 import { useQueryClient } from '@tanstack/react-query';
+import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
@@ -68,6 +69,13 @@ export default function ProfilePictureEditor() {
 
   const handleUpload = async () => {
     if (!croppedImage || !user) return;
+
+    // Check rate limit
+    if (!rateLimits.uploadImage(user.uid)) {
+      const resetTime = rateLimits.getResetTime('upload-image', user.uid);
+      toast.error(`Rate limit exceeded. Please wait ${formatResetTime(resetTime)} before uploading again.`);
+      return;
+    }
 
     setUploading(true);
     setError(null);

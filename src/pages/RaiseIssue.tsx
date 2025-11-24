@@ -28,6 +28,8 @@ import {
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
+import { sanitizeText, limitLength } from '@/lib/sanitize';
+import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
@@ -129,11 +131,24 @@ export default function RaiseIssuePage() {
     setIsSubmitting(true);
 
     try {
+      // Check rate limit
+      if (!rateLimits.createIssue(user?.uid || '')) {
+        const resetTime = rateLimits.getResetTime('create-issue', user?.uid || '');
+        toast.error(`Rate limit exceeded. Please wait ${formatResetTime(resetTime)} before creating another issue.`);
+        setIsSubmitting(false);
+        return;
+      }
+      
       const now = Date.now();
+      
+      // Sanitize inputs to prevent XSS
+      const sanitizedTitle = limitLength(sanitizeText(formData.title), 200);
+      const sanitizedDescription = limitLength(sanitizeText(formData.description), 5000);
+      
       // Submit to Firebase using the expected shape
       await addIssue.mutateAsync({
-        title: formData.title.trim(),
-        description: formData.description.trim(),
+        title: sanitizedTitle,
+        description: sanitizedDescription,
         category: formData.category as IssueCategory,
         status: 'received',
         votes: 0,
