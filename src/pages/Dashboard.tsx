@@ -153,7 +153,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-stone-50">
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 animate-in fade-in duration-300">
       <Navbar />
       {/* Background */}
       <ParticlesBackground fullPage hexOpacity={0.10}>

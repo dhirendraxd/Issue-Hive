@@ -5,7 +5,7 @@ import { Megaphone, ThumbsUp, CheckCircle2 } from "lucide-react";
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
       <Navbar />
       <main className="scroll-mt-20">
         <ParticlesBackground fullPage hexOpacity={0.10}>

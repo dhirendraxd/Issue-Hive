@@ -121,7 +121,7 @@ export default function Issues() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
       <Navbar />
       <main className="scroll-mt-20">
         <ParticlesBackground fullPage hexOpacity={0.11}>

@@ -132,7 +132,7 @@ const Index = () => {
   const stats = isFirebaseConfigured ? cloud.stats : local.stats;
 
   return (
-    <div className="min-h-screen bg-stone-50 relative">
+    <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
   <Navbar />
 

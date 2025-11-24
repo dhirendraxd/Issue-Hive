@@ -96,7 +96,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-stone-50">
+    <div className="min-h-screen relative overflow-hidden bg-stone-50 animate-in fade-in duration-300">
       {/* Background Effects */}
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <div />

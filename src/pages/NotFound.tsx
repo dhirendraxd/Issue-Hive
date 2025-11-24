@@ -13,7 +13,7 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen bg-stone-50 flex items-center justify-center relative overflow-hidden animate-in fade-in duration-300">
       <ParticlesBackground fullPage hexOpacity={0.10}>
       <div className="text-center">
         <h1 className="text-6xl font-semibold mb-2 tracking-tight">404</h1>

@@ -186,7 +186,7 @@ export default function RaiseIssuePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden animate-in fade-in duration-300">
       {/* Navbar */}
       <Navbar />
 

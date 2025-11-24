@@ -328,7 +328,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <Navbar />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">

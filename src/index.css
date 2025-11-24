@@ -102,6 +102,20 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Smooth page transition styles */
+  #root {
+    @apply transition-opacity duration-300 ease-in-out;
+  }
+
+  /* View transition API support */
+  @supports (view-transition-name: root) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 300ms;
+      animation-timing-function: ease-in-out;
+    }
+  }
 }
 @layer utilities {
   /* Glassmorphism effect utilities */
