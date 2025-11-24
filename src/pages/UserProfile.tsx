@@ -13,11 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Calendar, Link2, Settings, LogOut, Plus, Clock, AlertCircle, Activity as ActivityIcon, Eye, MoreVertical } from 'lucide-react';
+import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Calendar, Link2, Settings, LogOut, Plus, Clock, AlertCircle, Activity as ActivityIcon, Eye, MoreVertical, Upload } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -56,6 +57,7 @@ export default function UserProfile() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -66,6 +68,12 @@ export default function UserProfile() {
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
   const { data: ownerProfile } = useUserProfile(uid);
+  
+  // Initialize state after ownerProfile is available
+  const [editingBio, setEditingBio] = useState(false);
+  const [bio, setBio] = useState(ownerProfile?.bio || '');
+  const [location, setLocation] = useState(ownerProfile?.location || '');
+  const [website, setWebsite] = useState(ownerProfile?.social?.website || '');
   const { data: followCounts = { followers: 0, following: 0 } } = useFollowCounts(uid);
   
   // Fetch engagement metrics for all owned issues
@@ -170,15 +178,76 @@ export default function UserProfile() {
     }
   };
 
+  const handleCoverPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please upload a JPEG, PNG, or WebP image');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Image must be less than 2MB');
+      return;
+    }
+
+    setUploadingCover(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        const { doc, updateDoc } = await import('firebase/firestore');
+        const { db } = await import('@/integrations/firebase/config');
+        
+        await updateDoc(doc(db, 'users', user.uid), {
+          coverUrl: base64,
+          updatedAt: new Date()
+        });
+        
+        toast.success('Cover photo updated!');
+        setTimeout(() => window.location.reload(), 500);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      toast.error('Failed to upload cover photo');
+    } finally {
+      setUploadingCover(false);
+    }
+  };
+
+  const handleSaveProfileInfo = async () => {
+    if (!user) return;
+    
+    try {
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('@/integrations/firebase/config');
+      
+      await updateDoc(doc(db, 'users', user.uid), {
+        bio: bio.trim(),
+        location: location.trim(),
+        'social.website': website.trim(),
+        updatedAt: new Date()
+      });
+      
+      toast.success('Profile updated!');
+      setEditingBio(false);
+      setTimeout(() => window.location.reload(), 500);
+    } catch (error) {
+      toast.error('Failed to update profile');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50">
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <Navbar />
-        <main className="scroll-mt-20 pt-10 pb-24 px-4 mx-auto max-w-5xl">
+        <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
             {/* Cover Image */}
-            <div className="relative -mt-10">
+            <div className="relative">
               <div className="h-48 md:h-64 w-full rounded-2xl overflow-hidden border border-white/40 bg-gradient-to-br from-orange-100 via-amber-50 to-orange-50">
                 {ownerProfile?.coverUrl ? (
                   <img src={ownerProfile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
@@ -211,78 +280,210 @@ export default function UserProfile() {
                         Edit Profile
                       </Button>
                     </SheetTrigger>
-                    <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+                    <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
                       <SheetHeader>
-                        <SheetTitle>Edit Profile</SheetTitle>
+                        <SheetTitle className="text-xl">Edit Profile</SheetTitle>
                         <SheetDescription>
-                          Manage your profile, privacy settings, and visibility preferences
+                          Customize your profile, upload photos, and manage privacy settings
                         </SheetDescription>
                       </SheetHeader>
                       
-                      <div className="mt-6 space-y-6">
-                        {/* Display Name Editor */}
-                        <Card className="rounded-2xl border border-stone-200 p-6">
-                          <div className="space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <h3 className="font-semibold text-lg">Display Name</h3>
-                                <p className="text-sm text-muted-foreground">This is how others will see you</p>
+                      <Tabs defaultValue="basic" className="mt-6">
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                          <TabsTrigger value="photos">Photos</TabsTrigger>
+                          <TabsTrigger value="privacy">Privacy</TabsTrigger>
+                        </TabsList>
+                        
+                        {/* Basic Info Tab */}
+                        <TabsContent value="basic" className="space-y-6 mt-6">
+                          {/* Display Name */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-base">Display Name</h3>
+                                  <p className="text-xs text-muted-foreground">Your public username</p>
+                                </div>
+                                {!editingName && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingName(true);
+                                      setNewDisplayName(user?.displayName || '');
+                                    }}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                               </div>
-                              {!editingName && (
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setEditingName(true);
-                                    setNewDisplayName(user?.displayName || '');
-                                  }}
-                                  className="rounded-full"
-                                >
-                                  <Edit2 className="w-4 h-4 mr-2" />
-                                  Edit
-                                </Button>
+
+                              {editingName ? (
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={newDisplayName}
+                                    onChange={(e) => setNewDisplayName(e.target.value)}
+                                    placeholder="Your name"
+                                    disabled={savingName}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    onClick={handleSaveDisplayName}
+                                    disabled={savingName || !newDisplayName.trim()}
+                                    size="sm"
+                                    className="bg-gradient-to-r from-orange-500 to-amber-500"
+                                  >
+                                    {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                                  </Button>
+                                  <Button
+                                    onClick={() => setEditingName(false)}
+                                    disabled={savingName}
+                                    size="sm"
+                                    variant="outline"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              ) : (
+                                <p className="text-base font-medium">{user?.displayName || 'Not set'}</p>
                               )}
                             </div>
+                          </Card>
 
-                            {editingName ? (
-                              <div className="flex gap-2">
-                                <Input
-                                  value={newDisplayName}
-                                  onChange={(e) => setNewDisplayName(e.target.value)}
-                                  placeholder="Enter your display name"
-                                  disabled={savingName}
-                                  className="flex-1"
-                                />
-                                <Button
-                                  onClick={handleSaveDisplayName}
-                                  disabled={savingName || !newDisplayName.trim()}
-                                  size="sm"
-                                  className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
-                                >
-                                  {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                                </Button>
-                                <Button
-                                  onClick={() => setEditingName(false)}
-                                  disabled={savingName}
-                                  size="sm"
-                                  variant="outline"
-                                  className="rounded-full"
-                                >
-                                  <X className="w-4 h-4" />
-                                </Button>
+                          {/* Bio */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-base">Bio</h3>
+                                  <p className="text-xs text-muted-foreground">Tell others about yourself</p>
+                                </div>
+                                {!editingBio && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingBio(true)}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </Button>
+                                )}
                               </div>
-                            ) : (
-                              <p className="text-lg font-medium">{user?.displayName || 'Not set'}</p>
-                            )}
-                          </div>
-                        </Card>
+                              
+                              {editingBio ? (
+                                <div className="space-y-2">
+                                  <Textarea
+                                    value={bio}
+                                    onChange={(e) => setBio(e.target.value)}
+                                    placeholder="Write a short bio..."
+                                    className="min-h-[100px] resize-none"
+                                    maxLength={160}
+                                  />
+                                  <p className="text-xs text-muted-foreground text-right">{bio.length}/160</p>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">{bio || 'No bio added yet'}</p>
+                              )}
+                            </div>
+                          </Card>
 
-                        {/* Profile Picture Editor */}
-                        <ProfilePictureEditor />
+                          {/* Location */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="font-semibold text-base">Location</h3>
+                                <p className="text-xs text-muted-foreground">Where are you based?</p>
+                              </div>
+                              <Input
+                                value={location}
+                                onChange={(e) => setLocation(e.target.value)}
+                                placeholder="City, Country"
+                                className=""
+                              />
+                            </div>
+                          </Card>
 
-                        {/* Visibility & Privacy Settings */}
-                        <ProfileVisibilitySettings />
-                      </div>
+                          {/* Website */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="font-semibold text-base">Website</h3>
+                                <p className="text-xs text-muted-foreground">Your personal website or portfolio</p>
+                              </div>
+                              <Input
+                                value={website}
+                                onChange={(e) => setWebsite(e.target.value)}
+                                placeholder="https://example.com"
+                                type="url"
+                              />
+                            </div>
+                          </Card>
+
+                          {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '')) && (
+                            <Button 
+                              onClick={handleSaveProfileInfo}
+                              className="w-full bg-gradient-to-r from-orange-500 to-amber-500"
+                            >
+                              Save Changes
+                            </Button>
+                          )}
+                        </TabsContent>
+
+                        {/* Photos Tab */}
+                        <TabsContent value="photos" className="space-y-6 mt-6">
+                          {/* Cover Photo */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="font-semibold text-base">Cover Photo</h3>
+                                <p className="text-xs text-muted-foreground">Upload a banner image for your profile</p>
+                              </div>
+                              
+                              {ownerProfile?.coverUrl && (
+                                <div className="relative aspect-[3/1] rounded-lg overflow-hidden border border-stone-200">
+                                  <img 
+                                    src={ownerProfile.coverUrl} 
+                                    alt="Cover" 
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  className="flex-1"
+                                  disabled={uploadingCover}
+                                  onClick={() => document.getElementById('cover-upload')?.click()}
+                                >
+                                  {uploadingCover ? (
+                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                  ) : (
+                                    <Upload className="w-4 h-4 mr-2" />
+                                  )}
+                                  {ownerProfile?.coverUrl ? 'Change Cover' : 'Upload Cover'}
+                                </Button>
+                                <input
+                                  id="cover-upload"
+                                  type="file"
+                                  accept="image/jpeg,image/png,image/webp"
+                                  onChange={handleCoverPhotoUpload}
+                                  className="hidden"
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">Recommended: 1500x500px, Max 2MB (JPEG, PNG, WebP)</p>
+                            </div>
+                          </Card>
+
+                          {/* Profile Picture */}
+                          <ProfilePictureEditor />
+                        </TabsContent>
+
+                        {/* Privacy Tab */}
+                        <TabsContent value="privacy" className="space-y-6 mt-6">
+                          <ProfileVisibilitySettings />
+                        </TabsContent>
+                      </Tabs>
                     </SheetContent>
                   </Sheet>
                 ) : (
