@@ -1,7 +1,12 @@
-import { useParams, Link, useSearchParams } from 'react-router-dom';
+import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
+import { useUserActivity } from '@/hooks/use-user-activity';
+import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { useQueryClient } from '@tanstack/react-query';
+import type { Issue } from '@/types/issue';
+import { signOut } from '@/integrations/firebase';
 import Navbar from '@/components/Navbar';
 import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +16,17 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Calendar, Link2, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Calendar, Link2, Settings, LogOut, Plus, Clock, AlertCircle, Activity as ActivityIcon, Eye, MoreVertical } from 'lucide-react';
+import ResolveIssueDialog from '@/components/ResolveIssueDialog';
+import AddProgressDialog from '@/components/AddProgressDialog';
+import IssueDetailDialog from '@/components/IssueDetailDialog';
+import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { formatRelativeTime } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { isFirebaseConfigured } from '@/integrations/firebase/config';
+import { Separator } from '@/components/ui/separator';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { updateUserDisplayName } from '@/integrations/firebase/profile';
@@ -27,11 +42,20 @@ export default function UserProfile() {
   const { uid } = useParams();
   const [search] = useSearchParams();
   const { user } = useAuth();
-  const { data: issues, isLoading } = useIssuesFirebase();
+  const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
+  const activityTracker = useActivityTracker();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [editingName, setEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [savingName, setSavingName] = useState(false);
   const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
+  const [progressDialogOpen, setProgressDialogOpen] = useState(false);
+  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -107,18 +131,49 @@ export default function UserProfile() {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Signed out successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to sign out');
+    }
+  };
+
+  const handleResolve = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setResolveDialogOpen(true);
+  };
+
+  const handleAddProgress = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setProgressDialogOpen(true);
+  };
+
+  const handleViewDetails = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setDetailDialogOpen(true);
+  };
+
+  const handleViewAnalytics = (issue: Issue) => {
+    setSelectedIssue(issue);
+    setAnalyticsDialogOpen(true);
+  };
+
+  const handleVisibilityChange = async (issueId: string, newVisibility: string) => {
+    try {
+      setVisibility.mutate({ id: issueId, visibility: newVisibility as 'public' | 'private' | 'draft' });
+      toast.success(`Issue visibility updated to ${newVisibility}`);
+    } catch (error) {
+      toast.error('Failed to update visibility');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50">
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <Navbar />
-        {/* Cover banner */}
-        {ownerProfile?.coverUrl && (
-          <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-24">
-            <div className="w-full h-40 md:h-56 rounded-2xl overflow-hidden border border-white/40 bg-white/60 backdrop-blur-lg">
-              <img src={ownerProfile.coverUrl} alt="Profile cover" className="w-full h-full object-cover" />
-            </div>
-          </div>
-        )}
         <main className="scroll-mt-20 pt-10 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
@@ -370,13 +425,22 @@ export default function UserProfile() {
                   Analytics
                 </TabsTrigger>
                 {isOwner && (
-                  <TabsTrigger 
-                    value="settings" 
-                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </TabsTrigger>
+                  <>
+                    <TabsTrigger 
+                      value="activity" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <ActivityIcon className="h-4 w-4 mr-2" />
+                      Activity
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="settings" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </TabsTrigger>
+                  </>
                 )}
               </TabsList>
               
@@ -424,9 +488,50 @@ export default function UserProfile() {
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between gap-2">
                               <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
-                              {vis && vis !== 'public' && (
-                                <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
-                              )}
+                              <div className="flex items-center gap-2">
+                                {vis && vis !== 'public' && (
+                                  <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
+                                )}
+                                {isOwner && (
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleViewDetails(issue)}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Details
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleViewAnalytics(issue)}>
+                                        <TrendingUp className="mr-2 h-4 w-4" />
+                                        Analytics
+                                      </DropdownMenuItem>
+                                      {issue.status !== 'resolved' && (
+                                        <DropdownMenuItem onClick={() => handleResolve(issue)}>
+                                          <Check className="mr-2 h-4 w-4" />
+                                          Mark Resolved
+                                        </DropdownMenuItem>
+                                      )}
+                                      <DropdownMenuItem onClick={() => handleAddProgress(issue)}>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Progress
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'public')}>
+                                        Set Public
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'private')}>
+                                        Set Private
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleVisibilityChange(issue.id, 'draft')}>
+                                        Set Draft
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                )}
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent className="flex flex-col gap-3 text-sm flex-1">
@@ -537,6 +642,76 @@ export default function UserProfile() {
                 </div>
               </TabsContent>
               
+              {/* Activity Tab (Owner Only) */}
+              {isOwner && (
+                <TabsContent value="activity" className="mt-6">
+                  <div className="max-w-2xl space-y-6">
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight mb-2">Recent Activity</h2>
+                      <p className="text-sm text-muted-foreground mb-4">Your latest interactions and updates</p>
+                    </div>
+                    
+                    {isActivityLoading ? (
+                      <div className="space-y-3">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Skeleton key={i} className="h-16 rounded-xl" />
+                        ))}
+                      </div>
+                    ) : userActivity && (userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || userActivity.likedComments.length > 0) ? (
+                      <div className="space-y-4">
+                        <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                          <h3 className="font-semibold text-lg mb-4">Activity Summary</h3>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200">
+                              <div className="text-2xl font-bold text-green-600">{userActivity.votedIssues.filter(v => v.vote === 1).length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Upvotes</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-red-50 border border-red-200">
+                              <div className="text-2xl font-bold text-red-600">{userActivity.votedIssues.filter(v => v.vote === -1).length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Downvotes</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
+                              <div className="text-2xl font-bold text-blue-600">{userActivity.comments.length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Comments</div>
+                            </div>
+                            <div className="text-center p-3 rounded-lg bg-purple-50 border border-purple-200">
+                              <div className="text-2xl font-bold text-purple-600">{userActivity.likedComments.length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Likes Given</div>
+                            </div>
+                          </div>
+                        </Card>
+                        
+                        {userActivity.comments.length > 0 && (
+                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
+                            <CardHeader>
+                              <CardTitle className="text-lg">Recent Comments</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                              <div className="divide-y divide-stone-200/60">
+                                {userActivity.comments.slice(0, 5).map((comment, idx) => (
+                                  <div key={idx} className="p-4 hover:bg-white/40 transition-colors">
+                                    <p className="text-sm text-stone-900 line-clamp-2">{comment.content || ''}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      {formatRelativeTime(comment.createdAt?.toDate?.() || new Date())}
+                                      {comment.likes ? ` • ${comment.likes} likes` : ''}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    ) : (
+                      <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
+                        <p className="text-muted-foreground">No recent activity</p>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+              )}
+              
               {/* Settings Tab (Owner Only) */}
               {isOwner && (
                 <TabsContent value="settings" className="mt-6">
@@ -547,6 +722,7 @@ export default function UserProfile() {
                       <div className="flex flex-wrap gap-3">
                         <Link to="/raise-issue">
                           <Button className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500">
+                            <Plus className="h-4 w-4 mr-2" />
                             Create New Issue
                           </Button>
                         </Link>
@@ -591,12 +767,65 @@ export default function UserProfile() {
                         </div>
                       </div>
                     </Card>
+                    
+                    <Separator />
+                    
+                    <Card className="rounded-2xl border border-red-200 bg-red-50/60 p-6">
+                      <h3 className="font-semibold text-lg mb-2 text-red-900">Account Actions</h3>
+                      <p className="text-sm text-red-700 mb-4">Manage your account settings</p>
+                      <Button 
+                        variant="destructive" 
+                        className="rounded-full"
+                        onClick={handleSignOut}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
+                      </Button>
+                    </Card>
                   </div>
                 </TabsContent>
               )}
             </Tabs>
           </div>
         </main>
+        
+        {/* Dialogs */}
+        {selectedIssue && (
+          <>
+            <ResolveIssueDialog
+              open={resolveDialogOpen}
+              onOpenChange={setResolveDialogOpen}
+              issueTitle={selectedIssue.title}
+              onResolve={async (resolution) => {
+                await resolveIssue.mutateAsync({
+                  id: selectedIssue.id,
+                  ...resolution
+                });
+              }}
+            />
+            <AddProgressDialog
+              open={progressDialogOpen}
+              onOpenChange={setProgressDialogOpen}
+              issueTitle={selectedIssue.title}
+              onAddProgress={(data) => {
+                addProgress.mutate({
+                  id: selectedIssue.id,
+                  ...data
+                });
+              }}
+            />
+            <IssueDetailDialog
+              open={detailDialogOpen}
+              onOpenChange={setDetailDialogOpen}
+              issue={selectedIssue}
+            />
+            <IssueAnalyticsDialog
+              open={analyticsDialogOpen}
+              onOpenChange={setAnalyticsDialogOpen}
+              issue={selectedIssue}
+            />
+          </>
+        )}
       </ParticlesBackground>
     </div>
   );

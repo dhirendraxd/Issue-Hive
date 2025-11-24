@@ -66,6 +66,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
+    } else if (!authLoading && user) {
+      // Redirect to unified profile page
+      navigate(`/u/${user.uid}`);
     }
   }, [user, authLoading, navigate]);
 
