@@ -16,8 +16,6 @@ import ImageCropDialog from './ImageCropDialog';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
-  const [savingName, setSavingName] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -27,36 +25,6 @@ export default function ProfilePictureEditor() {
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
 
   if (!user) return null;
-  const handleNameSave = async () => {
-    if (!displayName.trim() || displayName === user.displayName) return;
-    setSavingName(true);
-    setError(null);
-    try {
-      const { updateUserDisplayName } = await import('@/integrations/firebase/profile');
-      const { syncUserProfile, updateUserNameInIssues } = await import('@/integrations/firebase/user-sync');
-      
-      console.log('Updating display name...');
-      await updateUserDisplayName(user, displayName.trim());
-      await syncUserProfile({ ...user, displayName: displayName.trim() });
-      
-      // Update the display name in all issues created by this user (optional, don't block)
-      console.log('Updating issues in background...');
-      updateUserNameInIssues(user.uid, displayName.trim()).catch(err => {
-        console.warn('Failed to update issues:', err);
-        // Don't fail the whole operation if this fails
-      });
-      
-      toast.success('Username updated!');
-      setTimeout(() => window.location.reload(), 800);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update username';
-      console.error('Name update error:', err);
-      setError(message);
-      toast.error(message);
-    } finally {
-      setSavingName(false);
-    }
-  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -179,36 +147,17 @@ export default function ProfilePictureEditor() {
   return (
     <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
       <div className="space-y-6">
-        {/* Current Avatar & Username Edit */}
+        {/* Current Avatar */}
         <div className="flex items-center gap-4">
           <Avatar className="w-20 h-20 border-2 border-orange-200">
-            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={displayName || 'User'} />
+            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || 'User'} />
             <AvatarFallback className="bg-gradient-to-br from-orange-100 to-amber-100 text-orange-900">
-              {displayName?.[0] || user.email?.[0] || 'U'}
+              {user.displayName?.[0] || user.email?.[0] || 'U'}
             </AvatarFallback>
           </Avatar>
           <div>
-            <Label htmlFor="username" className="font-semibold text-lg mb-1 block">Username</Label>
-            <div className="flex gap-2 items-center">
-              <Input
-                id="username"
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                disabled={savingName}
-                className="w-40"
-                maxLength={32}
-                placeholder="Set your name"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleNameSave}
-                disabled={savingName || !displayName.trim() || displayName === user.displayName}
-              >
-                {savingName ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{user.email}</p>
+            <p className="font-semibold text-lg">{user.displayName || 'User'}</p>
+            <p className="text-xs text-muted-foreground">{user.email}</p>
           </div>
         </div>
 

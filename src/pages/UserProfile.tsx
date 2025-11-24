@@ -74,6 +74,9 @@ export default function UserProfile() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [website, setWebsite] = useState('');
+  const [username, setUsername] = useState('');
+  const [editingUsername, setEditingUsername] = useState(false);
+  const [savingUsername, setSavingUsername] = useState(false);
   
   // Sync state with ownerProfile when it loads
   useEffect(() => {
@@ -81,6 +84,7 @@ export default function UserProfile() {
       setBio(ownerProfile.bio || '');
       setLocation(ownerProfile.location || '');
       setWebsite(ownerProfile.social?.website || '');
+      setUsername(ownerProfile.username || '');
     }
   }, [ownerProfile]);
   
@@ -254,6 +258,29 @@ export default function UserProfile() {
     }
   };
 
+  const handleSaveUsername = async () => {
+    if (!user || !username.trim() || username === ownerProfile?.username) return;
+    
+    setSavingUsername(true);
+    try {
+      const { doc, updateDoc } = await import('firebase/firestore');
+      const { db } = await import('@/integrations/firebase/config');
+      
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: username.trim(),
+        updatedAt: new Date()
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      toast.success('Username updated!');
+      setEditingUsername(false);
+    } catch (error) {
+      toast.error('Failed to update username');
+    } finally {
+      setSavingUsername(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-stone-50">
       <ParticlesBackground fullPage hexOpacity={0.10}>
@@ -317,8 +344,8 @@ export default function UserProfile() {
                             <div className="space-y-4">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold text-base">Display Name</h3>
-                                  <p className="text-xs text-muted-foreground">Your public username</p>
+                                  <h3 className="font-semibold text-base">Full Name</h3>
+                                  <p className="text-xs text-muted-foreground">Your display name shown on your profile</p>
                                 </div>
                                 {!editingName && (
                                   <Button
@@ -361,7 +388,10 @@ export default function UserProfile() {
                                   </Button>
                                 </div>
                               ) : (
-                                <p className="text-base font-medium">{user?.displayName || 'Not set'}</p>
+                                <div>
+                                  <p className="text-base font-medium">{user?.displayName || 'Not set'}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Current full name</p>
+                                </div>
                               )}
                             </div>
                           </Card>
@@ -532,7 +562,7 @@ export default function UserProfile() {
             <div className="mt-20 px-6 pb-4 border-b border-stone-200/60">
               <div className="mb-3">
                 <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
-                <p className="text-sm text-muted-foreground">@{ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                <p className="text-sm text-muted-foreground">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
               </div>
               
               {ownerProfile?.bio && (
@@ -706,82 +736,47 @@ export default function UserProfile() {
                               return (
                                 <Card 
                                   key={issue.id} 
-                                  className="rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/30 backdrop-blur-lg flex flex-col hover:shadow-xl hover:shadow-orange-400/30 hover:border-orange-300/60 hover:scale-[1.02] transition-all cursor-pointer"
+                                  className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
                                   onClick={() => handleViewDetails(issue)}
                                 >
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between gap-2">
                                       <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
-                                      <div className="flex items-center gap-2">
-                                        {vis && vis !== 'public' && (
-                                          <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
-                                        )}
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <Button 
-                                              variant="ghost" 
-                                              size="sm" 
-                                              className="h-8 w-8 p-0"
-                                              onClick={(e) => e.stopPropagation()}
-                                            >
-                                              <MoreVertical className="h-4 w-4" />
-                                            </Button>
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleViewDetails(issue)}>
-                                              <Eye className="mr-2 h-4 w-4" />
-                                              View Details
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleViewAnalytics(issue)}>
-                                              <TrendingUp className="mr-2 h-4 w-4" />
-                                              Analytics
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleVisibilityChange(issue.id, 'public');
-                                              }}
-                                            >
-                                              Set Public
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleVisibilityChange(issue.id, 'private');
-                                              }}
-                                            >
-                                              Set Private
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem 
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleVisibilityChange(issue.id, 'draft');
-                                              }}
-                                            >
-                                              Set Draft
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
+                                      {vis && vis !== 'public' && (
+                                        <Badge variant="outline" className="text-xs capitalize shrink-0 border-orange-300/60 text-orange-700/80 bg-orange-50/50">{vis}</Badge>
+                                      )}
                                     </div>
                                   </CardHeader>
                                   <CardContent className="flex flex-col gap-3 text-sm flex-1">
                                     <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
                                     <div className="flex flex-wrap gap-2 mt-auto">
-                                      <Badge variant="outline" className="text-xs">{issue.category}</Badge>
-                                      <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
-                                      <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                                      <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-stone-50">{issue.category}</Badge>
+                                      <Badge 
+                                        variant={issue.status === 'resolved' ? 'default' : 'secondary'} 
+                                        className={`text-xs capitalize ${
+                                          issue.status === 'resolved' 
+                                            ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                                            : issue.status === 'in_progress'
+                                            ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                            : 'bg-stone-100 text-stone-700 border-stone-200'
+                                        }`}
+                                      >
+                                        {issue.status.replace('_',' ')}
+                                      </Badge>
+                                      <span className="text-xs px-2 py-1 rounded-full bg-orange-50/70 text-orange-700/90 border border-orange-200/60">
+                                        {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
+                                      </span>
                                     </div>
-                                    <div className="flex gap-3 text-xs text-muted-foreground pt-2 border-t border-stone-200/60">
-                                      <span className="flex items-center gap-1">
+                                    <div className="flex gap-3 text-xs pt-2 border-t border-stone-200/60">
+                                      <span className="flex items-center gap-1 text-emerald-600/80">
                                         <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
                                       </span>
                                       {!ownerProfile?.hideDislikeCounts && (
-                                        <span className="flex items-center gap-1">
+                                        <span className="flex items-center gap-1 text-rose-600/80">
                                           <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
                                         </span>
                                       )}
-                                      <span className="flex items-center gap-1">
+                                      <span className="flex items-center gap-1 text-stone-600/80">
                                         <MessageSquare className="h-3 w-3" /> {engagement.comments}
                                       </span>
                                     </div>
@@ -817,34 +812,47 @@ export default function UserProfile() {
                           return (
                             <Card 
                               key={issue.id} 
-                              className="rounded-2xl border-2 border-orange-200/50 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/30 backdrop-blur-lg flex flex-col hover:shadow-xl hover:shadow-orange-400/30 hover:border-orange-300/60 hover:scale-[1.02] transition-all cursor-pointer"
+                              className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
                               onClick={() => handleViewDetails(issue)}
                             >
                               <CardHeader className="pb-3">
                                 <div className="flex items-start justify-between gap-2">
                                   <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
                                   {vis && vis !== 'public' && (
-                                    <Badge variant="outline" className="text-xs capitalize shrink-0">{vis}</Badge>
+                                    <Badge variant="outline" className="text-xs capitalize shrink-0 border-orange-300/60 text-orange-700/80 bg-orange-50/50">{vis}</Badge>
                                   )}
                                 </div>
                               </CardHeader>
                               <CardContent className="flex flex-col gap-3 text-sm flex-1">
                                 <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
                                 <div className="flex flex-wrap gap-2 mt-auto">
-                                  <Badge variant="outline" className="text-xs">{issue.category}</Badge>
-                                  <Badge variant={issue.status === 'resolved' ? 'default' : 'secondary'} className="text-xs capitalize">{issue.status.replace('_',' ')}</Badge>
-                                  <span className="text-xs text-muted-foreground">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</span>
+                                  <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-stone-50">{issue.category}</Badge>
+                                  <Badge 
+                                    variant={issue.status === 'resolved' ? 'default' : 'secondary'} 
+                                    className={`text-xs capitalize ${
+                                      issue.status === 'resolved' 
+                                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
+                                        : issue.status === 'in_progress'
+                                        ? 'bg-amber-100 text-amber-700 border-amber-200'
+                                        : 'bg-stone-100 text-stone-700 border-stone-200'
+                                    }`}
+                                  >
+                                    {issue.status.replace('_',' ')}
+                                  </Badge>
+                                  <span className="text-xs px-2 py-1 rounded-full bg-orange-50/70 text-orange-700/90 border border-orange-200/60">
+                                    {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
+                                  </span>
                                 </div>
-                                <div className="flex gap-3 text-xs text-muted-foreground pt-2 border-t border-stone-200/60">
-                                  <span className="flex items-center gap-1">
+                                <div className="flex gap-3 text-xs pt-2 border-t border-stone-200/60">
+                                  <span className="flex items-center gap-1 text-emerald-600/80">
                                     <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
                                   </span>
                                   {!ownerProfile?.hideDislikeCounts && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 text-rose-600/80">
                                       <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
                                     </span>
                                   )}
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1 text-stone-600/80">
                                     <MessageSquare className="h-3 w-3" /> {engagement.comments}
                                   </span>
                                 </div>

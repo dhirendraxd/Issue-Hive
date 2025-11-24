@@ -9,6 +9,7 @@ export interface UserProfileDoc {
   hideDislikeCounts?: boolean;
   updatedAt?: number;
   displayName?: string;
+  username?: string;
   photoURL?: string;
   coverUrl?: string | null;
   bio?: string | null;
