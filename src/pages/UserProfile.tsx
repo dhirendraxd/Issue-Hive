@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Edit2, Check, X, Loader2, MapPin, Globe, Github, Twitter, Linkedin, Instagram, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Calendar, Link2, Settings, LogOut, Plus, Clock, AlertCircle, Activity as ActivityIcon, Eye, MoreVertical, Upload } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
@@ -80,6 +81,7 @@ export default function UserProfile() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [website, setWebsite] = useState('');
+  const [pronouns, setPronouns] = useState('');
   const [github, setGithub] = useState('');
   const [twitter, setTwitter] = useState('');
   const [linkedin, setLinkedin] = useState('');
@@ -94,6 +96,7 @@ export default function UserProfile() {
       setBio(ownerProfile.bio || '');
       setLocation(ownerProfile.location || '');
       setWebsite(ownerProfile.social?.website || '');
+      setPronouns(ownerProfile.pronouns || '');
       setGithub(ownerProfile.social?.github || '');
       setTwitter(ownerProfile.social?.twitter || '');
       setLinkedin(ownerProfile.social?.linkedin || '');
@@ -275,6 +278,7 @@ export default function UserProfile() {
       const sanitizedBio = limitLength(sanitizeText(bio), 160);
       const sanitizedLocation = limitLength(sanitizeText(location), 100);
       const sanitizedWebsite = sanitizeURL(website);
+      const sanitizedPronouns = sanitizeText(pronouns);
       const sanitizedGithub = sanitizeURL(github);
       const sanitizedTwitter = sanitizeURL(twitter);
       const sanitizedLinkedin = sanitizeURL(linkedin);
@@ -305,6 +309,7 @@ export default function UserProfile() {
       await updateDoc(doc(db, 'users', user.uid), {
         bio: sanitizedBio,
         location: sanitizedLocation,
+        pronouns: sanitizedPronouns,
         'social.website': sanitizedWebsite,
         'social.github': sanitizedGithub,
         'social.twitter': sanitizedTwitter,
@@ -626,6 +631,31 @@ export default function UserProfile() {
                             </div>
                           </Card>
 
+                          {/* Pronouns */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="font-semibold text-base">Pronouns</h3>
+                                <p className="text-xs text-muted-foreground">How would you like to be referred?</p>
+                              </div>
+                              <Select value={pronouns} onValueChange={setPronouns}>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select pronouns" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="he/him">he/him</SelectItem>
+                                  <SelectItem value="she/her">she/her</SelectItem>
+                                  <SelectItem value="they/them">they/them</SelectItem>
+                                  <SelectItem value="he/they">he/they</SelectItem>
+                                  <SelectItem value="she/they">she/they</SelectItem>
+                                  <SelectItem value="any">any pronouns</SelectItem>
+                                  <SelectItem value="other">other</SelectItem>
+                                  <SelectItem value="">Prefer not to say</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </Card>
+
                           {/* Website */}
                           <Card className="rounded-xl border border-stone-200 p-5">
                             <div className="space-y-4">
@@ -706,7 +736,7 @@ export default function UserProfile() {
                             </div>
                           </Card>
 
-                          {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '') || github !== (ownerProfile?.social?.github || '') || twitter !== (ownerProfile?.social?.twitter || '') || linkedin !== (ownerProfile?.social?.linkedin || '') || instagram !== (ownerProfile?.social?.instagram || '')) && (
+                          {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '') || pronouns !== (ownerProfile?.pronouns || '') || github !== (ownerProfile?.social?.github || '') || twitter !== (ownerProfile?.social?.twitter || '') || linkedin !== (ownerProfile?.social?.linkedin || '') || instagram !== (ownerProfile?.social?.instagram || '')) && (
                             <div className="pt-2">
                               <Button 
                                 onClick={handleSaveProfileInfo}
@@ -803,7 +833,12 @@ export default function UserProfile() {
             <div className="mt-20 px-6 pb-4 border-b border-stone-200/60">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1">
-                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                    {ownerProfile?.pronouns && (
+                      <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
                 </div>
                 

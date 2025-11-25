@@ -13,6 +13,7 @@ import { useIssueComments } from "@/hooks/use-issue-comments";
 import { useIssueVotes } from "@/hooks/use-issue-votes";
 import { useMemo } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { pinComment, type CommentDoc, Timestamp } from "@/integrations/firebase/firestore";
 import { toast } from "sonner";
@@ -42,6 +43,7 @@ export default function IssueAnalyticsDialog({
   const { data: comments = [] } = useIssueComments(issue?.id);
   const { data: votes = [] } = useIssueVotes(issue?.id);
   const { user } = useAuth();
+  const { data: creatorProfile } = useUserProfile(issue?.createdBy);
   const qc = useQueryClient();
   const isOwner = !!issue && user?.uid === issue.createdBy;
 
@@ -171,7 +173,7 @@ export default function IssueAnalyticsDialog({
             <div className="flex flex-col gap-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <User className="h-4 w-4" />
-                <span>Posted by: <b>{issue.createdByName || "Anonymous"}</b></span>
+                <span>Posted by: <b>{creatorProfile?.displayName || issue.createdByName || "Anonymous"}</b></span>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />

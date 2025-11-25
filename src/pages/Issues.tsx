@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
@@ -9,10 +9,12 @@ import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from
 import { formatRelativeTime } from '@/lib/utils';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link } from 'react-router-dom';
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 import IssueDetailDialog from "@/components/IssueDetailDialog";
-import UserAvatar from "@/components/UserAvatar";
+import ReportUserDialog from "@/components/ReportUserDialog";
+import UserDisplay, { UserDisplayName } from "@/components/UserDisplay";
 
 export default function Issues() {
   const { user } = useAuth();
@@ -21,6 +23,8 @@ export default function Issues() {
   // Modal state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportingUser, setReportingUser] = useState<{ userId: string; userName: string; issueId: string; issueTitle: string } | null>(null);
 
   const handleCardClick = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -33,6 +37,17 @@ export default function Issues() {
       // Small delay to allow dialog close animation
       setTimeout(() => setSelectedIssue(null), 150);
     }
+  };
+
+  const handleReportUser = (issue: Issue, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setReportingUser({
+      userId: issue.createdBy,
+      userName: issue.createdByName || "Anonymous",
+      issueId: issue.id,
+      issueTitle: issue.title,
+    });
+    setReportDialogOpen(true);
   };
 
   // Filters
@@ -166,29 +181,42 @@ export default function Issues() {
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
-                    {i.anonymous ? (
-                      <UserAvatar 
-                        photoURL={i.createdByPhotoURL}
-                        userId={i.createdBy}
-                        displayName={i.createdByName}
-                        className="h-10 w-10 flex-shrink-0"
-                      />
-                    ) : (
-                      <Link to={`/u/${i.createdBy}`} onClick={(e) => e.stopPropagation()}>
-                        <UserAvatar 
-                          photoURL={i.createdByPhotoURL}
-                          userId={i.createdBy}
-                          displayName={i.createdByName}
-                          className="h-10 w-10 flex-shrink-0"
-                        />
-                      </Link>
-                    )}
+                    <UserDisplay
+                      userId={i.createdBy}
+                      photoURL={i.createdByPhotoURL}
+                      fallbackName={i.createdByName}
+                      anonymous={i.anonymous}
+                      showLink={!i.anonymous}
+                      avatarClassName="h-10 w-10 flex-shrink-0"
+                    />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{i.createdByName ?? "Anonymous"}</p>
+                      <UserDisplayName 
+                        userId={i.createdBy}
+                        fallbackName={i.createdByName}
+                        className="text-sm font-medium truncate"
+                      />
                       <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
                         {formatRelativeTime(i.createdAt)}
                       </p>
                     </div>
+                    {user && user.uid !== i.createdBy && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem
+                            onClick={(e) => handleReportUser(i, e)}
+                            className="text-red-600 focus:text-red-600 cursor-pointer"
+                          >
+                            <Flag className="h-4 w-4 mr-2" />
+                            Report User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )}
                   </div>
 
                   {/* Issue Title & Description */}
@@ -303,6 +331,20 @@ export default function Issues() {
         onOpenChange={handleDialogClose}
         enablePin={selectedIssue ? selectedIssue.createdBy === user?.uid : false}
       />
+
+      {/* Report User Dialog */}
+      {reportingUser && (
+        <ReportUserDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          reportedUserId={reportingUser.userId}
+          reportedUserName={reportingUser.userName}
+          context={{
+            issueId: reportingUser.issueId,
+            issueTitle: reportingUser.issueTitle,
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -14,6 +14,7 @@ export interface UserProfileDoc {
   coverUrl?: string | null;
   bio?: string | null;
   location?: string | null;
+  pronouns?: string | null;
   social?: {
     website?: string | null;
     twitter?: string | null;

@@ -6,12 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, MoreVertical, Flag } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
+import ReportUserDialog from "./ReportUserDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
+import { useUserProfile } from "@/hooks/use-user-profile";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
@@ -34,8 +37,10 @@ export default function IssueDetailDialog({
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
+  const { data: creatorProfile } = useUserProfile(issue?.createdBy);
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   
   // Sync visibility state with issue prop
   useEffect(() => {
@@ -115,7 +120,7 @@ export default function IssueDetailDialog({
             )}
             <div className="flex-1 min-w-0">
               <DialogTitle className="text-lg font-display font-semibold truncate">
-                {issue.createdByName ?? "Anonymous"}
+                {creatorProfile?.displayName || issue.createdByName || "Anonymous"}
               </DialogTitle>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3" />
@@ -132,6 +137,24 @@ export default function IssueDetailDialog({
                 <Lock className="h-3 w-3" />
                 Private Issue
               </Badge>
+            )}
+            {!isOwner && user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setReportDialogOpen(true)}
+                    className="text-red-600 focus:text-red-600 cursor-pointer"
+                  >
+                    <Flag className="h-4 w-4 mr-2" />
+                    Report User
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
           </div>
         </DialogHeader>
@@ -429,6 +452,18 @@ export default function IssueDetailDialog({
           </div>
         </ScrollArea>
       </DialogContent>
+      
+      {/* Report User Dialog */}
+      <ReportUserDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        reportedUserId={issue.createdBy}
+        reportedUserName={creatorProfile?.displayName || issue.createdByName || "Anonymous"}
+        context={{
+          issueId: issue.id,
+          issueTitle: issue.title,
+        }}
+      />
     </Dialog>
   );
 }
