@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -34,12 +34,14 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
 
-  if (!user) return null;
-
   // Close crop dialog if parent sheet closes to avoid portal unmount race conditions
-  if (!parentOpen && cropDialogOpen) {
-    setCropDialogOpen(false);
-  }
+  useEffect(() => {
+    if (!parentOpen && cropDialogOpen) {
+      setCropDialogOpen(false);
+    }
+  }, [parentOpen, cropDialogOpen]);
+
+  if (!user) return null;
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

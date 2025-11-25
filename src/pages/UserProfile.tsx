@@ -385,9 +385,10 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
-      <ParticlesBackground fullPage hexOpacity={0.10}>
-        <Navbar />
+    <>
+      <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
+        <ParticlesBackground fullPage hexOpacity={0.10}>
+          <Navbar />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
@@ -414,82 +415,15 @@ export default function UserProfile() {
               {/* Action Buttons */}
               <div className="absolute top-4 right-4 flex gap-2">
                 {isOwner ? (
-                  <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full bg-white/90 backdrop-blur hover:bg-white border-stone-300"
-                      >
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        Edit Profile
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-                      <SheetHeader>
-                        <SheetTitle className="text-xl">Edit Profile</SheetTitle>
-                        <SheetDescription>
-                          Customize your profile, upload photos, and manage privacy settings
-                        </SheetDescription>
-                      </SheetHeader>
-                      <Tabs defaultValue="basic" className="mt-6">
-                        <TabsList className="grid w-full grid-cols-2">
-                          <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                          <TabsTrigger value="photos">Photos</TabsTrigger>
-                        </TabsList>
-
-                        {/* Basic Info Tab */}
-                        <TabsContent value="basic" className="space-y-6 mt-6">
-                          <EditBasicInfoTab
-                            ownerProfile={ownerProfile}
-                            userDisplayName={user?.displayName}
-                            userEmail={user?.email}
-                            editingName={editingName}
-                            setEditingName={setEditingName}
-                            newDisplayName={newDisplayName}
-                            setNewDisplayName={setNewDisplayName}
-                            savingName={savingName}
-                            handleSaveDisplayName={handleSaveDisplayName}
-                            editingUsername={editingUsername}
-                            setEditingUsername={setEditingUsername}
-                            username={username}
-                            setUsername={setUsername}
-                            savingUsername={savingUsername}
-                            handleSaveUsername={handleSaveUsername}
-                            editingBio={editingBio}
-                            setEditingBio={setEditingBio}
-                            bio={bio}
-                            setBio={setBio}
-                            location={location}
-                            setLocation={setLocation}
-                            pronouns={pronouns}
-                            setPronouns={setPronouns}
-                            website={website}
-                            setWebsite={setWebsite}
-                            github={github}
-                            setGithub={setGithub}
-                            twitter={twitter}
-                            setTwitter={setTwitter}
-                            linkedin={linkedin}
-                            setLinkedin={setLinkedin}
-                            instagram={instagram}
-                            setInstagram={setInstagram}
-                            handleSaveProfileInfo={handleSaveProfileInfo}
-                          />
-                        </TabsContent>
-                        
-                        {/* Photos Tab */}
-                        <TabsContent value="photos" className="space-y-6 mt-6">
-                          <EditPhotosTab 
-                            ownerProfile={ownerProfile}
-                            uploadingCover={uploadingCover}
-                            handleCoverPhotoUpload={handleCoverPhotoUpload}
-                            sheetOpen={editSheetOpen}
-                          />
-                        </TabsContent>
-                      </Tabs>
-                    </SheetContent>
-                  </Sheet>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-full bg-white/90 backdrop-blur hover:bg-white border-stone-300"
+                    onClick={() => setEditSheetOpen(true)}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit Profile
+                  </Button>
                 ) : (
                   user && (
                     isFollowing ? (
@@ -1203,6 +1137,77 @@ export default function UserProfile() {
         )}
       </ParticlesBackground>
     </div>
+
+    {/* Edit Profile Sheet - Moved outside ParticlesBackground to prevent portal conflicts with canvas animations */}
+    {isOwner && (
+      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="text-xl">Edit Profile</SheetTitle>
+            <SheetDescription>
+              Customize your profile, upload photos, and manage privacy settings
+            </SheetDescription>
+          </SheetHeader>
+          <Tabs defaultValue="basic" className="mt-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
+            </TabsList>
+
+            {/* Basic Info Tab */}
+            <TabsContent value="basic" className="space-y-6 mt-6">
+              <EditBasicInfoTab
+                ownerProfile={ownerProfile}
+                userDisplayName={user?.displayName}
+                userEmail={user?.email}
+                editingName={editingName}
+                setEditingName={setEditingName}
+                newDisplayName={newDisplayName}
+                setNewDisplayName={setNewDisplayName}
+                savingName={savingName}
+                handleSaveDisplayName={handleSaveDisplayName}
+                editingUsername={editingUsername}
+                setEditingUsername={setEditingUsername}
+                username={username}
+                setUsername={setUsername}
+                savingUsername={savingUsername}
+                handleSaveUsername={handleSaveUsername}
+                editingBio={editingBio}
+                setEditingBio={setEditingBio}
+                bio={bio}
+                setBio={setBio}
+                location={location}
+                setLocation={setLocation}
+                pronouns={pronouns}
+                setPronouns={setPronouns}
+                website={website}
+                setWebsite={setWebsite}
+                github={github}
+                setGithub={setGithub}
+                twitter={twitter}
+                setTwitter={setTwitter}
+                linkedin={linkedin}
+                setLinkedin={setLinkedin}
+                instagram={instagram}
+                setInstagram={setInstagram}
+                handleSaveProfileInfo={handleSaveProfileInfo}
+              />
+            </TabsContent>
+            
+            {/* Photos Tab */}
+            <TabsContent value="photos" className="space-y-6 mt-6">
+              <EditPhotosTab 
+                ownerProfile={ownerProfile}
+                uploadingCover={uploadingCover}
+                handleCoverPhotoUpload={handleCoverPhotoUpload}
+                sheetOpen={editSheetOpen}
+              />
+            </TabsContent>
+          </Tabs>
+        </SheetContent>
+      </Sheet>
+    )}
+  </>
   );
 }
 
