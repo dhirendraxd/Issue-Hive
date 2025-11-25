@@ -360,7 +360,7 @@ export default function UserProfile() {
       
       // Invalidate and refetch the query for the current profile being viewed
       await queryClient.invalidateQueries({ queryKey: ['user-profile', uid] });
-      await queryClient.refetchQueries({ queryKey: ['userProfile', uid] });
+      await queryClient.refetchQueries({ queryKey: ['user-profile', uid] });
       
       toast.success('Username updated!');
       setEditingUsername(false);
@@ -402,7 +402,10 @@ export default function UserProfile() {
               {/* Action Buttons */}
               <div className="absolute top-4 right-4 flex gap-2">
                 {isOwner ? (
-                  <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+                  <Sheet open={editSheetOpen} onOpenChange={(open)=>{
+                    if (open && !ownerProfile) return; // wait until profile loaded
+                    setEditSheetOpen(open);
+                  }}>
                     <SheetTrigger asChild>
                       <Button
                         variant="outline"
@@ -414,7 +417,9 @@ export default function UserProfile() {
                       </Button>
                     </SheetTrigger>
                     <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-                      <SheetHeader>
+                      {ownerProfile ? (
+                        <>
+                        <SheetHeader>
                         <SheetTitle className="text-xl">Edit Profile</SheetTitle>
                         <SheetDescription>
                           Customize your profile, upload photos, and manage privacy settings
@@ -749,7 +754,7 @@ export default function UserProfile() {
                             </div>
                           )}
                         </TabsContent>
-
+                        
                         {/* Photos Tab */}
                         <TabsContent value="photos" className="space-y-6 mt-6">
                           {/* Cover Photo */}
@@ -800,6 +805,13 @@ export default function UserProfile() {
                           <ProfilePictureEditor />
                         </TabsContent>
                       </Tabs>
+                      </>
+                      ) : (
+                        <div className="py-10 flex flex-col items-center gap-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                          <p className="text-sm text-muted-foreground">Loading profile...</p>
+                        </div>
+                      )}
                     </SheetContent>
                   </Sheet>
                 ) : (
