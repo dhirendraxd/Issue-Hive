@@ -16,6 +16,7 @@ import ImageCropDialog from './ImageCropDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
+import { USER_PROFILE_KEY } from '@/lib/queryKeys';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
@@ -112,8 +113,8 @@ export default function ProfilePictureEditor() {
       setPreviewUrl(null);
       setCroppedImage(null);
       
-      // Invalidate queries to refetch updated profile
-      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      // Invalidate queries to refetch updated profile (standardized key)
+      await queryClient.invalidateQueries({ queryKey: [USER_PROFILE_KEY, user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
       console.error('Upload error:', err);
@@ -144,8 +145,8 @@ export default function ProfilePictureEditor() {
       setSelectedStyle(style);
       toast.success('Profile picture updated!');
       
-      // Invalidate queries to refetch updated profile
-      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      // Invalidate queries to refetch updated profile (standardized key)
+      await queryClient.invalidateQueries({ queryKey: [USER_PROFILE_KEY, user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set default avatar';
       console.error('Avatar update error:', err);
