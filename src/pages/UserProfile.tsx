@@ -168,7 +168,7 @@ export default function UserProfile() {
       await updateUserDisplayName(user, sanitizedName);
       
       // Invalidate queries to refetch updated data
-      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       await queryClient.invalidateQueries({ queryKey: ['issues'] });
       await queryClient.invalidateQueries({ queryKey: ['comments'] });
       
@@ -256,7 +256,7 @@ export default function UserProfile() {
         });
         
         // Invalidate queries to refetch updated data
-        queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+        queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
         toast.success('Cover photo updated!');
       };
       reader.readAsDataURL(file);
@@ -319,7 +319,7 @@ export default function UserProfile() {
       });
       
       // Invalidate queries to refetch updated data
-      queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       toast.success('Profile updated!');
       setEditingBio(false);
     } catch (error) {
@@ -359,7 +359,7 @@ export default function UserProfile() {
       console.log('Username updated in Firestore, invalidating queries');
       
       // Invalidate and refetch the query for the current profile being viewed
-      await queryClient.invalidateQueries({ queryKey: ['userProfile', uid] });
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', uid] });
       await queryClient.refetchQueries({ queryKey: ['userProfile', uid] });
       
       toast.success('Username updated!');
