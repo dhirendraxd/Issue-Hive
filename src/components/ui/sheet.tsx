@@ -55,12 +55,11 @@ const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
   SheetContentProps
 >(({ side = "right", className, children, ...props }, ref) => (
-  <SheetPortal container={typeof document !== 'undefined' ? document.body : undefined}>
+  <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
-      style={{ willChange: 'auto', viewTransitionName: 'none' } as React.CSSProperties}
       {...props}
     >
       {children}

@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
@@ -8,18 +8,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
 import Navbar from '@/components/Navbar';
-import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Edit2, Check, X, Loader2, MapPin, Github, Twitter, Linkedin, Instagram, Upload, Link2, Calendar, Activity as ActivityIcon, Settings, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -31,17 +25,12 @@ import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Separator } from '@/components/ui/separator';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
-import { updateUserDisplayName } from '@/integrations/firebase/profile';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts } from '@/hooks/use-follow';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
-import EditPhotosTab from '@/components/profile/EditPhotosTab';
-import EditBasicInfoTab from '@/components/profile/EditBasicInfoTab';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getUserAvatarUrl } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
-import { sanitizeText, sanitizeURL, limitLength, sanitizeEmail } from '@/lib/sanitize';
 
 export default function UserProfile() {
   const { uid } = useParams();
@@ -58,26 +47,11 @@ export default function UserProfile() {
   
   // Resolve avatar URL (handles firestore:// references)
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
-  const [editingName, setEditingName] = useState(false);
-  const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
-  const [savingName, setSavingName] = useState(false);
-  const [editSheetOpen, setEditSheetOpen] = useState(false);
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
-  // Lock body scroll when edit sheet open to prevent layout thrash & background reflow during portal animations
-  useEffect(() => {
-    if (editSheetOpen) {
-      const prev = document.body.style.overflow;
-      document.body.style.overflow = 'hidden';
-      return () => { document.body.style.overflow = prev; };
-    } else {
-      document.body.style.overflow = '';
-    }
-  }, [editSheetOpen]);
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -87,35 +61,6 @@ export default function UserProfile() {
   const { data: isFollowing = false } = useIsFollowing(!isOwner ? uid : undefined);
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
-  
-  // Initialize state after ownerProfile is available
-  const [editingBio, setEditingBio] = useState(false);
-  const [bio, setBio] = useState('');
-  const [location, setLocation] = useState('');
-  const [website, setWebsite] = useState('');
-  const [pronouns, setPronouns] = useState('');
-  const [github, setGithub] = useState('');
-  const [twitter, setTwitter] = useState('');
-  const [linkedin, setLinkedin] = useState('');
-  const [instagram, setInstagram] = useState('');
-  const [username, setUsername] = useState('');
-  const [editingUsername, setEditingUsername] = useState(false);
-  const [savingUsername, setSavingUsername] = useState(false);
-  
-  // Sync state with ownerProfile when it loads
-  useEffect(() => {
-    if (ownerProfile) {
-      setBio(ownerProfile.bio || '');
-      setLocation(ownerProfile.location || '');
-      setWebsite(ownerProfile.social?.website || '');
-      setPronouns(ownerProfile.pronouns || '');
-      setGithub(ownerProfile.social?.github || '');
-      setTwitter(ownerProfile.social?.twitter || '');
-      setLinkedin(ownerProfile.social?.linkedin || '');
-      setInstagram(ownerProfile.social?.instagram || '');
-      setUsername(ownerProfile.username || '');
-    }
-  }, [ownerProfile]);
   
   const { data: followCounts = { followers: 0, following: 0 } } = useFollowCounts(uid);
   
@@ -164,39 +109,6 @@ export default function UserProfile() {
     };
   }, [owned, engagementMap]);
 
-  const handleSaveDisplayName = async () => {
-    if (!user || !newDisplayName.trim()) return;
-
-    setSavingName(true);
-    try {
-      // Sanitize display name
-      const sanitizedName = limitLength(sanitizeText(newDisplayName), 100);
-      if (!sanitizedName) {
-        toast.error('Invalid display name');
-        setSavingName(false);
-        return;
-      }
-      
-      await updateUserDisplayName(user, sanitizedName);
-      
-      // Invalidate queries to refetch updated data
-      await queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      await queryClient.invalidateQueries({ queryKey: ['issues'] });
-      await queryClient.invalidateQueries({ queryKey: ['comments'] });
-      
-      toast.success('Display name updated across all issues and comments!');
-      setEditingName(false);
-      
-      // Reload to reflect changes everywhere
-      setTimeout(() => window.location.reload(), 500);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to update display name';
-      toast.error(message);
-    } finally {
-      setSavingName(false);
-    }
-  };
-
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -239,156 +151,10 @@ export default function UserProfile() {
     }
   };
 
-  const handleCoverPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      toast.error('Please upload a JPEG, PNG, or WebP image');
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
-      return;
-    }
-
-    setUploadingCover(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = reader.result as string;
-        const { doc, updateDoc } = await import('firebase/firestore');
-        const { db } = await import('@/integrations/firebase/config');
-        
-        await updateDoc(doc(db, 'users', user.uid), {
-          coverUrl: base64,
-          updatedAt: new Date()
-        });
-        
-        // Invalidate queries to refetch updated data
-        queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-        toast.success('Cover photo updated!');
-      };
-      reader.readAsDataURL(file);
-    } catch (error) {
-      toast.error('Failed to upload cover photo');
-    } finally {
-      setUploadingCover(false);
-    }
-  };
-
-  const handleSaveProfileInfo = async () => {
-    if (!user) return;
-    
-    try {
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/integrations/firebase/config');
-      
-      // Sanitize all inputs
-      const sanitizedBio = limitLength(sanitizeText(bio), 160);
-      const sanitizedLocation = limitLength(sanitizeText(location), 100);
-      const sanitizedWebsite = sanitizeURL(website);
-      const sanitizedPronouns = sanitizeText(pronouns);
-      const sanitizedGithub = sanitizeURL(github);
-      const sanitizedTwitter = sanitizeURL(twitter);
-      const sanitizedLinkedin = sanitizeURL(linkedin);
-      const sanitizedInstagram = sanitizeURL(instagram);
-      
-      // Validate URLs if provided
-      if (website && !sanitizedWebsite) {
-        toast.error('Invalid website URL');
-        return;
-      }
-      if (github && !sanitizedGithub) {
-        toast.error('Invalid GitHub URL');
-        return;
-      }
-      if (twitter && !sanitizedTwitter) {
-        toast.error('Invalid Twitter URL');
-        return;
-      }
-      if (linkedin && !sanitizedLinkedin) {
-        toast.error('Invalid LinkedIn URL');
-        return;
-      }
-      if (instagram && !sanitizedInstagram) {
-        toast.error('Invalid Instagram URL');
-        return;
-      }
-      
-      await updateDoc(doc(db, 'users', user.uid), {
-        bio: sanitizedBio,
-        location: sanitizedLocation,
-        pronouns: sanitizedPronouns,
-        'social.website': sanitizedWebsite,
-        'social.github': sanitizedGithub,
-        'social.twitter': sanitizedTwitter,
-        'social.linkedin': sanitizedLinkedin,
-        'social.instagram': sanitizedInstagram,
-        updatedAt: new Date()
-      });
-      
-      // Invalidate queries to refetch updated data
-      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      toast.success('Profile updated!');
-      setEditingBio(false);
-    } catch (error) {
-      toast.error('Failed to update profile');
-    }
-  };
-
-  const handleSaveUsername = async () => {
-    if (!user || !username.trim()) {
-      console.log('Cannot save: missing user or empty username');
-      return;
-    }
-    
-    // Sanitize and validate username
-    const sanitizedUsername = sanitizeText(username).toLowerCase().replace(/[^a-z0-9_-]/g, '');
-    if (!sanitizedUsername || sanitizedUsername.length < 3 || sanitizedUsername.length > 32) {
-      toast.error('Username must be 3-32 characters (letters, numbers, _ or - only)');
-      return;
-    }
-    
-    const trimmedUsername = sanitizedUsername.trim();
-    if (trimmedUsername === ownerProfile?.username) {
-      console.log('Username unchanged, skipping save');
-      toast.info('Username is already set to that value');
-      setEditingUsername(false);
-      return;
-    }
-    
-    setSavingUsername(true);
-    try {
-      const { updateUsername } = await import('@/integrations/firebase/profile');
-      
-      console.log('Updating username from:', ownerProfile?.username, 'to:', trimmedUsername, 'for user:', user.uid);
-      
-      await updateUsername(user.uid, trimmedUsername);
-      
-      console.log('Username updated in Firestore, invalidating queries');
-      
-      // Invalidate and refetch the query for the current profile being viewed
-      await queryClient.invalidateQueries({ queryKey: ['user-profile', uid] });
-      await queryClient.refetchQueries({ queryKey: ['user-profile', uid] });
-      
-      toast.success('Username updated!');
-      setEditingUsername(false);
-    } catch (error) {
-      console.error('Failed to update username:', error);
-      toast.error('Failed to update username');
-    } finally {
-      setSavingUsername(false);
-    }
-  };
-
   return (
-    <>
-      <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
-        <ParticlesBackground fullPage hexOpacity={0.10}>
-          <Navbar />
+    <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
+      <ParticlesBackground fullPage hexOpacity={0.10}>
+        <Navbar />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
@@ -419,7 +185,7 @@ export default function UserProfile() {
                     variant="outline"
                     size="sm"
                     className="rounded-full bg-white/90 backdrop-blur hover:bg-white border-stone-300"
-                    onClick={() => setEditSheetOpen(true)}
+                    onClick={() => navigate(`/profile/${user.uid}/edit`)}
                   >
                     <Edit2 className="w-4 h-4 mr-2" />
                     Edit Profile
@@ -1042,7 +808,7 @@ export default function UserProfile() {
                         <Button 
                           variant="outline" 
                           className="rounded-full"
-                          onClick={() => setEditSheetOpen(true)}
+                          onClick={() => navigate(`/profile/${user.uid}/edit`)}
                         >
                           <Edit2 className="h-4 w-4 mr-2" />
                           Edit Profile
@@ -1137,77 +903,6 @@ export default function UserProfile() {
         )}
       </ParticlesBackground>
     </div>
-
-    {/* Edit Profile Sheet - Moved outside ParticlesBackground to prevent portal conflicts with canvas animations */}
-    {isOwner && (
-      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
-        <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="text-xl">Edit Profile</SheetTitle>
-            <SheetDescription>
-              Customize your profile, upload photos, and manage privacy settings
-            </SheetDescription>
-          </SheetHeader>
-          <Tabs defaultValue="basic" className="mt-6">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="photos">Photos</TabsTrigger>
-            </TabsList>
-
-            {/* Basic Info Tab */}
-            <TabsContent value="basic" className="space-y-6 mt-6">
-              <EditBasicInfoTab
-                ownerProfile={ownerProfile}
-                userDisplayName={user?.displayName}
-                userEmail={user?.email}
-                editingName={editingName}
-                setEditingName={setEditingName}
-                newDisplayName={newDisplayName}
-                setNewDisplayName={setNewDisplayName}
-                savingName={savingName}
-                handleSaveDisplayName={handleSaveDisplayName}
-                editingUsername={editingUsername}
-                setEditingUsername={setEditingUsername}
-                username={username}
-                setUsername={setUsername}
-                savingUsername={savingUsername}
-                handleSaveUsername={handleSaveUsername}
-                editingBio={editingBio}
-                setEditingBio={setEditingBio}
-                bio={bio}
-                setBio={setBio}
-                location={location}
-                setLocation={setLocation}
-                pronouns={pronouns}
-                setPronouns={setPronouns}
-                website={website}
-                setWebsite={setWebsite}
-                github={github}
-                setGithub={setGithub}
-                twitter={twitter}
-                setTwitter={setTwitter}
-                linkedin={linkedin}
-                setLinkedin={setLinkedin}
-                instagram={instagram}
-                setInstagram={setInstagram}
-                handleSaveProfileInfo={handleSaveProfileInfo}
-              />
-            </TabsContent>
-            
-            {/* Photos Tab */}
-            <TabsContent value="photos" className="space-y-6 mt-6">
-              <EditPhotosTab 
-                ownerProfile={ownerProfile}
-                uploadingCover={uploadingCover}
-                handleCoverPhotoUpload={handleCoverPhotoUpload}
-                sheetOpen={editSheetOpen}
-              />
-            </TabsContent>
-          </Tabs>
-        </SheetContent>
-      </Sheet>
-    )}
-  </>
   );
 }
 
