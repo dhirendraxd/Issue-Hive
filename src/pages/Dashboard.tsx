@@ -41,6 +41,7 @@ import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
 import { formatRelativeTime } from '@/lib/utils';
 import { getUserAvatarUrl } from '@/lib/avatar';
+import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import IssueCard from '@/components/IssueCard';
@@ -48,6 +49,7 @@ import IssueCard from '@/components/IssueCard';
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
+  const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
   const queryClient = useQueryClient();
@@ -385,7 +387,7 @@ export default function Dashboard() {
               <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                   <img
-                    src={user.photoURL || getUserAvatarUrl(user.uid)}
+                    src={avatarUrl}
                     alt={user.displayName || 'User'}
                     className="h-16 w-16 rounded-full border-2 border-orange-500 object-cover bg-white"
                     onError={(e) => {

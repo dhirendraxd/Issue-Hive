@@ -37,6 +37,7 @@ import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getUserAvatarUrl } from '@/lib/avatar';
+import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { sanitizeText, sanitizeURL, limitLength, sanitizeEmail } from '@/lib/sanitize';
 
 export default function UserProfile() {
@@ -48,6 +49,12 @@ export default function UserProfile() {
   const activityTracker = useActivityTracker();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  
+  // Get user profile data
+  const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid!);
+  
+  // Resolve avatar URL (handles firestore:// references)
+  const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
   const [editingName, setEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
   const [savingName, setSavingName] = useState(false);
@@ -67,7 +74,6 @@ export default function UserProfile() {
   const { data: isFollowing = false } = useIsFollowing(!isOwner ? uid : undefined);
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
-  const { data: ownerProfile } = useUserProfile(uid);
   
   // Initialize state after ownerProfile is available
   const [editingBio, setEditingBio] = useState(false);
@@ -346,7 +352,7 @@ export default function UserProfile() {
               {/* Profile Picture Overlay */}
               <div className="absolute -bottom-16 left-6">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-                  <AvatarImage src={getUserAvatarUrl(uid!, ownerProfile?.photoURL)} />
+                  <AvatarImage src={avatarUrl} />
                   <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
                     {ownerProfile?.displayName?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>

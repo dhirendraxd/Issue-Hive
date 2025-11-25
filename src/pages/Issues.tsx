@@ -7,13 +7,12 @@ import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
 import { formatRelativeTime } from '@/lib/utils';
-import { getUserAvatarUrl } from '@/lib/avatar';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Link } from 'react-router-dom';
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 import IssueDetailDialog from "@/components/IssueDetailDialog";
+import UserAvatar from "@/components/UserAvatar";
 
 export default function Issues() {
   const { user } = useAuth();
@@ -168,20 +167,20 @@ export default function Issues() {
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
                     {i.anonymous ? (
-                      <Avatar className="h-10 w-10 flex-shrink-0">
-                        <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
-                        <AvatarFallback className="bg-orange-500 text-white text-xs">
-                          <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar 
+                        photoURL={i.createdByPhotoURL}
+                        userId={i.createdBy}
+                        displayName={i.createdByName}
+                        className="h-10 w-10 flex-shrink-0"
+                      />
                     ) : (
                       <Link to={`/u/${i.createdBy}`} onClick={(e) => e.stopPropagation()}>
-                        <Avatar className="h-10 w-10 flex-shrink-0">
-                          <AvatarImage src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} />
-                          <AvatarFallback className="bg-orange-500 text-white text-xs">
-                            <img src={i.createdByPhotoURL || getUserAvatarUrl(i.createdBy)} alt="" className="w-full h-full" />
-                          </AvatarFallback>
-                        </Avatar>
+                        <UserAvatar 
+                          photoURL={i.createdByPhotoURL}
+                          userId={i.createdBy}
+                          displayName={i.createdByName}
+                          className="h-10 w-10 flex-shrink-0"
+                        />
                       </Link>
                     )}
                     <div className="flex-1 min-w-0">
