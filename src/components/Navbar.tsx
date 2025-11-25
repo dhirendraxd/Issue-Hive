@@ -10,7 +10,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { getUserAvatarUrl } from "@/lib/avatar";
+import { getUserAvatarUrl } from '@/lib/avatar';
+import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { LayoutDashboard, LogOut } from "lucide-react";
 import { signOut } from "@/integrations/firebase/auth";
 
@@ -18,6 +19,8 @@ export default function Navbar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useAuth();
+  const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
+  
   return (
     <header className="absolute inset-x-0 top-4 z-30">
       <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between">
@@ -50,7 +53,7 @@ export default function Navbar() {
           {user ? (
             <Link to={`/dashboard`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
-                <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || user.email || 'User'} />
+                <AvatarImage src={avatarUrl} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
                   <img src={getUserAvatarUrl(user.uid)} alt="" className="w-full h-full" />
                 </AvatarFallback>

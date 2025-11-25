@@ -7,7 +7,7 @@ import { getDefaultAvatarUrl, type AvatarStyleId } from '@/lib/avatar';
  * Upload a custom profile picture (stores as base64 in Firestore - no Storage needed)
  * @param file - The image file to upload
  * @param userId - The user's ID
- * @returns The base64 data URL of the image
+ * @returns A firestore reference URL (format: firestore://users/{userId}/avatar)
  */
 export async function uploadProfilePicture(file: File, userId: string): Promise<string> {
   console.log('uploadProfilePicture called with:', { fileName: file.name, fileSize: file.size, userId });
@@ -35,7 +35,19 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
     
     console.log('Image converted to base64, length:', dataURL.length);
     
-    return dataURL;
+    // Store base64 data in Firestore
+    const { db } = await import('./config');
+    if (db) {
+      const { doc, setDoc } = await import('firebase/firestore');
+      await setDoc(doc(db, 'users', userId), { 
+        avatarData: dataURL,
+        updatedAt: Date.now() 
+      }, { merge: true });
+      console.log('Base64 image stored in Firestore');
+    }
+    
+    // Return a short reference URL instead of the long base64 string
+    return `firestore://users/${userId}/avatar`;
   } catch (error) {
     console.error('Upload error details:', error);
     if (error instanceof Error) {
@@ -48,13 +60,14 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
 /**
  * Update user's profile picture in Firebase Auth and Firestore
  * @param user - The current user
- * @param photoURL - The new photo URL
+ * @param photoURL - The new photo URL (can be firestore://, http://, or data: URL)
  */
 export async function updateUserProfilePicture(user: User, photoURL: string): Promise<void> {
   if (!auth) {
     throw new Error('Firebase Auth is not configured');
   }
 
+  // Update Firebase Auth with the reference URL
   await updateProfile(user, { photoURL });
   
   // Also sync to Firestore

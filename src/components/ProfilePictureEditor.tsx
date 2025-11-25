@@ -15,10 +15,12 @@ import { toast } from 'sonner';
 import ImageCropDialog from './ImageCropDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
+import { useAvatarUrl } from '@/hooks/use-avatar-url';
 
 export default function ProfilePictureEditor() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -160,7 +162,7 @@ export default function ProfilePictureEditor() {
         {/* Current Avatar */}
         <div className="flex items-center gap-4">
           <Avatar className="w-20 h-20 border-2 border-orange-200">
-            <AvatarImage src={user.photoURL || getUserAvatarUrl(user.uid)} alt={user.displayName || 'User'} />
+            <AvatarImage src={avatarUrl} alt={user.displayName || 'User'} />
             <AvatarFallback className="bg-gradient-to-br from-orange-100 to-amber-100 text-orange-900">
               {user.displayName?.[0] || user.email?.[0] || 'U'}
             </AvatarFallback>

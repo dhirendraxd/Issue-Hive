@@ -3,6 +3,79 @@
  * Supports custom uploads and default avatar selection
  */
 
+import { db } from '@/integrations/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
+
+// Cache for resolved avatar URLs to avoid repeated Firestore reads
+const avatarCache = new Map<string, string>();
+
+/**
+ * Resolve a photoURL to an actual displayable URL
+ * Handles firestore:// references by fetching the actual base64 data
+ */
+export async function resolveAvatarUrl(photoURL: string | null | undefined, userId: string): Promise<string> {
+  // If no photoURL, return default avatar
+  if (!photoURL) {
+    return getUserAvatarUrl(userId);
+  }
+
+  // If it's already a data URL or http URL, return as-is
+  if (photoURL.startsWith('data:') || photoURL.startsWith('http://') || photoURL.startsWith('https://')) {
+    return photoURL;
+  }
+
+  // If it's a firestore:// reference, fetch the actual data
+  if (photoURL.startsWith('firestore://')) {
+    // Check cache first
+    if (avatarCache.has(photoURL)) {
+      return avatarCache.get(photoURL)!;
+    }
+
+    try {
+      if (!db) {
+        console.warn('Firestore not configured, using default avatar');
+        return getUserAvatarUrl(userId);
+      }
+
+      const userDoc = await getDoc(doc(db, 'users', userId));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        if (data.avatarData) {
+          // Cache the resolved URL
+          avatarCache.set(photoURL, data.avatarData);
+          return data.avatarData;
+        }
+      }
+    } catch (error) {
+      console.error('Failed to resolve firestore avatar URL:', error);
+    }
+  }
+
+  // Fallback to default avatar
+  return getUserAvatarUrl(userId);
+}
+
+/**
+ * Synchronous version that returns cached value or default
+ * Use this in components that can't handle async
+ */
+export function getResolvedAvatarUrlSync(photoURL: string | null | undefined, userId: string): string {
+  if (!photoURL) {
+    return getUserAvatarUrl(userId);
+  }
+
+  if (photoURL.startsWith('data:') || photoURL.startsWith('http://') || photoURL.startsWith('https://')) {
+    return photoURL;
+  }
+
+  if (photoURL.startsWith('firestore://')) {
+    // Return cached value if available, otherwise return default
+    return avatarCache.get(photoURL) || getUserAvatarUrl(userId);
+  }
+
+  return getUserAvatarUrl(userId);
+}
+
 // Default avatar styles available for selection
 export const DEFAULT_AVATAR_STYLES = [
   { id: 'adventurer', label: 'Adventurer', description: 'Illustrated adventure characters' },

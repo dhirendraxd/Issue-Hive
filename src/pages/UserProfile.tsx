@@ -418,7 +418,7 @@ export default function UserProfile() {
                                     onClick={handleSaveDisplayName}
                                     disabled={savingName || !newDisplayName.trim()}
                                     size="sm"
-                                    className="bg-gradient-to-r from-orange-500 to-amber-500"
+                                    className="bg-gradient-to-r from-orange-500 to-amber-500 shrink-0"
                                   >
                                     {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
@@ -427,6 +427,7 @@ export default function UserProfile() {
                                     disabled={savingName}
                                     size="sm"
                                     variant="outline"
+                                    className="shrink-0"
                                   >
                                     <X className="w-4 h-4" />
                                   </Button>
@@ -464,14 +465,14 @@ export default function UserProfile() {
 
                               {editingUsername ? (
                                 <div className="flex gap-2">
-                                  <div className="flex items-center flex-1">
-                                    <span className="text-muted-foreground mr-1">@</span>
+                                  <div className="relative flex-1">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
                                     <Input
                                       value={username}
                                       onChange={(e) => setUsername(e.target.value)}
                                       placeholder="username"
                                       disabled={savingUsername}
-                                      className="flex-1"
+                                      className="pl-8"
                                       maxLength={32}
                                     />
                                   </div>
@@ -479,7 +480,7 @@ export default function UserProfile() {
                                     onClick={handleSaveUsername}
                                     disabled={savingUsername || !username.trim()}
                                     size="sm"
-                                    className="bg-gradient-to-r from-orange-500 to-amber-500"
+                                    className="bg-gradient-to-r from-orange-500 to-amber-500 shrink-0"
                                   >
                                     {savingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                   </Button>
@@ -488,6 +489,7 @@ export default function UserProfile() {
                                     disabled={savingUsername}
                                     size="sm"
                                     variant="outline"
+                                    className="shrink-0"
                                   >
                                     <X className="w-4 h-4" />
                                   </Button>
@@ -519,7 +521,11 @@ export default function UserProfile() {
                           </Card>
 
                           {/* Bio */}
-                          <Card className="rounded-xl border border-stone-200 p-5">\n                            <div className="space-y-4">\n                              <div className="flex items-center justify-between">\n                                <div>\n                                  <h3 className="font-semibold text-base">Bio</h3>
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h3 className="font-semibold text-base">Bio</h3>
                                   <p className="text-xs text-muted-foreground">Tell others about yourself</p>
                                 </div>
                                 {!editingBio && (
@@ -542,17 +548,31 @@ export default function UserProfile() {
                                     className="min-h-[100px] resize-none"
                                     maxLength={160}
                                   />
-                                  <p className="text-xs text-muted-foreground text-right">{bio.length}/160</p>
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-xs text-muted-foreground">{bio.length}/160 characters</p>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        onClick={() => setEditingBio(false)}
+                                        size="sm"
+                                        variant="outline"
+                                      >
+                                        Cancel
+                                      </Button>
+                                    </div>
+                                  </div>
                                 </div>
                               ) : (
-                                <p className="text-sm text-muted-foreground">{bio || 'No bio added yet'}</p>
+                                <div>
+                                  <p className="text-base">{bio || 'No bio added yet'}</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Current bio</p>
+                                </div>
                               )}
                             </div>
                           </Card>
 
                           {/* Location */}
                           <Card className="rounded-xl border border-stone-200 p-5">
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               <div>
                                 <h3 className="font-semibold text-base">Location</h3>
                                 <p className="text-xs text-muted-foreground">Where are you based?</p>
@@ -561,14 +581,13 @@ export default function UserProfile() {
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                                 placeholder="City, Country"
-                                className=""
                               />
                             </div>
                           </Card>
 
                           {/* Website */}
                           <Card className="rounded-xl border border-stone-200 p-5">
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                               <div>
                                 <h3 className="font-semibold text-base">Website</h3>
                                 <p className="text-xs text-muted-foreground">Your personal website or portfolio</p>
@@ -583,12 +602,16 @@ export default function UserProfile() {
                           </Card>
 
                           {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '')) && (
-                            <Button 
-                              onClick={handleSaveProfileInfo}
-                              className="w-full bg-gradient-to-r from-orange-500 to-amber-500"
-                            >
-                              Save Changes
-                            </Button>
+                            <div className="pt-2">
+                              <Button 
+                                onClick={handleSaveProfileInfo}
+                                className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                                size="lg"
+                              >
+                                <Check className="w-4 h-4 mr-2" />
+                                Save Changes
+                              </Button>
+                            </div>
                           )}
                         </TabsContent>
 
