@@ -80,6 +80,10 @@ export default function UserProfile() {
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
   const [website, setWebsite] = useState('');
+  const [github, setGithub] = useState('');
+  const [twitter, setTwitter] = useState('');
+  const [linkedin, setLinkedin] = useState('');
+  const [instagram, setInstagram] = useState('');
   const [username, setUsername] = useState('');
   const [editingUsername, setEditingUsername] = useState(false);
   const [savingUsername, setSavingUsername] = useState(false);
@@ -90,6 +94,10 @@ export default function UserProfile() {
       setBio(ownerProfile.bio || '');
       setLocation(ownerProfile.location || '');
       setWebsite(ownerProfile.social?.website || '');
+      setGithub(ownerProfile.social?.github || '');
+      setTwitter(ownerProfile.social?.twitter || '');
+      setLinkedin(ownerProfile.social?.linkedin || '');
+      setInstagram(ownerProfile.social?.instagram || '');
       setUsername(ownerProfile.username || '');
     }
   }, [ownerProfile]);
@@ -260,10 +268,30 @@ export default function UserProfile() {
       const sanitizedBio = limitLength(sanitizeText(bio), 160);
       const sanitizedLocation = limitLength(sanitizeText(location), 100);
       const sanitizedWebsite = sanitizeURL(website);
+      const sanitizedGithub = sanitizeURL(github);
+      const sanitizedTwitter = sanitizeURL(twitter);
+      const sanitizedLinkedin = sanitizeURL(linkedin);
+      const sanitizedInstagram = sanitizeURL(instagram);
       
-      // Validate website if provided
+      // Validate URLs if provided
       if (website && !sanitizedWebsite) {
         toast.error('Invalid website URL');
+        return;
+      }
+      if (github && !sanitizedGithub) {
+        toast.error('Invalid GitHub URL');
+        return;
+      }
+      if (twitter && !sanitizedTwitter) {
+        toast.error('Invalid Twitter URL');
+        return;
+      }
+      if (linkedin && !sanitizedLinkedin) {
+        toast.error('Invalid LinkedIn URL');
+        return;
+      }
+      if (instagram && !sanitizedInstagram) {
+        toast.error('Invalid Instagram URL');
         return;
       }
       
@@ -271,6 +299,10 @@ export default function UserProfile() {
         bio: sanitizedBio,
         location: sanitizedLocation,
         'social.website': sanitizedWebsite,
+        'social.github': sanitizedGithub,
+        'social.twitter': sanitizedTwitter,
+        'social.linkedin': sanitizedLinkedin,
+        'social.instagram': sanitizedInstagram,
         updatedAt: new Date()
       });
       
@@ -607,7 +639,71 @@ export default function UserProfile() {
                             </div>
                           </Card>
 
-                          {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '')) && (
+                          {/* Social Media Links */}
+                          <Card className="rounded-xl border border-stone-200 p-5">
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="font-semibold text-base">Social Media</h3>
+                                <p className="text-xs text-muted-foreground">Connect your social profiles</p>
+                              </div>
+                              
+                              <div className="space-y-3">
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium flex items-center gap-2">
+                                    <Github className="h-4 w-4" />
+                                    GitHub
+                                  </label>
+                                  <Input
+                                    value={github}
+                                    onChange={(e) => setGithub(e.target.value)}
+                                    placeholder="https://github.com/username"
+                                    type="url"
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium flex items-center gap-2">
+                                    <Twitter className="h-4 w-4" />
+                                    Twitter/X
+                                  </label>
+                                  <Input
+                                    value={twitter}
+                                    onChange={(e) => setTwitter(e.target.value)}
+                                    placeholder="https://twitter.com/username"
+                                    type="url"
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium flex items-center gap-2">
+                                    <Linkedin className="h-4 w-4" />
+                                    LinkedIn
+                                  </label>
+                                  <Input
+                                    value={linkedin}
+                                    onChange={(e) => setLinkedin(e.target.value)}
+                                    placeholder="https://linkedin.com/in/username"
+                                    type="url"
+                                  />
+                                </div>
+                                
+                                <div className="space-y-1.5">
+                                  <label className="text-sm font-medium flex items-center gap-2">
+                                    <Instagram className="h-4 w-4" />
+                                    Instagram
+                                  </label>
+                                  <Input
+                                    value={instagram}
+                                    onChange={(e) => setInstagram(e.target.value)}
+                                    placeholder="https://instagram.com/username"
+                                    type="url"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+
+                          {(editingBio || location !== (ownerProfile?.location || '') || website !== (ownerProfile?.social?.website || '') || github !== (ownerProfile?.social?.github || '') || twitter !== (ownerProfile?.social?.twitter || '') || linkedin !== (ownerProfile?.social?.linkedin || '') || instagram !== (ownerProfile?.social?.instagram || '')) && (
                             <div className="pt-2">
                               <Button 
                                 onClick={handleSaveProfileInfo}
@@ -702,9 +798,61 @@ export default function UserProfile() {
             
             {/* Profile Info Section */}
             <div className="mt-20 px-6 pb-4 border-b border-stone-200/60">
-              <div className="mb-3">
-                <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
-                <p className="text-sm text-muted-foreground">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+              <div className="flex items-start justify-between gap-4 mb-3">
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                  <p className="text-sm text-muted-foreground">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                </div>
+                
+                {/* Social Links - Right Side */}
+                {ownerProfile?.social && (
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    {ownerProfile.social.github && (
+                      <a 
+                        href={ownerProfile.social.github} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-muted-foreground hover:text-stone-900 transition-colors"
+                        title="GitHub"
+                      >
+                        <Github className="h-5 w-5" />
+                      </a>
+                    )}
+                    {ownerProfile.social.twitter && (
+                      <a 
+                        href={ownerProfile.social.twitter} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-muted-foreground hover:text-stone-900 transition-colors"
+                        title="Twitter"
+                      >
+                        <Twitter className="h-5 w-5" />
+                      </a>
+                    )}
+                    {ownerProfile.social.linkedin && (
+                      <a 
+                        href={ownerProfile.social.linkedin} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-muted-foreground hover:text-stone-900 transition-colors"
+                        title="LinkedIn"
+                      >
+                        <Linkedin className="h-5 w-5" />
+                      </a>
+                    )}
+                    {ownerProfile.social.instagram && (
+                      <a 
+                        href={ownerProfile.social.instagram} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="text-muted-foreground hover:text-stone-900 transition-colors"
+                        title="Instagram"
+                      >
+                        <Instagram className="h-5 w-5" />
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
               
               {ownerProfile?.bio && (
@@ -733,56 +881,6 @@ export default function UserProfile() {
                   <Calendar className="h-4 w-4" /> Joined April 2025
                 </span>
               </div>
-              
-              {/* Social Links */}
-              {ownerProfile?.social && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {ownerProfile.social.github && (
-                    <a 
-                      href={ownerProfile.social.github} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-muted-foreground hover:text-stone-900 transition-colors"
-                      title="GitHub"
-                    >
-                      <Github className="h-5 w-5" />
-                    </a>
-                  )}
-                  {ownerProfile.social.twitter && (
-                    <a 
-                      href={ownerProfile.social.twitter} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-muted-foreground hover:text-stone-900 transition-colors"
-                      title="Twitter"
-                    >
-                      <Twitter className="h-5 w-5" />
-                    </a>
-                  )}
-                  {ownerProfile.social.linkedin && (
-                    <a 
-                      href={ownerProfile.social.linkedin} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-muted-foreground hover:text-stone-900 transition-colors"
-                      title="LinkedIn"
-                    >
-                      <Linkedin className="h-5 w-5" />
-                    </a>
-                  )}
-                  {ownerProfile.social.instagram && (
-                    <a 
-                      href={ownerProfile.social.instagram} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-muted-foreground hover:text-stone-900 transition-colors"
-                      title="Instagram"
-                    >
-                      <Instagram className="h-5 w-5" />
-                    </a>
-                  )}
-                </div>
-              )}
               
               {/* Follower Counts */}
               <div className="flex gap-4 text-sm">
