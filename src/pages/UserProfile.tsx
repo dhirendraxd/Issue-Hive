@@ -185,7 +185,7 @@ export default function UserProfile() {
                     variant="outline"
                     size="sm"
                     className="rounded-full bg-white/90 backdrop-blur hover:bg-white border-stone-300"
-                    onClick={() => navigate(`/profile/${user.uid}/edit`)}
+                    onClick={() => navigate(`/profile/${uid}/edit`)}
                   >
                     <Edit2 className="w-4 h-4 mr-2" />
                     Edit Profile
@@ -808,7 +808,7 @@ export default function UserProfile() {
                         <Button 
                           variant="outline" 
                           className="rounded-full"
-                          onClick={() => navigate(`/profile/${user.uid}/edit`)}
+                          onClick={() => navigate(`/profile/${uid}/edit`)}
                         >
                           <Edit2 className="h-4 w-4 mr-2" />
                           Edit Profile

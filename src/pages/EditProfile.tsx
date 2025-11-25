@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -9,6 +9,7 @@ import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import EditBasicInfoTab from '@/components/profile/EditBasicInfoTab';
 import EditPhotosTab from '@/components/profile/EditPhotosTab';
+import PortalErrorBoundary from '@/components/PortalErrorBoundary';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,9 +19,19 @@ import { sanitizeText, sanitizeURL, limitLength } from '@/lib/sanitize';
 
 export default function EditProfile() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { uid } = useParams();
+  const { user, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(user?.uid || '');
+  
+  // Disable view transitions on this page to prevent portal conflicts
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.viewTransitionName = 'none';
+    return () => {
+      root.style.viewTransitionName = '';
+    };
+  }, []);
   
   const [editingName, setEditingName] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState(user?.displayName || '');
@@ -54,15 +65,37 @@ export default function EditProfile() {
     }
   }, [ownerProfile]);
 
-  // Redirect if not logged in - check happens before render
+  // Redirect if not logged in - but wait for auth to load first
   useEffect(() => {
+    // Don't redirect while auth is still loading
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth', { replace: true });
+      return;
     }
-  }, [user, navigate]);
+    
+    // Redirect if user tries to edit someone else's profile
+    if (uid && user.uid !== uid) {
+      toast.error('You can only edit your own profile');
+      navigate(`/profile/${user.uid}`, { replace: true });
+    }
+  }, [user, uid, navigate, authLoading]);
 
-  // Show loading while checking auth or if user not found
-  if (!user || profileLoading) {
+  // Show loading while checking auth or loading profile
+  if (authLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-orange-500 border-r-transparent"></div>
+          <p className="mt-4 text-sm text-muted-foreground animate-pulse">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // After loading completes, if still no user, the useEffect will redirect
+  if (!user) {
     return (
       <div className="min-h-screen bg-stone-50 flex items-center justify-center">
         <div className="text-center">
@@ -211,10 +244,10 @@ export default function EditProfile() {
     } finally {
       setUploadingCover(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div className="min-h-screen bg-stone-50" key={`edit-profile-${user.uid}`}>
       <Navbar />
       <main className="pt-24 pb-24 px-4 mx-auto max-w-4xl">
         <div className="mb-6">
@@ -282,12 +315,14 @@ export default function EditProfile() {
                 </TabsContent>
                 
                 <TabsContent value="photos" className="space-y-6 mt-6">
-                  <EditPhotosTab 
-                    ownerProfile={ownerProfile}
-                    uploadingCover={uploadingCover}
-                    handleCoverPhotoUpload={handleCoverPhotoUpload}
-                    sheetOpen={true}
-                  />
+                  <PortalErrorBoundary>
+                    <EditPhotosTab 
+                      ownerProfile={ownerProfile}
+                      uploadingCover={uploadingCover}
+                      handleCoverPhotoUpload={handleCoverPhotoUpload}
+                      sheetOpen={true}
+                    />
+                  </PortalErrorBoundary>
                 </TabsContent>
               </Tabs>
             </CardContent>

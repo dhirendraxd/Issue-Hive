@@ -13,16 +13,20 @@ import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl, getUserAvatarUrl } from '@/
 import type { AvatarStyleId } from '@/lib/avatar';
 import { toast } from 'sonner';
 import ImageCropDialog from './ImageCropDialog';
+import ImageCropDialogNoPortal from './ImageCropDialogNoPortal';
 import { useQueryClient } from '@tanstack/react-query';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { USER_PROFILE_KEY } from '@/lib/queryKeys';
+import { useLocation } from 'react-router-dom';
 
 interface ProfilePictureEditorProps {
   parentOpen?: boolean;
 }
 
 export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictureEditorProps) {
+  const location = useLocation();
+  const isEditProfilePage = location.pathname.includes('/edit');
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
@@ -297,14 +301,23 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
           </TabsContent>
         </Tabs>
 
-        {/* Image Crop Dialog */}
+        {/* Image Crop Dialog - Use no-portal version on edit profile page to avoid portal conflicts */}
         {selectedFile && previewUrl && (
-          <ImageCropDialog
-            open={cropDialogOpen}
-            onClose={() => setCropDialogOpen(false)}
-            imageSrc={previewUrl}
-            onCropComplete={handleCropComplete}
-          />
+          isEditProfilePage ? (
+            <ImageCropDialogNoPortal
+              open={cropDialogOpen}
+              onClose={() => setCropDialogOpen(false)}
+              imageSrc={previewUrl}
+              onCropComplete={handleCropComplete}
+            />
+          ) : (
+            <ImageCropDialog
+              open={cropDialogOpen}
+              onClose={() => setCropDialogOpen(false)}
+              imageSrc={previewUrl}
+              onCropComplete={handleCropComplete}
+            />
+          )
         )}
       </div>
     </Card>
