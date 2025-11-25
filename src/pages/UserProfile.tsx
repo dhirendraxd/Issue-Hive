@@ -68,6 +68,16 @@ export default function UserProfile() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  // Lock body scroll when edit sheet open to prevent layout thrash & background reflow during portal animations
+  useEffect(() => {
+    if (editSheetOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => { document.body.style.overflow = prev; };
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [editSheetOpen]);
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -474,6 +484,7 @@ export default function UserProfile() {
                             ownerProfile={ownerProfile}
                             uploadingCover={uploadingCover}
                             handleCoverPhotoUpload={handleCoverPhotoUpload}
+                            sheetOpen={editSheetOpen}
                           />
                         </TabsContent>
                       </Tabs>

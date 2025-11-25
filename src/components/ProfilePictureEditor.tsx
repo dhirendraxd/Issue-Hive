@@ -18,7 +18,11 @@ import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { USER_PROFILE_KEY } from '@/lib/queryKeys';
 
-export default function ProfilePictureEditor() {
+interface ProfilePictureEditorProps {
+  parentOpen?: boolean;
+}
+
+export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictureEditorProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
@@ -31,6 +35,11 @@ export default function ProfilePictureEditor() {
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
 
   if (!user) return null;
+
+  // Close crop dialog if parent sheet closes to avoid portal unmount race conditions
+  if (!parentOpen && cropDialogOpen) {
+    setCropDialogOpen(false);
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

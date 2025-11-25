@@ -12,9 +12,10 @@ interface EditPhotosTabProps {
   ownerProfile?: OwnerProfileLite | null;
   uploadingCover: boolean;
   handleCoverPhotoUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  sheetOpen: boolean;
 }
 
-const EditPhotosTab: React.FC<EditPhotosTabProps> = ({ ownerProfile, uploadingCover, handleCoverPhotoUpload }) => {
+const EditPhotosTab: React.FC<EditPhotosTabProps> = ({ ownerProfile, uploadingCover, handleCoverPhotoUpload, sheetOpen }) => {
   if (!ownerProfile) {
     return (
       <div className="space-y-4">
@@ -71,7 +72,7 @@ const EditPhotosTab: React.FC<EditPhotosTabProps> = ({ ownerProfile, uploadingCo
       </Card>
 
       {/* Profile Picture Editor */}
-      <ProfilePictureEditor />
+      <ProfilePictureEditor parentOpen={sheetOpen} />
     </div>
   );
 };

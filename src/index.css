@@ -116,6 +116,8 @@
       animation-timing-function: ease-in-out;
     }
   }
+  /* Disable view transitions on Radix portals to avoid removeChild race */
+  [data-radix-portal] { view-transition-name: none; }
 }
 @layer utilities {
   /* Glassmorphism effect utilities */
