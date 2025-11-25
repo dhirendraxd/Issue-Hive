@@ -2,6 +2,7 @@ import { updateProfile } from 'firebase/auth';
 import { auth } from './config';
 import type { User } from 'firebase/auth';
 import { getDefaultAvatarUrl, type AvatarStyleId } from '@/lib/avatar';
+import { logger } from '@/lib/logger';
 
 /**
  * Upload a custom profile picture (stores as base64 in Firestore - no Storage needed)
@@ -10,7 +11,7 @@ import { getDefaultAvatarUrl, type AvatarStyleId } from '@/lib/avatar';
  * @returns A firestore reference URL (format: firestore://users/{userId}/avatar)
  */
 export async function uploadProfilePicture(file: File, userId: string): Promise<string> {
-  console.log('uploadProfilePicture called with:', { fileName: file.name, fileSize: file.size, userId });
+  logger.debug('uploadProfilePicture called with:', { fileName: file.name, fileSize: file.size, userId });
   
   // Validate file type
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -33,7 +34,7 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
       reader.readAsDataURL(file);
     });
     
-    console.log('Image converted to base64, length:', dataURL.length);
+    logger.debug('Image converted to base64, length:', dataURL.length);
     
     // Store base64 data in Firestore
     const { db } = await import('./config');
@@ -43,13 +44,13 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
         avatarData: dataURL,
         updatedAt: Date.now() 
       }, { merge: true });
-      console.log('Base64 image stored in Firestore');
+      logger.debug('Base64 image stored in Firestore');
     }
     
     // Return a short reference URL instead of the long base64 string
     return `firestore://users/${userId}/avatar`;
   } catch (error) {
-    console.error('Upload error details:', error);
+    logger.error('Upload error details:', error);
     if (error instanceof Error) {
       throw new Error(`Upload failed: ${error.message}`);
     }
@@ -101,7 +102,7 @@ export async function setDefaultAvatar(user: User, style: AvatarStyleId): Promis
 export async function deleteProfilePicture(photoURL: string): Promise<void> {
   // Base64 data URLs are stored in Firestore, nothing to delete from Storage
   // External URLs (like DiceBear) also don't need deletion
-  console.log('Profile picture cleanup (no-op for base64/external URLs)');
+  logger.debug('Profile picture cleanup (no-op for base64/external URLs)');
   return;
 }
 
@@ -138,10 +139,10 @@ export async function updateUserDisplayName(user: User, displayName: string): Pr
           batch.update(docSnap.ref, { createdByName: displayName });
         });
         await batch.commit();
-        console.log(`Updated display name in ${issuesSnapshot.size} issues`);
+        logger.debug(`Updated display name in ${issuesSnapshot.size} issues`);
       }
     } catch (error) {
-      console.error('Error syncing display name to issues:', error);
+      logger.error('Error syncing display name to issues:', error);
     }
     
     // Sync display name to all comments by this user
@@ -156,10 +157,10 @@ export async function updateUserDisplayName(user: User, displayName: string): Pr
           batch.update(docSnap.ref, { userName: displayName });
         });
         await batch.commit();
-        console.log(`Updated display name in ${commentsSnapshot.size} comments`);
+        logger.debug(`Updated display name in ${commentsSnapshot.size} comments`);
       }
     } catch (error) {
-      console.error('Error syncing display name to comments:', error);
+      logger.error('Error syncing display name to comments:', error);
     }
   }
 }

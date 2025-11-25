@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getUserActivity, type UserActivity } from '@/integrations/firebase/firestore';
 import { useAuth } from './use-auth';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to get the current user's activity (votes, comments, likes)
@@ -36,18 +37,18 @@ export function useUserActivity() {
         const commentLikesReceived = activity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
         const totalEngagement = upvotes + downvotes + totalComments + commentsLiked;
         
-        console.log('[UserActivity] ✅ Activity Summary:');
-        console.log(`  📊 Total Engagement: ${totalEngagement}`);
-        console.log(`  👍 Upvotes Given: ${upvotes}`);
-        console.log(`  👎 Downvotes Given: ${downvotes}`);
-        console.log(`  💬 Comments Made: ${totalComments} (${topLevelComments} top-level, ${replies} replies)`);
-        console.log(`  ❤️  Comments Liked: ${commentsLiked}`);
-        console.log(`  ⭐ Comment Likes Received: ${commentLikesReceived}`);
-        console.log(`  🎯 Impact Score: ${commentLikesReceived}`);
+        logger.debug('[UserActivity] ✅ Activity Summary:');
+        logger.debug(`  📊 Total Engagement: ${totalEngagement}`);
+        logger.debug(`  👍 Upvotes Given: ${upvotes}`);
+        logger.debug(`  👎 Downvotes Given: ${downvotes}`);
+        logger.debug(`  💬 Comments Made: ${totalComments} (${topLevelComments} top-level, ${replies} replies)`);
+        logger.debug(`  ❤️  Comments Liked: ${commentsLiked}`);
+        logger.debug(`  ⭐ Comment Likes Received: ${commentLikesReceived}`);
+        logger.debug(`  🎯 Impact Score: ${commentLikesReceived}`);
         
         return activity;
       } catch (error) {
-        console.error('[UserActivity] Error fetching activity:', error);
+        logger.error('[UserActivity] Error fetching activity:', error);
         // Return empty activity on error
         return {
           votedIssues: [],

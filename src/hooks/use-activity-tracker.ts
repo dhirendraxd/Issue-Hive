@@ -3,6 +3,7 @@ import { useAuth } from './use-auth';
 import { getActivitySummary, type ActivitySummary } from '@/lib/activity-tracker';
 import { getUserActivity } from '@/integrations/firebase/firestore';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook to get user activity with local tracking + Firebase sync
@@ -29,7 +30,7 @@ export function useActivityTracker() {
       }
       
       const summary = getActivitySummary(user.uid);
-      console.log('[ActivityTracker] 📊 Local Activity Summary:', summary);
+      logger.debug('[ActivityTracker] 📊 Local Activity Summary:', summary);
       return summary;
     },
     enabled: !!user,
@@ -52,7 +53,7 @@ export function useActivityTracker() {
         // Calculate metrics
         const commentLikesReceived = activity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
         
-        console.log('[ActivityTracker] ☁️  Firebase Activity:', {
+        logger.debug('[ActivityTracker] ☁️  Firebase Activity:', {
           votedIssues: activity.votedIssues.length,
           comments: activity.comments.length,
           likedComments: activity.likedComments.length,
@@ -66,7 +67,7 @@ export function useActivityTracker() {
           commentLikesReceived,
         };
       } catch (error) {
-        console.error('[ActivityTracker] Error fetching Firebase activity:', error);
+        logger.error('[ActivityTracker] Error fetching Firebase activity:', error);
         return null;
       }
     },

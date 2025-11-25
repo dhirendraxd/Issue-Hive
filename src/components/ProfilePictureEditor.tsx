@@ -19,6 +19,7 @@ import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { USER_PROFILE_KEY } from '@/lib/queryKeys';
 import { useLocation } from 'react-router-dom';
+import { logger } from '@/lib/logger';
 
 interface ProfilePictureEditorProps {
   parentOpen?: boolean;
@@ -103,23 +104,23 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
       const file = new File([croppedImage], 'profile.jpg', { type: 'image/jpeg' });
       
       // Upload to Firebase Storage
-      console.log('Uploading to Firebase Storage...');
+      logger.debug('Uploading to Firebase Storage...');
       const downloadURL = await uploadProfilePicture(file, user.uid);
-      console.log('Upload complete, URL:', downloadURL);
+      logger.debug('Upload complete, URL:', downloadURL);
       
       // Update user profile
-      console.log('Updating user profile...');
+      logger.debug('Updating user profile...');
       await updateUserProfilePicture(user, downloadURL);
       
       // Sync to Firestore users collection
-      console.log('Syncing to Firestore...');
+      logger.debug('Syncing to Firestore...');
       const { syncUserProfile, updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
       await syncUserProfile({ ...user, photoURL: downloadURL });
       
       // Update profile photo in all issues created by this user (optional, don't block)
-      console.log('Updating issues in background...');
+      logger.debug('Updating issues in background...');
       updateUserPhotoInIssues(user.uid, downloadURL).catch(err => {
-        console.warn('Failed to update issues:', err);
+        logger.warn('Failed to update issues:', err);
         // Don't fail the whole operation if this fails
       });
       
@@ -132,7 +133,7 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
       await queryClient.invalidateQueries({ queryKey: [USER_PROFILE_KEY, user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
-      console.error('Upload error:', err);
+      logger.error('Upload error:', err);
       setError(message);
       toast.error(message);
     } finally {
@@ -147,14 +148,14 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
     setError(null);
 
     try {
-      console.log('Setting default avatar...');
+      logger.debug('Setting default avatar...');
       const avatarUrl = await setDefaultAvatar(user, style);
       
       // Update profile photo in all issues created by this user (optional, don't block)
-      console.log('Updating issues in background...');
+      logger.debug('Updating issues in background...');
       const { updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
       updateUserPhotoInIssues(user.uid, avatarUrl).catch(err => {
-        console.warn('Failed to update issues:', err);
+        logger.warn('Failed to update issues:', err);
       });
       
       setSelectedStyle(style);
@@ -164,7 +165,7 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
       await queryClient.invalidateQueries({ queryKey: [USER_PROFILE_KEY, user.uid] });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to set default avatar';
-      console.error('Avatar update error:', err);
+      logger.error('Avatar update error:', err);
       setError(message);
       toast.error(message);
     } finally {

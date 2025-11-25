@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, isFirebaseConfigured, db } from '@/integrations/firebase/config';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { logger } from '@/lib/logger';
 
 // Sync user Auth data to Firestore
 async function syncUserToFirestore(user: User) {
@@ -20,7 +21,7 @@ async function syncUserToFirestore(user: User) {
       }, { merge: true });
     }
   } catch (error) {
-    console.error('Error syncing user to Firestore:', error);
+    logger.error('Error syncing user to Firestore:', error);
   }
 }
 

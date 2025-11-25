@@ -3,6 +3,8 @@
  * Tracks all user activities (votes, comments, likes) and stores them locally
  */
 
+import { logger } from './logger';
+
 export type ActivityType = 'upvote' | 'downvote' | 'comment' | 'reply' | 'like_comment' | 'unlike_comment' | 'remove_vote';
 
 export interface ActivityEntry {
@@ -43,7 +45,7 @@ export function getUserActivities(userId: string): ActivityEntry[] {
     const allActivities: ActivityEntry[] = JSON.parse(stored);
     return allActivities.filter(a => a.userId === userId);
   } catch (error) {
-    console.error('[ActivityTracker] Error reading activities:', error);
+    logger.error('[ActivityTracker] Error reading activities:', error);
     return [];
   }
 }
@@ -76,9 +78,9 @@ export function logActivity(
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     
-    console.log(`[ActivityTracker] ✅ Logged ${type}:`, data);
+    logger.debug(`[ActivityTracker] ✅ Logged ${type}:`, data);
   } catch (error) {
-    console.error('[ActivityTracker] Error logging activity:', error);
+    logger.error('[ActivityTracker] Error logging activity:', error);
   }
 }
 
@@ -175,9 +177,9 @@ export function clearUserActivities(userId: string): void {
     const filtered = allActivities.filter(a => a.userId !== userId);
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-    console.log(`[ActivityTracker] Cleared activities for user ${userId}`);
+    logger.debug(`[ActivityTracker] Cleared activities for user ${userId}`);
   } catch (error) {
-    console.error('[ActivityTracker] Error clearing activities:', error);
+    logger.error('[ActivityTracker] Error clearing activities:', error);
   }
 }
 

@@ -4,6 +4,7 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getAnalytics, type Analytics } from 'firebase/analytics';
 import { getDatabase, type Database } from 'firebase/database';
+import { logger } from '@/lib/logger';
 
 // Firebase configuration
 // Get these values from Firebase Console > Project Settings > General
@@ -44,10 +45,10 @@ try {
       analytics = getAnalytics(app);
     }
   } else {
-    console.warn('[Issue-Hive] Firebase not configured. Set VITE_FIREBASE_* env vars to enable auth and database.');
+    logger.warn('[Issue-Hive] Firebase not configured. Set VITE_FIREBASE_* env vars to enable auth and database.');
   }
 } catch (e) {
-  console.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
+  logger.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
 }
 
 export { app, auth, db, realtimeDb, storage, analytics };
