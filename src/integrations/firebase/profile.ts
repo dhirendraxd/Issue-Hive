@@ -120,10 +120,64 @@ export async function updateUserDisplayName(user: User, displayName: string): Pr
   // Also sync to Firestore
   const { db } = await import('./config');
   if (db) {
-    const { doc, setDoc } = await import('firebase/firestore');
+    const { doc, setDoc, collection, query, where, getDocs, writeBatch } = await import('firebase/firestore');
     await setDoc(doc(db, 'users', user.uid), { 
       displayName,
       updatedAt: Date.now() 
     }, { merge: true });
+    
+    // Sync display name to all issues created by this user
+    try {
+      const issuesRef = collection(db, 'issues');
+      const issuesQuery = query(issuesRef, where('createdBy', '==', user.uid));
+      const issuesSnapshot = await getDocs(issuesQuery);
+      
+      if (!issuesSnapshot.empty) {
+        const batch = writeBatch(db);
+        issuesSnapshot.docs.forEach((docSnap) => {
+          batch.update(docSnap.ref, { createdByName: displayName });
+        });
+        await batch.commit();
+        console.log(`Updated display name in ${issuesSnapshot.size} issues`);
+      }
+    } catch (error) {
+      console.error('Error syncing display name to issues:', error);
+    }
+    
+    // Sync display name to all comments by this user
+    try {
+      const commentsRef = collection(db, 'comments');
+      const commentsQuery = query(commentsRef, where('userId', '==', user.uid));
+      const commentsSnapshot = await getDocs(commentsQuery);
+      
+      if (!commentsSnapshot.empty) {
+        const batch = writeBatch(db);
+        commentsSnapshot.docs.forEach((docSnap) => {
+          batch.update(docSnap.ref, { userName: displayName });
+        });
+        await batch.commit();
+        console.log(`Updated display name in ${commentsSnapshot.size} comments`);
+      }
+    } catch (error) {
+      console.error('Error syncing display name to comments:', error);
+    }
   }
+}
+
+/**
+ * Update username across all user data
+ * @param userId - The user's ID
+ * @param username - The new username
+ */
+export async function updateUsername(userId: string, username: string): Promise<void> {
+  const { db } = await import('./config');
+  if (!db) {
+    throw new Error('Firebase is not configured');
+  }
+
+  const { doc, setDoc } = await import('firebase/firestore');
+  await setDoc(doc(db, 'users', userId), { 
+    username,
+    updatedAt: Date.now() 
+  }, { merge: true });
 }

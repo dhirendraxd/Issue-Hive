@@ -163,9 +163,16 @@ export default function UserProfile() {
       }
       
       await updateUserDisplayName(user, sanitizedName);
-      toast.success('Display name updated!');
+      
+      // Invalidate queries to refetch updated data
+      await queryClient.invalidateQueries({ queryKey: ['userProfile', user.uid] });
+      await queryClient.invalidateQueries({ queryKey: ['issues'] });
+      await queryClient.invalidateQueries({ queryKey: ['comments'] });
+      
+      toast.success('Display name updated across all issues and comments!');
       setEditingName(false);
-      // Reload to reflect changes
+      
+      // Reload to reflect changes everywhere
       setTimeout(() => window.location.reload(), 500);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update display name';
@@ -338,17 +345,13 @@ export default function UserProfile() {
     
     setSavingUsername(true);
     try {
-      const { doc, updateDoc } = await import('firebase/firestore');
-      const { db } = await import('@/integrations/firebase/config');
+      const { updateUsername } = await import('@/integrations/firebase/profile');
       
       console.log('Updating username from:', ownerProfile?.username, 'to:', trimmedUsername, 'for user:', user.uid);
       
-      await updateDoc(doc(db, 'users', user.uid), {
-        username: trimmedUsername,
-        updatedAt: new Date()
-      });
+      await updateUsername(user.uid, trimmedUsername);
       
-      console.log('Username updated in Firestore, invalidating query for uid:', uid);
+      console.log('Username updated in Firestore, invalidating queries');
       
       // Invalidate and refetch the query for the current profile being viewed
       await queryClient.invalidateQueries({ queryKey: ['userProfile', uid] });
