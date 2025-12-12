@@ -13,11 +13,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
 import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
+import SendMessageDialog from '@/components/SendMessageDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatRelativeTime } from '@/lib/utils';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -52,6 +53,7 @@ export default function UserProfile() {
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
+  const [messageDialogOpen, setMessageDialogOpen] = useState(false);
 
   // Filter issues belonging to this user
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -195,25 +197,37 @@ export default function UserProfile() {
                   </Button>
                 ) : (
                   user && (
-                    isFollowing ? (
+                    <div className="flex gap-2">
                       <Button
                         size="sm"
+                        variant="outline"
                         className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
-                        disabled={unfollowMutation.isPending}
-                        onClick={() => unfollowMutation.mutate(uid!)}
+                        onClick={() => setMessageDialogOpen(true)}
                       >
-                        {unfollowMutation.isPending ? 'Unfollowing...' : 'Following'}
+                        <Mail className="w-4 h-4 mr-2" />
+                        Message
                       </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
-                        disabled={followMutation.isPending}
-                        onClick={() => followMutation.mutate(uid!)}
-                      >
-                        {followMutation.isPending ? 'Following...' : 'Follow'}
-                      </Button>
-                    )
+                      {isFollowing ? (
+                        <Button
+                          size="sm"
+                          className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
+                          disabled={unfollowMutation.isPending}
+                          onClick={() => unfollowMutation.mutate(uid!)}
+                        >
+                          <Check className="w-4 h-4 mr-2" />
+                          {unfollowMutation.isPending ? 'Unfollowing...' : 'Following'}
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
+                          disabled={followMutation.isPending}
+                          onClick={() => followMutation.mutate(uid!)}
+                        >
+                          {followMutation.isPending ? 'Following...' : 'Follow'}
+                        </Button>
+                      )}
+                    </div>
                   )
                 )}
               </div>
@@ -221,29 +235,28 @@ export default function UserProfile() {
             
             {/* Profile Info Section with Glassmorphism */}
             <div className="mt-20 px-6 pb-4 border-b border-white/30">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
-                    {ownerProfile?.pronouns && (
-                      <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-muted-foreground">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                  {ownerProfile?.pronouns && (
+                    <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
+                  )}
                 </div>
+                <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
                 
-                {/* Social Links - Right Side */}
+                {/* Social Links - Inline Badges */}
                 {ownerProfile?.social && (
-                  <div className="flex flex-wrap gap-2 justify-end">
+                  <div className="flex flex-wrap gap-2 mb-3">
                     {ownerProfile.social.github && (
                       <a 
                         href={ownerProfile.social.github} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-muted-foreground hover:text-stone-900 transition-colors"
-                        title="GitHub"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
+                        title="GitHub Profile"
                       >
-                        <Github className="h-5 w-5" />
+                        <Github className="h-3.5 w-3.5" />
+                        GitHub
                       </a>
                     )}
                     {ownerProfile.social.twitter && (
@@ -251,10 +264,11 @@ export default function UserProfile() {
                         href={ownerProfile.social.twitter} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-muted-foreground hover:text-stone-900 transition-colors"
-                        title="Twitter"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
+                        title="Twitter Profile"
                       >
-                        <Twitter className="h-5 w-5" />
+                        <Twitter className="h-3.5 w-3.5" />
+                        Twitter
                       </a>
                     )}
                     {ownerProfile.social.linkedin && (
@@ -262,10 +276,11 @@ export default function UserProfile() {
                         href={ownerProfile.social.linkedin} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-muted-foreground hover:text-stone-900 transition-colors"
-                        title="LinkedIn"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
+                        title="LinkedIn Profile"
                       >
-                        <Linkedin className="h-5 w-5" />
+                        <Linkedin className="h-3.5 w-3.5" />
+                        LinkedIn
                       </a>
                     )}
                     {ownerProfile.social.instagram && (
@@ -273,10 +288,23 @@ export default function UserProfile() {
                         href={ownerProfile.social.instagram} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="text-muted-foreground hover:text-stone-900 transition-colors"
-                        title="Instagram"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
+                        title="Instagram Profile"
                       >
-                        <Instagram className="h-5 w-5" />
+                        <Instagram className="h-3.5 w-3.5" />
+                        Instagram
+                      </a>
+                    )}
+                    {ownerProfile.social.website && (
+                      <a 
+                        href={ownerProfile.social.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
+                        title="Personal Website"
+                      >
+                        <Link2 className="h-3.5 w-3.5" />
+                        Website
                       </a>
                     )}
                   </div>
@@ -294,32 +322,21 @@ export default function UserProfile() {
                     <MapPin className="h-4 w-4" /> {ownerProfile.location}
                   </span>
                 )}
-                {ownerProfile?.social?.website && (
-                  <a 
-                    href={ownerProfile.social.website} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    className="inline-flex items-center gap-1.5 hover:text-orange-600 transition-colors"
-                  >
-                    <Link2 className="h-4 w-4" /> 
-                    {ownerProfile.social.website.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
-                  </a>
-                )}
                 <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" /> Joined April 2025
+                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'recently'}
                 </span>
               </div>
               
               {/* Follower Counts */}
-              <div className="flex gap-4 text-sm">
-                <button className="hover:underline">
-                  <span className="font-semibold text-stone-900">{followCounts.following}</span>
-                  <span className="text-muted-foreground ml-1">Following</span>
-                </button>
-                <button className="hover:underline">
+              <div className="flex gap-6 text-sm">
+                <div className="flex flex-col">
                   <span className="font-semibold text-stone-900">{followCounts.followers}</span>
-                  <span className="text-muted-foreground ml-1">Followers</span>
-                </button>
+                  <span className="text-muted-foreground text-xs">Followers</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-semibold text-stone-900">{followCounts.following}</span>
+                  <span className="text-muted-foreground text-xs">Following</span>
+                </div>
               </div>
             </div>
             
@@ -902,6 +919,17 @@ export default function UserProfile() {
               issue={selectedIssue}
             />
           </>
+        )}
+
+        {/* Message Dialog */}
+        {!isOwner && user && (
+          <SendMessageDialog
+            open={messageDialogOpen}
+            onOpenChange={setMessageDialogOpen}
+            targetUserId={uid!}
+            targetUserName={ownerProfile?.displayName || 'User'}
+            targetUserAvatar={avatarUrl}
+          />
         )}
       </ParticlesBackground>
     </div>
