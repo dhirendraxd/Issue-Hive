@@ -169,82 +169,88 @@ export default function Dashboard() {
       </div>
       {/* Main Content */}
       <main className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-24">
-        {/* Welcome Section */}
-        <div className="mb-8 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-3xl font-display font-semibold tracking-tight">
-              Welcome back, {user.displayName || user.email?.split('@')[0]}!
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Manage your issues and track community reports
-            </p>
+        {/* Welcome & Profile Section */}
+        <div className="mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start md:items-center">
+            {/* Welcome Text */}
+            <div className="md:col-span-2">
+              <h1 className="text-4xl font-display font-bold tracking-tight mb-2">
+                Welcome back, {user.displayName || user.email?.split('@')[0]}!
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Manage your issues and track community reports
+              </p>
+            </div>
+            {/* Edit Profile Button */}
+            <Link to={`/profile/${user?.uid}`} className="md:justify-self-end w-full md:w-auto">
+              <Button className="w-full md:w-auto rounded-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-medium">
+                <Edit2 className="h-4 w-4 mr-2" /> Edit Profile
+              </Button>
+            </Link>
           </div>
-          <Link to={`/profile/${user?.uid}`} className="shrink-0">
-            <Button className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500" size="sm">
-              <Edit2 className="h-4 w-4 mr-2" /> Edit Public Profile
-            </Button>
-          </Link>
         </div>
 
         {/* Stats Cards */}
         <motion.div 
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-blue-400">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
+          <Card className="glass-card hover:shadow-lg hover:shadow-blue-400/15 hover:border-blue-200/30 transition-all duration-300 border-t-2 border-t-blue-400">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Issues
               </CardTitle>
-              <AlertCircle className="h-4 w-4 text-blue-500" />
+              <AlertCircle className="h-5 w-5 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-display font-bold text-blue-600">{stats?.total || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Community-wide</p>
+              <div className="text-3xl font-bold text-blue-600">{stats?.total || 0}</div>
+              <p className="text-xs text-muted-foreground mt-2">Community-wide</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-orange-400">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
+          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-t-2 border-t-orange-400">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Open Issues
               </CardTitle>
-              <Clock className="h-4 w-4 text-orange-500" />
+              <Clock className="h-5 w-5 text-orange-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-display font-bold text-orange-500">{stats?.open || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Needs attention</p>
+              <div className="text-3xl font-bold text-orange-500">{stats?.open || 0}</div>
+              <p className="text-xs text-muted-foreground mt-2">Need attention</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-green-400">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-display font-medium text-muted-foreground">
+          <Card className="glass-card hover:shadow-lg hover:shadow-green-400/15 hover:border-green-200/30 transition-all duration-300 border-t-2 border-t-green-400">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Total Supports
               </CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-5 w-5 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-display font-bold text-green-600">{stats?.votes || 0}</div>
-              <p className="text-xs text-muted-foreground mt-1">Community engagement</p>
+              <div className="text-3xl font-bold text-green-600">{stats?.votes || 0}</div>
+              <p className="text-xs text-muted-foreground mt-2">Community engagement</p>
             </CardContent>
           </Card>
 
-          <Card className="glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 border-l-4 border-l-purple-400">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-display font-medium text-muted-foreground flex items-center gap-2">
+          <Card className="glass-card hover:shadow-lg hover:shadow-purple-400/15 hover:border-purple-200/30 transition-all duration-300 border-t-2 border-t-purple-400">
+            <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Your Issues
-                {(privateCount > 0 || draftCount > 0) && (
-                  <span className="text-[10px] font-normal text-muted-foreground">{privateCount} private · {draftCount} draft</span>
-                )}
               </CardTitle>
-              <User className="h-4 w-4 text-purple-500" />
+              <User className="h-5 w-5 text-purple-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-display font-bold text-purple-600">{userIssues.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">Issues you reported</p>
+              <div className="text-3xl font-bold text-purple-600">{userIssues.length}</div>
+              {(privateCount > 0 || draftCount > 0) && (
+                <p className="text-xs text-muted-foreground mt-2">{privateCount} private · {draftCount} draft</p>
+              )}
+              {userIssues.length > 0 && privateCount === 0 && draftCount === 0 && (
+                <p className="text-xs text-muted-foreground mt-2">All published</p>
+              )}
             </CardContent>
           </Card>
         </motion.div>

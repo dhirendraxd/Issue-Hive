@@ -21,10 +21,14 @@ export default function Navbar() {
   const { user } = useAuth();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   
+  const isActive = (path: string) => {
+    return currentPath === path;
+  };
+
   return (
     <header className="absolute inset-x-0 top-4 z-30">
       <div className="mx-auto max-w-6xl px-4 h-20 relative flex items-center justify-between">
-        {/* Logo left */}
+        {/* Logo */}
         <Link
           to="/"
           className="flex items-center gap-2 font-display font-semibold text-xl tracking-tight select-none transition-opacity hover:opacity-90"
@@ -32,26 +36,49 @@ export default function Navbar() {
           <img
             src="/beehive-honey-svgrepo-com.svg"
             alt="IssueHive Logo"
-            className="h-10 w-10 mr-2"
+            className="h-10 w-10"
           />
           IssueHive
         </Link>
-        {/* Main nav */}
-        <nav className="flex-1 flex items-center justify-end gap-6">
-          {currentPath !== "/" && (
-            <Link to="/" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Home</Link>
-          )}
-          {currentPath !== "/about" && (
-            <Link to="/about" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">About</Link>
-          )}
-          {currentPath !== "/issues" && (
-            <Link to="/issues" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Issues</Link>
-          )}
-          {currentPath !== "/raise-issue" && (
-            <Link to="/raise-issue" className="uppercase font-medium text-black/80 hover:text-orange-500 transition-colors">Raise Issue</Link>
-          )}
+
+        {/* Navigation Links */}
+        <nav className="flex items-center gap-8">
+          <Link
+            to="/"
+            className={`font-medium transition-colors ${
+              isActive('/') 
+                ? 'text-black border-b-2 border-orange-500' 
+                : 'text-black/70 hover:text-black'
+            }`}
+          >
+            Home
+          </Link>
+          <Link
+            to="/issues"
+            className={`font-medium transition-colors ${
+              isActive('/issues')
+                ? 'text-black border-b-2 border-orange-500'
+                : 'text-black/70 hover:text-black'
+            }`}
+          >
+            Issues
+          </Link>
+          <Link
+            to="/raise-issue"
+            className={`font-medium transition-colors ${
+              isActive('/raise-issue')
+                ? 'text-black border-b-2 border-orange-500'
+                : 'text-black/70 hover:text-black'
+            }`}
+          >
+            Raise Issue
+          </Link>
+        </nav>
+
+        {/* Right side: Auth */}
+        <div className="flex items-center gap-4">
           {user ? (
-            <Link to={`/dashboard`} className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
+            <Link to="/dashboard" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
               <Avatar className="h-9 w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
                 <AvatarImage src={avatarUrl} alt={user.displayName || user.email || 'User'} />
                 <AvatarFallback className="bg-gradient-to-br from-orange-500 to-amber-500 text-white font-semibold">
@@ -61,12 +88,12 @@ export default function Navbar() {
             </Link>
           ) : (
             <Link to="/auth">
-              <Button aria-label="Join Now" className="h-9 rounded-full px-4 bg-black text-white hover:bg-orange-400/90 transition-colors uppercase font-medium tracking-wide text-[13px]">
+              <Button className="rounded-full px-4 bg-black text-white hover:bg-orange-500 transition-colors font-medium text-sm">
                 Join Now
               </Button>
             </Link>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );
