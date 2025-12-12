@@ -177,8 +177,8 @@ export default function EditProfile() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
       return;
     }
 
@@ -219,8 +219,8 @@ export default function EditProfile() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error('Image must be less than 2MB');
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
       return;
     }
 
@@ -296,7 +296,7 @@ export default function EditProfile() {
                 {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
                 {ownerProfile?.coverUrl ? 'Change Cover' : 'Upload Cover'}
               </Button>
-              <p className="text-xs text-muted-foreground">Recommended: 1500x500px, Max 2MB (JPEG, PNG, WebP)</p>
+              <p className="text-xs text-muted-foreground">Recommended: 1500x500px, Max 5MB (JPEG, PNG, WebP)</p>
             </div>
           </Card>
 
@@ -326,7 +326,7 @@ export default function EditProfile() {
                   {uploadingAvatar ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                   Upload Photo
                 </Button>
-                <p className="text-xs text-muted-foreground">JPG, PNG, GIF or WebP. Max 2MB.</p>
+                <p className="text-xs text-muted-foreground">JPG, PNG, GIF or WebP. Max 5MB.</p>
               </div>
             </div>
 

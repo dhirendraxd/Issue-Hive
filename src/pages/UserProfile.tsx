@@ -220,7 +220,7 @@ export default function UserProfile() {
             </div>
             
             {/* Profile Info Section with Glassmorphism */}
-            <div className="mt-20 px-6 pb-4 border-b border-white/50 bg-white/40 backdrop-blur-2xl rounded-2xl mx-4 shadow-lg shadow-orange-100/20">
+            <div className="mt-20 px-6 pb-4 border-b border-white/30">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">

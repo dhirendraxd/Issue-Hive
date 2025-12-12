@@ -59,11 +59,11 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
       return;
     }
 
-    // Validate file size (max 1MB for Firestore base64 storage)
-    const maxSize = 1 * 1024 * 1024; // 1MB
+    // Validate file size (max 5MB for Firestore base64 storage)
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      setError('File too large. Maximum size is 1MB.');
-      toast.error('Please choose an image smaller than 1MB');
+      setError('File too large. Maximum size is 5MB.');
+      toast.error('Please choose an image smaller than 5MB');
       return;
     }
 
@@ -218,7 +218,7 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
                 className="cursor-pointer"
               />
               <p className="text-xs text-muted-foreground">
-                Maximum file size: 1MB. Supported formats: JPEG, PNG, GIF, WebP
+                Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
               </p>
             </div>
 
