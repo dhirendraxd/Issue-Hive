@@ -4,7 +4,8 @@ import { DialogNoPortal as Dialog, DialogNoPortalContent as DialogContent, Dialo
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { ZoomOut, RotateCw, Sun, Sliders, Palette, FlipHorizontal, FlipVertical, RotateCcw } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ImageCropDialogNoPortalProps {
   open: boolean;
@@ -26,6 +27,11 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
+  const [brightness, setBrightness] = useState(100);
+  const [contrast, setContrast] = useState(100);
+  const [saturation, setSaturation] = useState(100);
+  const [flipH, setFlipH] = useState(false);
+  const [flipV, setFlipV] = useState(false);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<CroppedAreaPixels | null>(null);
   const [processing, setProcessing] = useState(false);
 
@@ -47,7 +53,12 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
   const getCroppedImg = async (
     imageSrc: string,
     pixelCrop: CroppedAreaPixels,
-    rotation = 0
+    rotation = 0,
+    brightness = 100,
+    contrast = 100,
+    saturation = 100,
+    flipH = false,
+    flipV = false
   ): Promise<Blob> => {
     const image = await createImage(imageSrc);
     const canvas = document.createElement('canvas');
@@ -65,6 +76,11 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
 
     ctx.translate(safeArea / 2, safeArea / 2);
     ctx.rotate((rotation * Math.PI) / 180);
+    
+    // Apply flips
+    if (flipH) ctx.scale(-1, 1);
+    if (flipV) ctx.scale(1, -1);
+    
     ctx.translate(-safeArea / 2, -safeArea / 2);
 
     ctx.drawImage(
@@ -73,19 +89,60 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
       safeArea / 2 - image.height * 0.5
     );
 
-    const data = ctx.getImageData(0, 0, safeArea, safeArea);
+    let imageData = ctx.getImageData(0, 0, safeArea, safeArea);
+    const data = imageData.data;
 
-    canvas.width = pixelCrop.width;
-    canvas.height = pixelCrop.height;
+    // Apply brightness, contrast, and saturation filters
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
 
-    ctx.putImageData(
-      data,
-      Math.round(0 - safeArea / 2 + image.width * 0.5 - pixelCrop.x),
-      Math.round(0 - safeArea / 2 + image.height * 0.5 - pixelCrop.y)
+      // Apply brightness
+      r = (r * brightness) / 100;
+      g = (g * brightness) / 100;
+      b = (b * brightness) / 100;
+
+      // Apply contrast
+      r = ((r - 128) * contrast / 100) + 128;
+      g = ((g - 128) * contrast / 100) + 128;
+      b = ((b - 128) * contrast / 100) + 128;
+
+      // Apply saturation
+      const gray = r * 0.299 + g * 0.587 + b * 0.114;
+      r = Math.round(gray + (r - gray) * saturation / 100);
+      g = Math.round(gray + (g - gray) * saturation / 100);
+      b = Math.round(gray + (b - gray) * saturation / 100);
+
+      // Clamp values
+      data[i] = Math.min(255, Math.max(0, r));
+      data[i + 1] = Math.min(255, Math.max(0, g));
+      data[i + 2] = Math.min(255, Math.max(0, b));
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+
+    const croppedCanvas = document.createElement('canvas');
+    const croppedCtx = croppedCanvas.getContext('2d');
+    if (!croppedCtx) throw new Error('No 2d context');
+
+    croppedCanvas.width = pixelCrop.width;
+    croppedCanvas.height = pixelCrop.height;
+
+    croppedCtx.drawImage(
+      canvas,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height
     );
 
     return new Promise((resolve) => {
-      canvas.toBlob((blob) => {
+      croppedCanvas.toBlob((blob) => {
         if (blob) {
           resolve(blob);
         }
@@ -98,7 +155,16 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
 
     setProcessing(true);
     try {
-      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels, rotation);
+      const croppedImage = await getCroppedImg(
+        imageSrc,
+        croppedAreaPixels,
+        rotation,
+        brightness,
+        contrast,
+        saturation,
+        flipH,
+        flipV
+      );
       onCropComplete(croppedImage);
       onClose();
     } catch (e) {
@@ -108,14 +174,37 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
     }
   };
 
+  const handleReset = () => {
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setRotation(0);
+    setBrightness(100);
+    setContrast(100);
+    setSaturation(100);
+    setFlipH(false);
+    setFlipV(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>Crop Image</DialogTitle>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader className="flex items-center justify-between">
+          <DialogTitle>Edit Image</DialogTitle>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="ml-auto"
+            disabled={processing}
+          >
+            <RotateCcw className="h-4 w-4 mr-1" />
+            Reset
+          </Button>
         </DialogHeader>
         
-        <div className="relative h-[400px] bg-gray-100 rounded-lg overflow-hidden">
+        <div className="relative h-[350px] bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center" style={{
+          filter: `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`
+        }}>
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -131,50 +220,140 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
           />
         </div>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <ZoomOut className="h-4 w-4" />
-                Zoom
-              </Label>
-              <span className="text-sm text-muted-foreground">{zoom.toFixed(1)}x</span>
-            </div>
-            <Slider
-              value={[zoom]}
-              onValueChange={(value) => setZoom(value[0])}
-              min={1}
-              max={3}
-              step={0.1}
-              className="w-full"
-            />
-          </div>
+        <Tabs defaultValue="crop" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="crop">Crop & Rotate</TabsTrigger>
+            <TabsTrigger value="adjust">Adjust</TabsTrigger>
+            <TabsTrigger value="flip">Transform</TabsTrigger>
+          </TabsList>
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="flex items-center gap-2">
-                <RotateCw className="h-4 w-4" />
-                Rotation
-              </Label>
-              <span className="text-sm text-muted-foreground">{rotation}°</span>
+          {/* Crop & Rotate Tab */}
+          <TabsContent value="crop" className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <ZoomOut className="h-4 w-4" />
+                  Zoom
+                </Label>
+                <span className="text-sm text-muted-foreground">{zoom.toFixed(1)}x</span>
+              </div>
+              <Slider
+                value={[zoom]}
+                onValueChange={(value) => setZoom(value[0])}
+                min={1}
+                max={3}
+                step={0.1}
+                className="w-full"
+              />
             </div>
-            <Slider
-              value={[rotation]}
-              onValueChange={(value) => setRotation(value[0])}
-              min={0}
-              max={360}
-              step={1}
-              className="w-full"
-            />
-          </div>
-        </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <RotateCw className="h-4 w-4" />
+                  Rotation
+                </Label>
+                <span className="text-sm text-muted-foreground">{rotation}°</span>
+              </div>
+              <Slider
+                value={[rotation]}
+                onValueChange={(value) => setRotation(value[0])}
+                min={0}
+                max={360}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </TabsContent>
+
+          {/* Adjust Tab */}
+          <TabsContent value="adjust" className="space-y-4 py-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Sun className="h-4 w-4" />
+                  Brightness
+                </Label>
+                <span className="text-sm text-muted-foreground">{brightness}%</span>
+              </div>
+              <Slider
+                value={[brightness]}
+                onValueChange={(value) => setBrightness(value[0])}
+                min={0}
+                max={200}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Sliders className="h-4 w-4" />
+                  Contrast
+                </Label>
+                <span className="text-sm text-muted-foreground">{contrast}%</span>
+              </div>
+              <Slider
+                value={[contrast]}
+                onValueChange={(value) => setContrast(value[0])}
+                min={0}
+                max={200}
+                step={1}
+                className="w-full"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="flex items-center gap-2">
+                  <Palette className="h-4 w-4" />
+                  Saturation
+                </Label>
+                <span className="text-sm text-muted-foreground">{saturation}%</span>
+              </div>
+              <Slider
+                value={[saturation]}
+                onValueChange={(value) => setSaturation(value[0])}
+                min={0}
+                max={200}
+                step={1}
+                className="w-full"
+              />
+            </div>
+          </TabsContent>
+
+          {/* Transform Tab */}
+          <TabsContent value="flip" className="space-y-4 py-4">
+            <div className="flex gap-2">
+              <Button
+                variant={flipH ? 'default' : 'outline'}
+                onClick={() => setFlipH(!flipH)}
+                disabled={processing}
+                className="flex-1"
+              >
+                <FlipHorizontal className="h-4 w-4 mr-2" />
+                Flip Horizontal
+              </Button>
+              <Button
+                variant={flipV ? 'default' : 'outline'}
+                onClick={() => setFlipV(!flipV)}
+                disabled={processing}
+                className="flex-1"
+              >
+                <FlipVertical className="h-4 w-4 mr-2" />
+                Flip Vertical
+              </Button>
+            </div>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={processing}>
             Cancel
           </Button>
-          <Button onClick={handleCrop} disabled={processing}>
-            {processing ? 'Processing...' : 'Apply Crop'}
+          <Button onClick={handleCrop} disabled={processing} className="bg-gradient-to-r from-orange-500 to-amber-500">
+            {processing ? 'Processing...' : 'Apply & Save'}
           </Button>
         </DialogFooter>
       </DialogContent>
