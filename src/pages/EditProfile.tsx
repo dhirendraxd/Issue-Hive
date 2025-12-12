@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { updateUserDisplayName, uploadProfilePicture, updateUserProfilePicture, setDefaultAvatar } from '@/integrations/firebase/profile';
 import { sanitizeText, sanitizeURL, limitLength } from '@/lib/sanitize';
-import { DEFAULT_AVATAR_STYLES } from '@/lib/avatar';
+import { getAvatarPreviews } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -28,6 +28,7 @@ export default function EditProfile() {
   const queryClient = useQueryClient();
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(user?.uid || '');
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, user?.uid || '');
+  const avatarPreviews = useMemo(() => getAvatarPreviews(user?.uid || 'guest'), [user?.uid]);
   
   // State
   const [displayName, setDisplayName] = useState('');
@@ -188,7 +189,8 @@ export default function EditProfile() {
       queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       toast.success('Profile picture updated!');
     } catch (error) {
-      toast.error('Failed to upload profile picture');
+      const message = error instanceof Error ? error.message : 'Failed to upload profile picture';
+      toast.error(message);
     } finally {
       setUploadingAvatar(false);
     }
@@ -265,14 +267,14 @@ export default function EditProfile() {
             <div className="mt-6">
               <h3 className="text-sm font-medium mb-3">Or choose a default avatar:</h3>
               <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                {DEFAULT_AVATAR_STYLES.map((style) => (
+                {avatarPreviews.map((style) => (
                   <button
-                    key={style.id}
-                    onClick={() => handleSetDefaultAvatar(style.id)}
+                    key={style.style}
+                    onClick={() => handleSetDefaultAvatar(style.style)}
                     disabled={uploadingAvatar}
                     className="aspect-square rounded-full overflow-hidden border-2 border-stone-200 hover:border-orange-500 transition-colors disabled:opacity-50"
                   >
-                    <img src={style.preview} alt={style.label} className="w-full h-full object-cover" />
+                    <img src={style.url} alt={style.label} className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

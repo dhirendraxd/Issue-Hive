@@ -51,8 +51,6 @@ coverage
 .firebaserc
 firebase-debug.log
 firebase-debug.*.log
-firebase-test.js
-firebase-verify.js
 test-firebase.sh
 public/test-firebase.js
 
