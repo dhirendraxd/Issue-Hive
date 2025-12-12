@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag } from "lucide-react";
+import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
@@ -172,12 +173,20 @@ export default function Issues() {
               </div>
             )}
 
-            {visibleIssues.map((i) => (
-              <Card 
-                key={i.id} 
-                className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
-                onClick={() => handleCardClick(i)}
-              >
+            {visibleIssues.map((i, idx) => {
+              const e = engagement?.get(i.id);
+              return (
+                <motion.div
+                  key={i.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3) }}
+                >
+                  <Card 
+                    className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
+                    onClick={() => handleCardClick(i)}
+                  >
                 <CardContent className="p-6 md:p-7 flex flex-col h-full">
                   {/* Header: User Info */}
                   <div className="flex items-center gap-3 mb-4">
@@ -317,7 +326,9 @@ export default function Issues() {
                   )}
                 </CardContent>
               </Card>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </section>
           </div>

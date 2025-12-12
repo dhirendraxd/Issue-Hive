@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import HeroRings from "@/components/HeroRings";
 import HiveHexParticles from "@/components/HiveHexParticles";
@@ -25,7 +26,12 @@ function Hero() {
       </div>
       <div className="relative z-10 mx-auto max-w-6xl px-6 md:px-8 py-20 md:py-28">
         {/* Content wrapper */}
-        <div className="flex flex-col items-center text-center gap-4 md:gap-6 relative">
+        <motion.div 
+          className="flex flex-col items-center text-center gap-4 md:gap-6 relative"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
           <h1 className="text-4xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
             Unified Campus Platform for
             <br />
@@ -42,7 +48,7 @@ function Hero() {
               </Button>
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
       {/* Subtle bottom feather: very light inset shadow + mask to soften transition without obvious gradient */}
       <div
@@ -110,15 +116,23 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
   }
   return (
     <div className="mx-auto max-w-6xl px-4 grid grid-cols-1 sm:grid-cols-3 gap-6">
-      {items.map((i) => (
-        <Card key={i.label} className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
-          <CardContent className="py-8 text-center">
-            <div className="text-3xl md:text-4xl font-display font-semibold text-orange-500">
-              <CountUpNumber value={i.value} />
-            </div>
-            <div className="mt-2 text-sm text-muted-foreground">{i.label}</div>
-          </CardContent>
-        </Card>
+      {items.map((i, idx) => (
+        <motion.div
+          key={i.label}
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5, delay: idx * 0.1 }}
+        >
+          <Card className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
+            <CardContent className="py-8 text-center">
+              <div className="text-3xl md:text-4xl font-display font-semibold text-orange-500">
+                <CountUpNumber value={i.value} />
+              </div>
+              <div className="mt-2 text-sm text-muted-foreground">{i.label}</div>
+            </CardContent>
+          </Card>
+        </motion.div>
       ))}
     </div>
   );
