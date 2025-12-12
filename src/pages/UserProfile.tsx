@@ -233,19 +233,29 @@ export default function UserProfile() {
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
                 
-                {/* Social Links - Inline Badges */}
+                {/* Social Links - Colored Icons Only */}
                 {ownerProfile?.social && (
-                  <div className="flex flex-wrap gap-2 mb-3">
+                  <div className="flex flex-wrap gap-3 mb-3">
+                    {ownerProfile.social.website && (
+                      <a 
+                        href={ownerProfile.social.website} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-600 hover:text-orange-700 transition-all hover:shadow-md"
+                        title="Website"
+                      >
+                        <Link2 className="h-5 w-5" />
+                      </a>
+                    )}
                     {ownerProfile.social.github && (
                       <a 
                         href={ownerProfile.social.github} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
-                        title="GitHub Profile"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md"
+                        title="GitHub"
                       >
-                        <Github className="h-3.5 w-3.5" />
-                        GitHub
+                        <Github className="h-5 w-5" />
                       </a>
                     )}
                     {ownerProfile.social.twitter && (
@@ -253,11 +263,10 @@ export default function UserProfile() {
                         href={ownerProfile.social.twitter} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
-                        title="Twitter Profile"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md"
+                        title="Twitter"
                       >
-                        <Twitter className="h-3.5 w-3.5" />
-                        Twitter
+                        <Twitter className="h-5 w-5" />
                       </a>
                     )}
                     {ownerProfile.social.linkedin && (
@@ -265,11 +274,10 @@ export default function UserProfile() {
                         href={ownerProfile.social.linkedin} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
-                        title="LinkedIn Profile"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md"
+                        title="LinkedIn"
                       >
-                        <Linkedin className="h-3.5 w-3.5" />
-                        LinkedIn
+                        <Linkedin className="h-5 w-5" />
                       </a>
                     )}
                     {ownerProfile.social.instagram && (
@@ -277,23 +285,10 @@ export default function UserProfile() {
                         href={ownerProfile.social.instagram} 
                         target="_blank" 
                         rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
-                        title="Instagram Profile"
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md"
+                        title="Instagram"
                       >
-                        <Instagram className="h-3.5 w-3.5" />
-                        Instagram
-                      </a>
-                    )}
-                    {ownerProfile.social.website && (
-                      <a 
-                        href={ownerProfile.social.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/50 hover:bg-white/70 border border-white/50 hover:border-stone-300 transition-all text-xs font-medium text-stone-700"
-                        title="Personal Website"
-                      >
-                        <Link2 className="h-3.5 w-3.5" />
-                        Website
+                        <Instagram className="h-5 w-5" />
                       </a>
                     )}
                   </div>
@@ -338,20 +333,14 @@ export default function UserProfile() {
                 >
                   Issues
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                >
-                  Analytics
-                </TabsTrigger>
                 {isOwner && (
                   <>
                     <TabsTrigger 
-                      value="activity" 
+                      value="analytics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
-                      <ActivityIcon className="h-4 w-4 mr-2" />
-                      Activity
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Analytics & Activity
                     </TabsTrigger>
                     <TabsTrigger 
                       value="settings" 
@@ -540,91 +529,93 @@ export default function UserProfile() {
                 )}
               </TabsContent>
               
-              {/* Analytics Tab */}
-              <TabsContent value="analytics" className="mt-6">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6 hover:shadow-xl hover:shadow-orange-200/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-orange-100">
-                        <TrendingUp className="h-6 w-6 text-orange-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Issues</p>
-                        <p className="text-2xl font-bold">{analytics.totalIssues}</p>
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-6 hover:shadow-xl hover:shadow-green-200/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-green-100">
-                        <ThumbsUp className="h-6 w-6 text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Upvotes</p>
-                        <p className="text-2xl font-bold">{analytics.totalUpvotes}</p>
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  {(!ownerProfile?.hideDislikeCounts || isOwner) && (
-                    <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6 hover:shadow-xl hover:shadow-red-200/30 transition-all">
-                      <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-full bg-red-100">
-                          <ThumbsDown className="h-6 w-6 text-red-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Total Downvotes</p>
-                          <p className="text-2xl font-bold">{analytics.totalDownvotes}</p>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
-                  
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-6 hover:shadow-xl hover:shadow-blue-200/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-blue-100">
-                        <MessageSquare className="h-6 w-6 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Comments</p>
-                        <p className="text-2xl font-bold">{analytics.totalComments}</p>
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-purple-100/20 p-6 hover:shadow-xl hover:shadow-purple-200/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-purple-100">
-                        <TrendingUp className="h-6 w-6 text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Supports</p>
-                        <p className="text-2xl font-bold">{analytics.totalSupports}</p>
-                      </div>
-                    </div>
-                  </Card>
-                  
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6 hover:shadow-xl hover:shadow-amber-200/30 transition-all">
-                    <div className="flex items-center gap-4">
-                      <div className="p-3 rounded-full bg-amber-100">
-                        <Check className="h-6 w-6 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Resolved Issues</p>
-                        <p className="text-2xl font-bold">{analytics.resolvedIssues}</p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-              </TabsContent>
-              
-              {/* Activity Tab (Owner Only) */}
+              {/* Analytics & Activity Tab (Owner Only) */}
               {isOwner && (
-                <TabsContent value="activity" className="mt-6">
-                  <div className="max-w-2xl space-y-6">
+                <TabsContent value="analytics" className="mt-6">
+                  <div className="space-y-6">
+                    {/* Analytics Section */}
                     <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-2">Recent Activity</h2>
+                      <h2 className="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
+                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6 hover:shadow-xl hover:shadow-orange-200/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-orange-100">
+                              <TrendingUp className="h-6 w-6 text-orange-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Total Issues</p>
+                              <p className="text-2xl font-bold">{analytics.totalIssues}</p>
+                            </div>
+                          </div>
+                        </Card>
+                        
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-6 hover:shadow-xl hover:shadow-green-200/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-green-100">
+                              <ThumbsUp className="h-6 w-6 text-green-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Total Upvotes</p>
+                              <p className="text-2xl font-bold">{analytics.totalUpvotes}</p>
+                            </div>
+                          </div>
+                        </Card>
+                        
+                        {(!ownerProfile?.hideDislikeCounts || isOwner) && (
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6 hover:shadow-xl hover:shadow-red-200/30 transition-all">
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 rounded-full bg-red-100">
+                                <ThumbsDown className="h-6 w-6 text-red-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Total Downvotes</p>
+                                <p className="text-2xl font-bold">{analytics.totalDownvotes}</p>
+                              </div>
+                            </div>
+                          </Card>
+                        )}
+                        
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-6 hover:shadow-xl hover:shadow-blue-200/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-blue-100">
+                              <MessageSquare className="h-6 w-6 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Total Comments</p>
+                              <p className="text-2xl font-bold">{analytics.totalComments}</p>
+                            </div>
+                          </div>
+                        </Card>
+                        
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-purple-100/20 p-6 hover:shadow-xl hover:shadow-purple-200/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-purple-100">
+                              <TrendingUp className="h-6 w-6 text-purple-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Total Supports</p>
+                              <p className="text-2xl font-bold">{analytics.totalSupports}</p>
+                            </div>
+                          </div>
+                        </Card>
+                        
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6 hover:shadow-xl hover:shadow-amber-200/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-amber-100">
+                              <Check className="h-6 w-6 text-amber-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm text-muted-foreground">Resolved Issues</p>
+                              <p className="text-2xl font-bold">{analytics.resolvedIssues}</p>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </div>
+
+                    {/* Activity Section */}
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight mb-2">Activity</h2>
                       <p className="text-sm text-muted-foreground mb-4">Your latest interactions and updates</p>
                     </div>
                     

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/hooks/use-auth';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useUserActivity } from '@/hooks/use-user-activity';
@@ -36,7 +37,12 @@ import {
   ThumbsDown,
   MessageSquare,
   Activity,
-  Edit2
+  Edit2,
+  Github,
+  Twitter,
+  Linkedin,
+  Instagram,
+  Globe
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
@@ -49,6 +55,7 @@ import IssueCard from '@/components/IssueCard';
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
+  const { data: userProfile } = useUserProfile(user?.uid || '');
   const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
@@ -442,6 +449,73 @@ export default function Dashboard() {
                     </span>
                   </div>
                 </div>
+
+                {/* Social Media Links */}
+                {userProfile?.social && Object.values(userProfile.social).some(v => v) && (
+                  <>
+                    <Separator />
+                    <div className="space-y-2">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Follow</p>
+                      <div className="flex flex-wrap gap-3">
+                        {userProfile.social.website && (
+                          <a
+                            href={userProfile.social.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-600 hover:text-orange-700 transition-all hover:shadow-md"
+                            title="Website"
+                          >
+                            <Globe className="h-5 w-5" />
+                          </a>
+                        )}
+                        {userProfile.social.github && (
+                          <a
+                            href={userProfile.social.github}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md"
+                            title="GitHub"
+                          >
+                            <Github className="h-5 w-5" />
+                          </a>
+                        )}
+                        {userProfile.social.twitter && (
+                          <a
+                            href={userProfile.social.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md"
+                            title="Twitter"
+                          >
+                            <Twitter className="h-5 w-5" />
+                          </a>
+                        )}
+                        {userProfile.social.linkedin && (
+                          <a
+                            href={userProfile.social.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md"
+                            title="LinkedIn"
+                          >
+                            <Linkedin className="h-5 w-5" />
+                          </a>
+                        )}
+                        {userProfile.social.instagram && (
+                          <a
+                            href={userProfile.social.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md"
+                            title="Instagram"
+                          >
+                            <Instagram className="h-5 w-5" />
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
