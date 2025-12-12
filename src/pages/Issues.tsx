@@ -174,7 +174,7 @@ export default function Issues() {
             )}
 
             {visibleIssues.map((i, idx) => {
-              const e = engagement?.get(i.id);
+              const e = engagement?.[i.id];
               return (
                 <motion.div
                   key={i.id}

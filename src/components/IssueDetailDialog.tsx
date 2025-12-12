@@ -97,7 +97,7 @@ export default function IssueDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] p-0 gap-0">
+      <DialogContent className="max-w-3xl max-h-[90vh] p-0 gap-0 flex flex-col">
         <DialogHeader className="px-6 pt-6 pb-4 space-y-3">
           {/* User info header */}
           <div className="flex items-center gap-3">
@@ -159,8 +159,8 @@ export default function IssueDetailDialog({
           </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 px-6">
-          <div className="space-y-6 pb-6">
+        <ScrollArea className="flex-1 px-6 overflow-y-auto">
+          <div className="space-y-6 pb-6 max-w-full">
             {/* Issue Title */}
             <div>
               <h2 className="text-2xl font-bold leading-tight">{issue.title}</h2>

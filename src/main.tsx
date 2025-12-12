@@ -7,6 +7,9 @@ import { validateEnv } from '@/lib/env'
 // Validate environment variables on startup
 validateEnv();
 
+// Store React root instance globally so we can unmount it if needed
+let reactRoot: ReturnType<typeof createRoot> | null = null;
+
 // Global handlers to avoid a white-screen when uncaught errors occur outside React render lifecycle
 function mountGlobalErrorHandlers() {
 	if (typeof window === 'undefined') return;
@@ -14,6 +17,16 @@ function mountGlobalErrorHandlers() {
 		window.addEventListener('error', (ev) => {
 			try {
 				console.error('[Global] Uncaught error', ev.error || ev.message, ev);
+				// Unmount React before manipulating DOM directly
+				if (reactRoot) {
+					try {
+						reactRoot.unmount();
+						reactRoot = null;
+					} catch (unmountErr) {
+						console.warn('[Global] Failed to unmount React root', unmountErr);
+					}
+				}
+				
 				// show minimal overlay so user sees something instead of white screen
 				const root = document.getElementById('root');
 				if (root) {
@@ -35,6 +48,16 @@ function mountGlobalErrorHandlers() {
 		window.addEventListener('unhandledrejection', (ev) => {
 			try {
 				console.error('[Global] Unhandled Rejection', ev.reason);
+				// Unmount React before manipulating DOM directly
+				if (reactRoot) {
+					try {
+						reactRoot.unmount();
+						reactRoot = null;
+					} catch (unmountErr) {
+						console.warn('[Global] Failed to unmount React root', unmountErr);
+					}
+				}
+				
 				const root = document.getElementById('root');
 				if (root) {
 					// Sanitize error message to prevent XSS
@@ -55,7 +78,8 @@ function mountGlobalErrorHandlers() {
 
 mountGlobalErrorHandlers();
 
-createRoot(document.getElementById("root")!).render(
+reactRoot = createRoot(document.getElementById("root")!);
+reactRoot.render(
 	<ErrorBoundary>
 		<App />
 	</ErrorBoundary>

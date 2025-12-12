@@ -153,7 +153,7 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
   };
 
   return (
-    <div className={cn('space-y-3', className)}>
+    <div className={cn('space-y-3 max-w-full overflow-hidden', className)}>
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold flex items-center gap-2">
           <MessageSquare className="h-4 w-4" />
@@ -188,27 +188,27 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
             
             return (
               <div className={cn(
-                "rounded-md px-3 py-2 border transition-all duration-200",
+                "rounded-md px-3 py-2 border transition-all duration-200 w-full overflow-hidden",
                 isReply ? "bg-orange-50/50 backdrop-blur border-orange-100" : "bg-white/70 backdrop-blur",
                 isOptimistic && "opacity-70 animate-pulse"
               )}>
-                <div className="flex justify-between items-start mb-1">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                <div className="flex justify-between items-start mb-1 gap-2">
+                  <span className={cn("font-semibold text-gray-800 flex items-center gap-1.5 flex-wrap min-w-0", isReply ? "text-[10px]" : "text-[11px]")}>
                     <span className={cn("font-medium truncate", isReply ? "text-[11px]" : "text-xs")}>
                       {c.userName}
-                                        {allowPin && c.pinnedAt && (
-                                          <span className="text-[9px] text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
-                                            <Pin className="h-2.5 w-2.5" />
-                                            Pinned
-                                          </span>
-                                        )}
                     </span>
+                    {allowPin && c.pinnedAt && (
+                      <span className="text-[9px] text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded flex items-center gap-1 flex-shrink-0">
+                        <Pin className="h-2.5 w-2.5" />
+                        Pinned
+                      </span>
+                    )}
                     {isOptimistic && (
                       <span className="text-[9px] text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded flex-shrink-0">
                         Posting...
                       </span>
                     )}
-                  </div>
+                  </span>
                   <span className={cn("text-gray-500 flex-shrink-0", isReply ? "text-[9px]" : "text-[10px]")}
                         title={(() => { 
                           if (typeof c.createdAt === 'number') return new Date(c.createdAt).toLocaleString();
@@ -222,10 +222,10 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
                     })()}
                   </span>
                 </div>
-                <p className={cn("text-gray-700 break-words mb-2", isReply ? "text-[11px]" : "text-xs")}>
+                <p className={cn("text-gray-700 break-words overflow-wrap-anywhere mb-2 max-w-full", isReply ? "text-[11px]" : "text-xs")}>
                   {c.content}
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {user && (
                     <Button
                       size="sm"
@@ -279,13 +279,13 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
           };
           
           return (
-            <div key={comment.id} className="space-y-2">
+            <div key={comment.id} className="space-y-2 w-full overflow-hidden">
               {/* Top-level comment */}
               <CommentItem c={comment} />
 
               {/* Replies */}
               {replies.length > 0 && (
-                <div className="ml-6 space-y-2 border-l-2 border-orange-200 pl-3">
+                <div className="ml-6 space-y-2 border-l-2 border-orange-200 pl-3 overflow-hidden">
                   {replies.map(reply => (
                     <CommentItem key={reply.id} c={reply} isReply />
                   ))}
