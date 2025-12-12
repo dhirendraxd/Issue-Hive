@@ -5,10 +5,10 @@ import { getDefaultAvatarUrl, type AvatarStyleId } from '@/lib/avatar';
 import { logger } from '@/lib/logger';
 
 /**
- * Upload a custom profile picture (stores as base64 in Firestore - no Storage needed)
+ * Upload a custom profile picture to Firebase Storage
  * @param file - The image file to upload
  * @param userId - The user's ID
- * @returns A firestore reference URL (format: firestore://users/{userId}/avatar)
+ * @returns The download URL from Firebase Storage
  */
 export async function uploadProfilePicture(file: File, userId: string): Promise<string> {
   logger.debug('uploadProfilePicture called with:', { fileName: file.name, fileSize: file.size, userId });
@@ -19,36 +19,29 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
     throw new Error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
   }
 
-  // Validate file size (max 1MB for base64 storage in Firestore)
-  const maxSize = 1 * 1024 * 1024; // 1MB max
+  // Validate file size (max 5MB for Firebase Storage)
+  const maxSize = 5 * 1024 * 1024; // 5MB max
   if (file.size > maxSize) {
-    throw new Error('File too large. Maximum size is 1MB for profile pictures.');
+    throw new Error('File too large. Maximum size is 5MB for profile pictures.');
   }
 
   try {
-    // Convert file to base64 data URL
-    const dataURL = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-    
-    logger.debug('Image converted to base64, length:', dataURL.length);
-    
-    // Store base64 data in Firestore
-    const { db } = await import('./config');
-    if (db) {
-      const { doc, setDoc } = await import('firebase/firestore');
-      await setDoc(doc(db, 'users', userId), { 
-        avatarData: dataURL,
-        updatedAt: Date.now() 
-      }, { merge: true });
-      logger.debug('Base64 image stored in Firestore');
+    // Upload to Firebase Storage
+    const { storage } = await import('./config');
+    if (!storage) {
+      throw new Error('Firebase Storage is not configured');
     }
     
-    // Return a short reference URL instead of the long base64 string
-    return `firestore://users/${userId}/avatar`;
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const storageRef = ref(storage, `profile-pictures/${userId}/avatar`);
+    
+    logger.debug('Uploading to Firebase Storage...');
+    await uploadBytes(storageRef, file);
+    
+    const downloadURL = await getDownloadURL(storageRef);
+    logger.debug('Image uploaded successfully, URL:', downloadURL);
+    
+    return downloadURL;
   } catch (error) {
     logger.error('Upload error details:', error);
     if (error instanceof Error) {
