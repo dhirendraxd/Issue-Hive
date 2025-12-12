@@ -41,7 +41,6 @@ export default function EditProfile() {
   const [instagram, setInstagram] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [uploadingCover, setUploadingCover] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [editingUsername, setEditingUsername] = useState(false);
   const [editingBio, setEditingBio] = useState(false);
@@ -210,40 +209,6 @@ export default function EditProfile() {
     }
   };
 
-  const handleCoverPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
-
-    setUploadingCover(true);
-    try {
-      const storageRef = ref(storage, `covers/${user.uid}/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(storageRef);
-      
-      await updateDoc(doc(db, 'users', user.uid), {
-        coverUrl: downloadURL,
-        updatedAt: new Date()
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      toast.success('Cover photo updated!');
-    } catch (error) {
-      toast.error('Failed to upload cover photo');
-    } finally {
-      setUploadingCover(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Simple header */}
@@ -264,42 +229,8 @@ export default function EditProfile() {
           </Button>
         </div>
       </header>
-
-      {/* Main content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="space-y-6">
-          {/* Cover Photo */}
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Cover Photo</h2>
-            {ownerProfile?.coverUrl && (
-              <div className="relative aspect-[3/1] rounded-lg overflow-hidden border border-stone-200 mb-4">
-                <img
-                  src={ownerProfile.coverUrl}
-                  alt="Cover"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <input
-                type="file"
-                id="cover-upload"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleCoverPhotoUpload}
-                className="hidden"
-              />
-              <Button
-                variant="outline"
-                onClick={() => document.getElementById('cover-upload')?.click()}
-                disabled={uploadingCover}
-              >
-                {uploadingCover ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-                {ownerProfile?.coverUrl ? 'Change Cover' : 'Upload Cover'}
-              </Button>
-              <p className="text-xs text-muted-foreground">Recommended: 1500x500px, Max 5MB (JPEG, PNG, WebP)</p>
-            </div>
-          </Card>
-
+    <main className="max-w-4xl mx-auto px-4 py-8">
+      <div className="space-y-6">
           {/* Profile Picture */}
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Profile Picture</h2>

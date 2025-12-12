@@ -59,7 +59,7 @@ export default function PrivacyPolicy() {
                     </li>
                     <li className="text-stone-700 flex gap-3">
                       <span className="text-orange-500 font-bold">•</span>
-                      <span>Profile pictures and cover photos</span>
+                      <span>Profile pictures</span>
                     </li>
                   </ul>
                 </div>

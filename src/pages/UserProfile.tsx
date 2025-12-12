@@ -160,21 +160,10 @@ export default function UserProfile() {
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
-            {/* Cover Image with Glassmorphism */}
-            <div className="relative">
-              <div className="h-48 md:h-64 w-full rounded-2xl overflow-hidden border border-white/50 bg-gradient-to-br from-orange-100 via-amber-50 to-orange-50 backdrop-blur-2xl shadow-2xl shadow-orange-200/20">
-                {ownerProfile?.coverUrl ? (
-                  <>
-                    <img src={ownerProfile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 backdrop-blur-sm" />
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-400/20 via-amber-400/10 to-orange-300/20 backdrop-blur-xl" />
-                )}
-              </div>
-              
-              {/* Profile Picture Overlay */}
-              <div className="absolute -bottom-16 left-6">
+            {/* Profile Section */}
+            <div className="relative pt-8">
+              {/* Profile Picture */}
+              <div className="flex justify-start mb-8">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
                   <AvatarImage src={avatarUrl} />
                   <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
