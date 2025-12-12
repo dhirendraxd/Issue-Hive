@@ -89,7 +89,7 @@ export default function ImageCropDialogNoPortal({ open, onClose, imageSrc, onCro
       safeArea / 2 - image.height * 0.5
     );
 
-    let imageData = ctx.getImageData(0, 0, safeArea, safeArea);
+    const imageData = ctx.getImageData(0, 0, safeArea, safeArea);
     const data = imageData.data;
 
     // Apply brightness, contrast, and saturation filters

@@ -2,6 +2,10 @@ import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
 import ErrorBoundary from '@/components/ErrorBoundary'
+import { validateEnv } from '@/lib/env'
+
+// Validate environment variables on startup
+validateEnv();
 
 // Global handlers to avoid a white-screen when uncaught errors occur outside React render lifecycle
 function mountGlobalErrorHandlers() {

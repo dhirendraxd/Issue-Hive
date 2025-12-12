@@ -60,6 +60,29 @@ Tech stack
 - Vite + React + TypeScript
 - Tailwind + shadcn‑style components
 - React Router
-- React Query (client‑side cache)
+- React Query (client‑side cache with optimized defaults)
 - Firebase (optional backend - Auth, Firestore, Storage)
+- PWA support with offline capabilities
+
+Security & Performance
+---------------------
+
+**Security features:**
+- Content Security Policy (CSP) headers
+- Environment variable validation
+- Input sanitization for all user content
+- Firestore security rules (owner-only updates/deletes)
+- Rate limiting for API operations
+
+**Performance optimizations:**
+- Code splitting with React.lazy
+- Manual chunk splitting for better caching
+- React Query with 5min stale time
+- Image optimization pipeline
+- Production console.log stripping
+
+**PWA features:**
+- Offline support with service worker
+- App manifest for installability
+- Optimized for mobile devices
 

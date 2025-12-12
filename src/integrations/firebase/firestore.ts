@@ -486,8 +486,6 @@ export const getUserActivity = async (userId: string): Promise<UserActivity> => 
       }
     }
 
-    console.log(`[getUserActivity] Found: ${votedIssues.length} votes, ${comments.length} comments, ${likedComments.length} likes`);
-
     return {
       votedIssues,
       comments,

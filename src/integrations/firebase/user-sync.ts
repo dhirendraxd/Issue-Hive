@@ -78,7 +78,6 @@ export async function updateUserPhotoInIssues(userId: string, newPhotoURL: strin
     });
     
     await batch.commit();
-    console.log(`Updated ${snapshot.size} issues with new profile photo`);
   } catch (error) {
     console.error('Error updating user photo in issues:', error);
     throw error;
