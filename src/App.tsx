@@ -15,6 +15,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const RaiseIssue = lazy(() => import("./pages/RaiseIssue"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const EditProfile = lazy(() => import("./pages/EditProfile"));
+const Terms = lazy(() => import("./pages/Terms"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 
 const queryClient = new QueryClient();
 
@@ -45,6 +48,9 @@ const App = () => (
             <Route path="/u/:uid" element={<UserProfile />} />
             <Route path="/profile/:uid" element={<UserProfile />} />
             <Route path="/profile/:uid/edit" element={<EditProfile />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-use" element={<TermsOfUse />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

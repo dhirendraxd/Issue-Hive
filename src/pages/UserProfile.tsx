@@ -158,13 +158,16 @@ export default function UserProfile() {
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto">
-            {/* Cover Image */}
+            {/* Cover Image with Glassmorphism */}
             <div className="relative">
-              <div className="h-48 md:h-64 w-full rounded-2xl overflow-hidden border border-white/40 bg-gradient-to-br from-orange-100 via-amber-50 to-orange-50">
+              <div className="h-48 md:h-64 w-full rounded-2xl overflow-hidden border border-white/50 bg-gradient-to-br from-orange-100 via-amber-50 to-orange-50 backdrop-blur-2xl shadow-2xl shadow-orange-200/20">
                 {ownerProfile?.coverUrl ? (
-                  <img src={ownerProfile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                  <>
+                    <img src={ownerProfile.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/5 backdrop-blur-sm" />
+                  </>
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-400/20 via-amber-400/10 to-orange-300/20" />
+                  <div className="w-full h-full bg-gradient-to-br from-orange-400/20 via-amber-400/10 to-orange-300/20 backdrop-blur-xl" />
                 )}
               </div>
               
@@ -178,13 +181,13 @@ export default function UserProfile() {
                 </Avatar>
               </div>
               
-              {/* Action Buttons */}
-              <div className="absolute top-4 right-4 flex gap-2">
+              {/* Action Buttons with Glassmorphism */}
+              <div className="absolute top-4 right-4 flex gap-2 backdrop-blur-md">
                 {isOwner ? (
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full bg-white/90 backdrop-blur hover:bg-white border-stone-300"
+                    className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
                     onClick={() => navigate(`/profile/${uid}/edit`)}
                   >
                     <Edit2 className="w-4 h-4 mr-2" />
@@ -194,9 +197,8 @@ export default function UserProfile() {
                   user && (
                     isFollowing ? (
                       <Button
-                        variant="secondary"
                         size="sm"
-                        className="rounded-full bg-white/90 backdrop-blur hover:bg-white"
+                        className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
                         disabled={unfollowMutation.isPending}
                         onClick={() => unfollowMutation.mutate(uid!)}
                       >
@@ -205,7 +207,7 @@ export default function UserProfile() {
                     ) : (
                       <Button
                         size="sm"
-                        className="rounded-full bg-stone-900 text-white hover:bg-stone-800"
+                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
                         disabled={followMutation.isPending}
                         onClick={() => followMutation.mutate(uid!)}
                       >
@@ -217,8 +219,8 @@ export default function UserProfile() {
               </div>
             </div>
             
-            {/* Profile Info Section */}
-            <div className="mt-20 px-6 pb-4 border-b border-stone-200/60">
+            {/* Profile Info Section with Glassmorphism */}
+            <div className="mt-20 px-6 pb-4 border-b border-white/50 bg-white/40 backdrop-blur-2xl rounded-2xl mx-4 shadow-lg shadow-orange-100/20">
               <div className="flex items-start justify-between gap-4 mb-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -383,7 +385,7 @@ export default function UserProfile() {
                           </div>
                         )}
                         {!isLoading && issues.length === 0 && (
-                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-xl shadow-orange-100/20 p-10 text-center">
                             <p className="text-muted-foreground">{emptyText}</p>
                             {key === 'all' && (
                               <Link to="/raise-issue">
@@ -402,7 +404,7 @@ export default function UserProfile() {
                               return (
                                 <Card 
                                   key={issue.id} 
-                                  className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
+                                  className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl flex flex-col hover:shadow-2xl hover:shadow-orange-300/30 hover:border-orange-300/60 hover:bg-white/60 transition-all cursor-pointer"
                                   onClick={() => handleViewDetails(issue)}
                                 >
                                   <CardHeader className="pb-3">
@@ -466,7 +468,7 @@ export default function UserProfile() {
                       </div>
                     )}
                     {!isLoading && publicIssues.length === 0 && followerPrivateIssues.length === 0 && (
-                      <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-xl shadow-orange-100/20 p-10 text-center">
                         <p className="text-muted-foreground">No public issues yet.</p>
                       </Card>
                     )}
@@ -478,7 +480,7 @@ export default function UserProfile() {
                           return (
                             <Card 
                               key={issue.id} 
-                              className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg flex flex-col hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all cursor-pointer"
+                              className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl flex flex-col hover:shadow-2xl hover:shadow-orange-300/30 hover:border-orange-300/60 hover:bg-white/60 transition-all cursor-pointer"
                               onClick={() => handleViewDetails(issue)}
                             >
                               <CardHeader className="pb-3">
@@ -535,7 +537,7 @@ export default function UserProfile() {
               {/* Analytics Tab */}
               <TabsContent value="analytics" className="mt-6">
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6 hover:shadow-xl hover:shadow-orange-200/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-full bg-orange-100">
                         <TrendingUp className="h-6 w-6 text-orange-600" />
@@ -547,7 +549,7 @@ export default function UserProfile() {
                     </div>
                   </Card>
                   
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-6 hover:shadow-xl hover:shadow-green-200/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-full bg-green-100">
                         <ThumbsUp className="h-6 w-6 text-green-600" />
@@ -560,7 +562,7 @@ export default function UserProfile() {
                   </Card>
                   
                   {(!ownerProfile?.hideDislikeCounts || isOwner) && (
-                    <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                    <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6 hover:shadow-xl hover:shadow-red-200/30 transition-all">
                       <div className="flex items-center gap-4">
                         <div className="p-3 rounded-full bg-red-100">
                           <ThumbsDown className="h-6 w-6 text-red-600" />
@@ -573,7 +575,7 @@ export default function UserProfile() {
                     </Card>
                   )}
                   
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-6 hover:shadow-xl hover:shadow-blue-200/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-full bg-blue-100">
                         <MessageSquare className="h-6 w-6 text-blue-600" />
@@ -585,7 +587,7 @@ export default function UserProfile() {
                     </div>
                   </Card>
                   
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-purple-100/20 p-6 hover:shadow-xl hover:shadow-purple-200/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-full bg-purple-100">
                         <TrendingUp className="h-6 w-6 text-purple-600" />
@@ -597,7 +599,7 @@ export default function UserProfile() {
                     </div>
                   </Card>
                   
-                  <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6 hover:shadow-xl hover:shadow-amber-200/30 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="p-3 rounded-full bg-amber-100">
                         <Check className="h-6 w-6 text-amber-600" />
@@ -629,7 +631,7 @@ export default function UserProfile() {
                     ) : userActivity ? (
                       <div className="space-y-4">
                         {/* Activity Summary - Always show */}
-                        <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
                           <h3 className="font-semibold text-lg mb-4">Activity Summary</h3>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                             <div className="text-center p-3 rounded-lg bg-orange-50 border border-orange-200">
@@ -667,7 +669,7 @@ export default function UserProfile() {
                         
                         {/* Activity Feed - Only show if there's activity */}
                         {(userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || owned.length > 0) ? (
-                        <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg">
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20">
                           <CardHeader>
                             <CardTitle className="text-lg">Activity Feed</CardTitle>
                             <p className="text-xs text-muted-foreground">Recent updates on your issues and interactions</p>
@@ -770,14 +772,14 @@ export default function UserProfile() {
                           </CardContent>
                         </Card>
                         ) : (
-                          <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-10 text-center">
                             <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
                             <p className="text-muted-foreground">No recent activity to show</p>
                           </Card>
                         )}
                       </div>
                     ) : (
-                      <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-10 text-center">
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-10 text-center">
                         <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
                         <p className="text-muted-foreground">No activity data available</p>
                       </Card>
@@ -816,7 +818,7 @@ export default function UserProfile() {
                       </div>
                     </div>
                     
-                    <Card className="rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-6">
+                    <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
                       <h3 className="font-semibold text-lg mb-2">Profile Overview</h3>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
@@ -844,7 +846,7 @@ export default function UserProfile() {
                     
                     <Separator />
                     
-                    <Card className="rounded-2xl border border-red-200 bg-red-50/60 p-6">
+                    <Card className="rounded-2xl border border-red-300/60 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6">
                       <h3 className="font-semibold text-lg mb-2 text-red-900">Account Actions</h3>
                       <p className="text-sm text-red-700 mb-4">Manage your account settings</p>
                       <Button 
