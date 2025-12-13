@@ -4,6 +4,8 @@ import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
+import { useReceivedMessages } from '@/hooks/use-messaging';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
@@ -13,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, Image as ImageIcon } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -40,11 +42,13 @@ export default function UserProfile() {
   const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
+  const { data: receivedMessages, isLoading: messagesLoading } = useReceivedMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
   // Get user profile data
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid!);
+  const { data: senderProfiles } = useUserProfile(uid!);
   
   // Resolve avatar URL (handles firestore:// references)
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
@@ -336,6 +340,13 @@ export default function UserProfile() {
                 {isOwner && (
                   <>
                     <TabsTrigger 
+                      value="messages" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="analytics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
@@ -528,6 +539,104 @@ export default function UserProfile() {
                   </>
                 )}
               </TabsContent>
+              
+              {/* Messages Tab (Owner Only) */}
+              {isOwner && (
+                <TabsContent value="messages" className="mt-6">
+                  <div className="max-w-4xl space-y-6">
+                    <div>
+                      <h2 className="text-xl font-semibold tracking-tight mb-2">Your Messages</h2>
+                      <p className="text-sm text-muted-foreground mb-4">Messages sent to you by other users</p>
+                    </div>
+
+                    {messagesLoading ? (
+                      <div className="space-y-3">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <Skeleton key={i} className="h-24 rounded-xl" />
+                        ))}
+                      </div>
+                    ) : receivedMessages && receivedMessages.length > 0 ? (
+                      <div className="space-y-4">
+                        {receivedMessages.map((message, idx) => {
+                          const senderName = message.senderName || 'Anonymous User';
+                          const senderAvatar = message.senderAvatar;
+                          
+                          return (
+                            <Card key={idx} className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 hover:shadow-xl hover:shadow-blue-200/30 transition-all overflow-hidden">
+                              <CardContent className="p-6">
+                                <div className="flex gap-4">
+                                  <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-blue-200">
+                                    <AvatarImage src={senderAvatar} />
+                                    <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+                                      {senderName.charAt(0).toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div>
+                                        <p className="font-semibold text-stone-900">{senderName}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {formatRelativeTime(
+                                            message.createdAt?.toDate?.() || new Date(message.createdAt || Date.now())
+                                          )}
+                                        </p>
+                                      </div>
+                                      <Link to={`/profile/${message.senderId}`}>
+                                        <Button 
+                                          variant="outline" 
+                                          size="sm" 
+                                          className="rounded-full text-xs"
+                                        >
+                                          View Profile
+                                        </Button>
+                                      </Link>
+                                    </div>
+                                    <div className="bg-stone-50 rounded-lg p-4 mt-3 border border-stone-200/50">
+                                      <p className="text-sm text-stone-900 leading-relaxed break-words">{message.content}</p>
+                                    </div>
+                                    <div className="flex gap-2 mt-3">
+                                      <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="rounded-full text-xs"
+                                        onClick={() => {
+                                          setMessageDialogOpen(true);
+                                          // Store context for reply
+                                        }}
+                                      >
+                                        <Send className="h-3 w-3 mr-1" />
+                                        Reply
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                        <Mail className="h-16 w-16 mx-auto mb-4 opacity-40 text-muted-foreground" />
+                        <h3 className="text-lg font-semibold text-stone-900 mb-2">No Messages Yet</h3>
+                        <p className="text-sm text-muted-foreground mb-6">
+                          Messages from other users will appear here. Share your profile with others to receive messages!
+                        </p>
+                        <Button 
+                          className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 rounded-full"
+                          onClick={() => {
+                            const url = `${window.location.origin}/profile/${user?.uid}`;
+                            navigator.clipboard.writeText(url);
+                            toast.success('Profile link copied to clipboard!');
+                          }}
+                        >
+                          Copy Profile Link
+                        </Button>
+                      </Card>
+                    )}
+                  </div>
+                </TabsContent>
+              )}
               
               {/* Analytics & Activity Tab (Owner Only) */}
               {isOwner && (

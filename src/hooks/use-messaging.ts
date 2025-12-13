@@ -87,3 +87,62 @@ export function useSendMessage() {
     }
   });
 }
+
+export function useReceivedMessages() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['receivedMessages', user?.uid],
+    enabled: !!user && !!db,
+    queryFn: async () => {
+      if (!user || !db) return [];
+      
+      // Get all conversations for this user
+      const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
+      const conversationSnaps = await getDocs(q);
+      
+      const allMessages: any[] = [];
+      
+      // For each conversation, get messages from other users
+      for (const convDoc of conversationSnaps.docs) {
+        const convData = convDoc.data() as ConversationDoc;
+        const otherUserId = convData.participants.find(id => id !== user.uid);
+        
+        if (otherUserId) {
+          // Fetch sender profile details
+          const senderDocRef = doc(db, 'users', otherUserId);
+          const senderDoc = await getDoc(senderDocRef);
+          const senderData = senderDoc.data() || {};
+          
+          const messagesQuery = query(
+            collection(db, 'conversations', convDoc.id, 'messages'),
+            where('senderId', '==', otherUserId),
+            orderBy('createdAt', 'desc')
+          );
+          const messageSnaps = await getDocs(messagesQuery);
+          
+          messageSnaps.docs.forEach(msgDoc => {
+            const msgData = msgDoc.data() as MessageDoc;
+            allMessages.push({
+              id: msgDoc.id,
+              conversationId: convDoc.id,
+              senderId: msgData.senderId,
+              senderName: senderData.displayName || 'Anonymous',
+              senderAvatar: senderData.photoURL,
+              content: msgData.content,
+              createdAt: msgData.createdAt,
+              otherUserId
+            });
+          });
+        }
+      }
+      
+      // Sort by createdAt descending (most recent first)
+      return allMessages.sort((a, b) => {
+        const aTime = a.createdAt?.toMillis?.() || 0;
+        const bTime = b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      });
+    },
+    refetchInterval: 5000
+  });
+}
