@@ -12,11 +12,16 @@ async function syncUserToFirestore(user: User) {
     const userRef = doc(db, 'users', user.uid);
     const userSnap = await getDoc(userRef);
     
-    // Only update if displayName or photoURL is missing in Firestore
-    if (!userSnap.exists() || !userSnap.data()?.displayName || !userSnap.data()?.photoURL) {
+    const data = userSnap.data();
+    const needsProfileFields = !userSnap.exists() || !data?.displayName || !data?.photoURL;
+    const missingCreatedAt = !data?.createdAt;
+    const authCreatedAt = user.metadata?.creationTime ? Date.parse(user.metadata.creationTime) : undefined;
+
+    if (needsProfileFields || missingCreatedAt) {
       await setDoc(userRef, {
         displayName: user.displayName || null,
         photoURL: user.photoURL || null,
+        createdAt: data?.createdAt || authCreatedAt || Date.now(),
         updatedAt: Date.now(),
       }, { merge: true });
     }

@@ -9,19 +9,20 @@ export async function syncUserProfile(user: User) {
   if (!user || !user.uid) return;
   const userRef = doc(db, 'users', user.uid);
   
-  // Check if user document exists
+  // Check if user document exists and whether createdAt is missing
   const userDoc = await getDoc(userRef);
   const isNewUser = !userDoc.exists();
+  const existingCreatedAt = userDoc.data()?.createdAt;
   
-  const userData: any = {
+  const userData: Record<string, unknown> = {
     displayName: user.displayName || '',
     photoURL: user.photoURL || '',
     email: user.email || '',
     updatedAt: Date.now(),
   };
   
-  // Set createdAt only for new users
-  if (isNewUser) {
+  // Set createdAt for new users or if the field is missing on existing docs
+  if (isNewUser || !existingCreatedAt) {
     userData.createdAt = Date.now();
   }
   

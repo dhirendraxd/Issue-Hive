@@ -20,6 +20,7 @@ import { getAvatarPreviews } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useDebounce } from '@/hooks/use-debounce';
 
 export default function EditProfile() {
@@ -30,6 +31,12 @@ export default function EditProfile() {
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(user?.uid || '');
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, user?.uid || '');
   const avatarPreviews = useMemo(() => getAvatarPreviews(user?.uid || 'guest'), [user?.uid]);
+  const normalizeUrl = (value: string) => {
+    const trimmed = value?.trim() || '';
+    if (!trimmed) return '';
+    const withProtocol = /^(https?|mailto):/i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    return sanitizeURL(withProtocol);
+  };
   
   // State
   const [displayName, setDisplayName] = useState('');
@@ -43,14 +50,11 @@ export default function EditProfile() {
   const [instagram, setInstagram] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [editingUsername, setEditingUsername] = useState(false);
   const [editingBio, setEditingBio] = useState(false);
-  const [savingName, setSavingName] = useState(false);
-  const [savingUsername, setSavingUsername] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const initialLoadRef = useRef(true);
+  const [exitDialogOpen, setExitDialogOpen] = useState(false);
 
   // Initialize state
   useEffect(() => {
@@ -92,11 +96,11 @@ export default function EditProfile() {
 
     const sanitizedBio = limitLength(sanitizeText(bio), 160);
     const sanitizedLocation = limitLength(sanitizeText(location), 100);
-    const sanitizedWebsite = website ? sanitizeURL(website) : '';
-    const sanitizedGithub = github ? sanitizeURL(github) : '';
-    const sanitizedTwitter = twitter ? sanitizeURL(twitter) : '';
-    const sanitizedLinkedin = linkedin ? sanitizeURL(linkedin) : '';
-    const sanitizedInstagram = instagram ? sanitizeURL(instagram) : '';
+    const sanitizedWebsite = normalizeUrl(website);
+    const sanitizedGithub = normalizeUrl(github);
+    const sanitizedTwitter = normalizeUrl(twitter);
+    const sanitizedLinkedin = normalizeUrl(linkedin);
+    const sanitizedInstagram = normalizeUrl(instagram);
 
     setAutoSaving(true);
     try {
@@ -140,19 +144,32 @@ export default function EditProfile() {
 
   const handleSave = async () => {
     if (!user) return;
-
+    const sanitizedDisplayName = sanitizeText(displayName);
+    const sanitizedUsername = sanitizeUsername(username);
     const sanitizedBio = limitLength(sanitizeText(bio), 160);
     const sanitizedLocation = limitLength(sanitizeText(location), 100);
-    const sanitizedWebsite = website ? sanitizeURL(website) : '';
-    const sanitizedGithub = github ? sanitizeURL(github) : '';
-    const sanitizedTwitter = twitter ? sanitizeURL(twitter) : '';
-    const sanitizedLinkedin = linkedin ? sanitizeURL(linkedin) : '';
-    const sanitizedInstagram = instagram ? sanitizeURL(instagram) : '';
+    const sanitizedWebsite = normalizeUrl(website);
+    const sanitizedGithub = normalizeUrl(github);
+    const sanitizedTwitter = normalizeUrl(twitter);
+    const sanitizedLinkedin = normalizeUrl(linkedin);
+    const sanitizedInstagram = normalizeUrl(instagram);
+
+    if (!sanitizedDisplayName || sanitizedDisplayName.length < 2) {
+      toast.error('Display name must be at least 2 characters');
+      return;
+    }
+
+    if (!sanitizedUsername || sanitizedUsername.length < 3) {
+      toast.error('Username must be at least 3 characters');
+      return;
+    }
 
     setSaving(true);
     try {
+      await updateUserDisplayName(user, sanitizedDisplayName);
       // Update Firestore profile
       await updateDoc(doc(db, 'users', user.uid), {
+        username: sanitizedUsername,
         bio: sanitizedBio,
         location: sanitizedLocation,
         'social.website': sanitizedWebsite,
@@ -173,52 +190,7 @@ export default function EditProfile() {
     }
   };
 
-  const handleSaveDisplayName = async () => {
-    if (!user) return;
-
-    const sanitizedDisplayName = sanitizeText(displayName);
-    if (!sanitizedDisplayName || sanitizedDisplayName.length < 2) {
-      toast.error('Display name must be at least 2 characters');
-      return;
-    }
-
-    setSavingName(true);
-    try {
-      await updateUserDisplayName(user, sanitizedDisplayName);
-      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      toast.success('Display name updated!');
-      setEditingName(false);
-    } catch (error) {
-      toast.error('Failed to update display name');
-    } finally {
-      setSavingName(false);
-    }
-  };
-
-  const handleSaveUsername = async () => {
-    if (!user) return;
-
-    const sanitizedUsername = sanitizeText(username.toLowerCase().replace(/[^a-z0-9_]/g, ''));
-    if (!sanitizedUsername || sanitizedUsername.length < 3) {
-      toast.error('Username must be at least 3 characters');
-      return;
-    }
-
-    setSavingUsername(true);
-    try {
-      await updateDoc(doc(db, 'users', user.uid), {
-        username: sanitizedUsername,
-        updatedAt: new Date()
-      });
-      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      toast.success('Username updated!');
-      setEditingUsername(false);
-    } catch (error) {
-      toast.error('Failed to update username');
-    } finally {
-      setSavingUsername(false);
-    }
-  };
+  const sanitizeUsername = (value: string) => sanitizeText(value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -296,23 +268,21 @@ export default function EditProfile() {
                 </div>
               </div>
             </div>
-            <Button
-              onClick={handleSave}
-              disabled={saving}
-              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-medium"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save All
-                </>
+            <div className="flex items-center gap-3">
+              {/* Auto-save status indicator */}
+              {autoSaving && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+                  <span>Saving...</span>
+                </div>
               )}
-            </Button>
+              {!autoSaving && lastSaved && (
+                <div className="flex items-center gap-2 text-sm text-emerald-600">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Saved {lastSaved.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -390,110 +360,44 @@ export default function EditProfile() {
           {/* Basic Info */}
           <Card className="glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 px-6 py-4 border-b border-stone-200/50">
-              <h2 className="text-lg font-bold text-stone-900">Basic Information</h2>
-              <p className="text-sm text-muted-foreground mt-1">Your core profile details</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-stone-900">Basic Information</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Your core profile details</p>
+                </div>
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Auto-save enabled
+                </Badge>
+              </div>
             </div>
             <div className="p-6 space-y-6">
             {/* Display Name */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="displayName">Display Name *</Label>
-                  <p className="text-xs text-muted-foreground">Your full name shown on your profile</p>
-                </div>
-                {!editingName && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingName(true)}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
-              </div>
-              {editingName ? (
-                <div className="flex gap-2">
-                  <Input
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                    placeholder="Your name"
-                    disabled={savingName}
-                    maxLength={100}
-                  />
-                  <Button
-                    onClick={handleSaveDisplayName}
-                    disabled={savingName || !displayName.trim()}
-                    size="sm"
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 shrink-0"
-                  >
-                    {savingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  </Button>
-                  <Button
-                    onClick={() => setEditingName(false)}
-                    disabled={savingName}
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-base font-medium">{displayName || 'Not set'}</p>
-              )}
+              <Label htmlFor="displayName">Display Name *</Label>
+              <p className="text-xs text-muted-foreground">Your full name shown on your profile</p>
+              <Input
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="Your name"
+                maxLength={100}
+              />
             </div>
 
             {/* Username */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="username">@Username</Label>
-                  <p className="text-xs text-muted-foreground">Your unique handle</p>
-                </div>
-                {!editingUsername && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setEditingUsername(true)}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                )}
+              <Label htmlFor="username">@Username</Label>
+              <p className="text-xs text-muted-foreground">Your unique handle</p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
+                <Input
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="username"
+                  className="pl-8"
+                  maxLength={32}
+                />
               </div>
-              {editingUsername ? (
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">@</span>
-                    <Input
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="username"
-                      disabled={savingUsername}
-                      className="pl-8"
-                      maxLength={32}
-                    />
-                  </div>
-                  <Button
-                    onClick={handleSaveUsername}
-                    disabled={savingUsername || !username.trim()}
-                    size="sm"
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 shrink-0"
-                  >
-                    {savingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                  </Button>
-                  <Button
-                    onClick={() => setEditingUsername(false)}
-                    disabled={savingUsername}
-                    size="sm"
-                    variant="outline"
-                    className="shrink-0"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-base font-medium">@{username || 'Not set'}</p>
-              )}
             </div>
 
             {/* Email (Read-only) */}
@@ -586,8 +490,16 @@ export default function EditProfile() {
           {/* Social Media Links Section */}
           <Card className="glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 px-6 py-4 border-b border-stone-200/50">
-              <h2 className="text-lg font-bold text-stone-900">Social Media</h2>
-              <p className="text-sm text-muted-foreground mt-1">Connect your social profiles</p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-stone-900">Social Media</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Connect your social profiles</p>
+                </div>
+                <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Auto-save enabled
+                </Badge>
+              </div>
             </div>
             <div className="p-6 space-y-6">
               {/* Website */}
@@ -668,18 +580,18 @@ export default function EditProfile() {
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between bg-white/50 backdrop-blur-sm border border-stone-200/50 rounded-lg px-6 py-4 sticky bottom-0">
-            <p className="text-sm text-muted-foreground">Changes are auto-saved to your profile</p>
+            <p className="text-sm text-muted-foreground">Changes auto-save. Choose how to exit.</p>
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                onClick={() => navigate(`/profile/${user.uid}`)}
+                onClick={() => setExitDialogOpen(true)}
                 className="border-stone-200 hover:bg-stone-50"
               >
-                Cancel
+                Exit without saving
               </Button>
               <Button
                 onClick={handleSave}
-                disabled={saving}
+                disabled={saving || autoSaving}
                 className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-medium"
               >
                 {saving ? (
@@ -690,7 +602,7 @@ export default function EditProfile() {
                 ) : (
                   <>
                     <Save className="w-4 h-4 mr-2" />
-                    Save All Changes
+                    Save & Exit
                   </>
                 )}
               </Button>
@@ -698,6 +610,53 @@ export default function EditProfile() {
           </div>
         </div>
       </main>
+
+      <Dialog open={exitDialogOpen} onOpenChange={setExitDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Exit without saving?</DialogTitle>
+            <DialogDescription>
+              Your recent edits are auto-saved. You can leave now or stay to save & exit.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setExitDialogOpen(false)}
+              className="border-stone-200"
+            >
+              Stay on page
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/profile/${user.uid}`)}
+              className="border-stone-200"
+            >
+              Exit without saving
+            </Button>
+            <Button
+              onClick={async () => {
+                await handleSave();
+                navigate(`/profile/${user.uid}`);
+              }}
+              disabled={saving || autoSaving}
+              className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-medium"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save & Exit
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

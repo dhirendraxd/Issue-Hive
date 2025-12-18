@@ -253,7 +253,7 @@ export default function UserProfile() {
                 
                 {/* Social Links - Colored Icons Only */}
                 {ownerProfile?.social && (
-                  <div className="flex flex-wrap gap-3 mb-3">
+                  <div className="flex flex-wrap gap-3 mb-3 w-full justify-end">
                     {ownerProfile.social.website && (
                       <a 
                         href={ownerProfile.social.website} 

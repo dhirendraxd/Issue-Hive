@@ -58,3 +58,10 @@ public/test-firebase.js
 .DS_Store
 public/og-image.webp
 serviceAccountKey.json
+check-firebase.js
+verify-fix.js
+fix-timestamps.js
+reset-user-profiles.js
+reset-usernames.js
+reset-user-emails.js
+
