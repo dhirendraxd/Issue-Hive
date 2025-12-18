@@ -325,7 +325,7 @@ export default function UserProfile() {
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'recently'}
+                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                 </span>
               </div>
               
