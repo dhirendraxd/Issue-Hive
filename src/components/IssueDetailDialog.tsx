@@ -365,7 +365,7 @@ export default function IssueDetailDialog({
                             src={photo}
                             alt={`Resolution ${idx + 1}`}
                             className="rounded border border-green-200 w-full h-32 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                            onClick={() => window.open(photo, '_blank')}
+                            onClick={() => window.open(photo, '_blank', 'noopener,noreferrer')}
                           />
                         ))}
                       </div>
@@ -415,7 +415,7 @@ export default function IssueDetailDialog({
                                 src={photo}
                                 alt={`Progress ${photoIdx + 1}`}
                                 className="rounded border border-orange-200 w-full h-24 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(photo, '_blank')}
+                                onClick={() => window.open(photo, '_blank', 'noopener,noreferrer')}
                               />
                             ))}
                           </div>

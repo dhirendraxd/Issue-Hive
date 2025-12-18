@@ -105,7 +105,7 @@ export function FirebaseStatus() {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => window.open('https://console.firebase.google.com', '_blank')}
+            onClick={() => window.open('https://console.firebase.google.com', '_blank', 'noopener,noreferrer')}
           >
             Open Console
           </Button>

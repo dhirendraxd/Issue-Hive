@@ -64,12 +64,16 @@ export default function Auth() {
         // Import Firestore to check user creation time
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('@/integrations/firebase/config');
-        const userDoc = await getDoc(doc(db, 'users', uid));
+        const userRef = doc(db, 'users', uid);
+        const userDoc = await getDoc(userRef);
         const userData = userDoc.data();
-        const createdAt = userData?.createdAt;
+        const createdAt = userData?.createdAt as number | undefined;
         
-        // If created within last 10 seconds, redirect to edit profile
-        const isNewUser = createdAt && (Date.now() - createdAt) < 10000;
+        // Treat missing user doc as new (race with profile sync)
+        const isDocMissing = !userDoc.exists();
+        // If created within last 2 minutes, consider new (buffer for cold start/sync)
+        const isRecent = typeof createdAt === 'number' && (Date.now() - createdAt) < 2 * 60 * 1000;
+        const isNewUser = isDocMissing || isRecent;
         
         toast.success('Account created successfully!');
         navigate(isNewUser ? `/profile/${uid}/edit` : `/profile/${uid}`);

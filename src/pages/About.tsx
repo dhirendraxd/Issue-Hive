@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
 import SiteFooter from "@/components/SiteFooter";
 import ParticlesBackground from "@/components/ParticlesBackground";
-import { Megaphone, ThumbsUp, CheckCircle2 } from "lucide-react";
+import { Megaphone, ThumbsUp, CheckCircle2, UserPlus, MessageSquare, Wrench } from "lucide-react";
 
 export default function About() {
   return (
@@ -39,36 +39,90 @@ export default function About() {
               </div>
             </section>
 
-            {/* How it works */}
-            <section className="mx-auto max-w-5xl mt-12 md:mt-16">
+            {/* How it works (Timeline) */}
+            <section className="mx-auto max-w-3xl mt-12 md:mt-16">
               <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight text-center">How it works</h2>
-              <div className="mt-8 grid gap-8 md:grid-cols-3">
-                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
-                      <Megaphone className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-base font-display font-semibold">Report</h3>
+              <div className="relative mt-8 pl-7">
+                {/* Vertical line */}
+                <div className="absolute left-3 top-0 bottom-0 w-px bg-gradient-to-b from-orange-300/70 via-orange-200/50 to-transparent" aria-hidden />
+
+                {/* Step 1 */}
+                <div className="relative">
+                  <div className="absolute -left-1.5 h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
+                    <Megaphone className="h-4 w-4" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Share a campus issue with a clear description and category.</p>
+                  <div className="rounded-2xl glass-card p-5 border border-white/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-base font-display font-semibold">Report an issue</h3>
+                      <span className="text-[11px] rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 border border-orange-200">Step 1</span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">Share a campus problem with a clear title, description, and category. Add images if it helps.</p>
+                  </div>
                 </div>
-                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
-                      <ThumbsUp className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-base font-display font-semibold">Support</h3>
+
+                {/* Step 2 */}
+                <div className="relative mt-6">
+                  <div className="absolute -left-1.5 h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
+                    <ThumbsUp className="h-4 w-4" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Students upvote to show support and prioritize what matters.</p>
+                  <div className="rounded-2xl glass-card p-5 border border-white/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-base font-display font-semibold">Gather support</h3>
+                      <span className="text-[11px] rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 border border-orange-200">Step 2</span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">Students upvote to signal priority. Discussions in comments help add context and ideas.</p>
+                  </div>
                 </div>
-                <div className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/15 hover:border-orange-200/30 transition-all duration-300 p-6 text-left">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
-                      <CheckCircle2 className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-base font-display font-semibold">Resolve</h3>
+
+                {/* Step 3 */}
+                <div className="relative mt-6">
+                  <div className="absolute -left-1.5 h-7 w-7 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white grid place-items-center shadow-md">
+                    <CheckCircle2 className="h-4 w-4" />
                   </div>
-                  <p className="text-sm text-muted-foreground">Admins track progress transparently—from received to resolved.</p>
+                  <div className="rounded-2xl glass-card p-5 border border-white/60">
+                    <div className="flex items-center justify-between gap-3">
+                      <h3 className="text-base font-display font-semibold">Track to resolution</h3>
+                      <span className="text-[11px] rounded-full bg-orange-100 text-orange-700 px-2 py-0.5 border border-orange-200">Step 3</span>
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">Admins move issues through statuses and add progress updates until they’re resolved.</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* What you can do as a user */}
+            <section className="mx-auto max-w-4xl mt-12 md:mt-16">
+              <h3 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-center">As a student, you can</h3>
+              <div className="mt-6 grid gap-3 text-sm text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
+                    <UserPlus className="h-4 w-4" />
+                  </div>
+                  <p>Create an account and set up your profile</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
+                    <Megaphone className="h-4 w-4" />
+                  </div>
+                  <p>Raise a new issue with a clear title, description, and category</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
+                    <ThumbsUp className="h-4 w-4" />
+                  </div>
+                  <p>Support issues from others with upvotes</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
+                    <MessageSquare className="h-4 w-4" />
+                  </div>
+                  <p>Join the discussion in comments and follow progress</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
+                    <Wrench className="h-4 w-4" />
+                  </div>
+                  <p>Manage your own issues — update visibility, add progress, mark resolved</p>
                 </div>
               </div>
             </section>

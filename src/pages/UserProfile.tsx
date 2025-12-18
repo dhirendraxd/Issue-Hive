@@ -23,6 +23,7 @@ import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
 import SendMessageDialog from '@/components/SendMessageDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatRelativeTime } from '@/lib/utils';
+import { sanitizeUrl } from '@/lib/security';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Separator } from '@/components/ui/separator';
@@ -141,9 +142,9 @@ export default function UserProfile() {
 
   const socialIcons = hasSocialLinks ? (
     <div className="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur-xl border border-white/60 rounded-full px-2 py-2 shadow-lg shadow-black/5">
-      {ownerProfile?.social?.website && (
+      {sanitizeUrl(ownerProfile?.social?.website || '') && (
         <a 
-          href={ownerProfile?.social?.website} 
+          href={sanitizeUrl(ownerProfile?.social?.website || '')} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-orange-100/50 text-orange-600 hover:text-orange-700 transition-all duration-200"
@@ -152,9 +153,9 @@ export default function UserProfile() {
           <Link2 className="h-4 w-4" />
         </a>
       )}
-      {ownerProfile?.social?.github && (
+      {sanitizeUrl(ownerProfile?.social?.github || '') && (
         <a 
-          href={ownerProfile?.social?.github} 
+          href={sanitizeUrl(ownerProfile?.social?.github || '')} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100/50 text-slate-800 hover:text-slate-900 transition-all duration-200"
@@ -163,9 +164,9 @@ export default function UserProfile() {
           <Github className="h-4 w-4" />
         </a>
       )}
-      {ownerProfile?.social?.twitter && (
+      {sanitizeUrl(ownerProfile?.social?.twitter || '') && (
         <a 
-          href={ownerProfile?.social?.twitter} 
+          href={sanitizeUrl(ownerProfile?.social?.twitter || '')} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-500 hover:text-blue-600 transition-all duration-200"
@@ -174,9 +175,9 @@ export default function UserProfile() {
           <Twitter className="h-4 w-4" />
         </a>
       )}
-      {ownerProfile?.social?.linkedin && (
+      {sanitizeUrl(ownerProfile?.social?.linkedin || '') && (
         <a 
-          href={ownerProfile?.social?.linkedin} 
+          href={sanitizeUrl(ownerProfile?.social?.linkedin || '')} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-700 hover:text-blue-800 transition-all duration-200"
@@ -185,9 +186,9 @@ export default function UserProfile() {
           <Linkedin className="h-4 w-4" />
         </a>
       )}
-      {ownerProfile?.social?.instagram && (
+      {sanitizeUrl(ownerProfile?.social?.instagram || '') && (
         <a 
-          href={ownerProfile?.social?.instagram} 
+          href={sanitizeUrl(ownerProfile?.social?.instagram || '')} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-pink-100/50 text-pink-600 hover:text-pink-700 transition-all duration-200"

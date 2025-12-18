@@ -181,9 +181,9 @@ const Index = () => {
               IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
             </p>
             <div className="mt-6 flex justify-center">
-              <Link to="/raise-issue">
+              <Link to="/about">
                 <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
-                  Start Now
+                  How It Works
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
