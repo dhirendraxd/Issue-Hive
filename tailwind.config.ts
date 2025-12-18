@@ -20,6 +20,9 @@ export default {
 			}
 		},
 		extend: {
+						screens: {
+							'xs': '475px',
+						},
 			fontFamily: {
 				sans: ["Inter", ...defaultTheme.fontFamily.sans],
 				display: ["Halenoir", "Inter", ...defaultTheme.fontFamily.sans],

@@ -247,14 +247,14 @@ export default function UserProfile() {
         <Navbar />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
             {/* Profile Section */}
             <div className="relative pt-8">
               {/* Profile Picture */}
               <div className="flex flex-col items-start gap-3 mb-6">
-                <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
+                <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-white shadow-xl">
                   <AvatarImage src={avatarUrl} />
-                  <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
+                  <AvatarFallback className="text-2xl sm:text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
                     {ownerProfile?.displayName?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
@@ -262,58 +262,58 @@ export default function UserProfile() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
+                    className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10 text-xs sm:text-sm"
                     onClick={() => navigate(`/profile/${uid}/edit`)}
                   >
-                    <Edit2 className="w-4 h-4 mr-2" />
+                    <Edit2 className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                     Edit Profile
                   </Button>
                 )}
               </div>
               
               {/* Social Icons - Top Right */}
-              <div className="absolute top-2 right-2">
+              <div className="absolute top-2 right-0 sm:right-2">
                 {socialIcons}
               </div>
             </div>
             
             {/* Profile Info Section with Glassmorphism */}
-            <div className="mt-12 px-6 pb-4 border-b border-white/30">
+            <div className="mt-12 px-4 sm:px-6 pb-4 border-b border-white/30">
               <div className="mb-4">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
                   {ownerProfile?.pronouns && (
-                    <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
                 
                 {/* Message and Follow Buttons - Below Username for Visitors */}
                 {!isOwner && user && (
-                  <div className="flex gap-2 mb-4">
+                  <div className="flex flex-col xs:flex-row gap-2 mb-4">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
+                      className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10 w-full xs:w-auto text-xs sm:text-sm"
                       onClick={() => setMessageDialogOpen(true)}
                     >
-                      <Mail className="w-4 h-4 mr-2" />
+                      <Mail className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                       Message
                     </Button>
                     {isFollowing ? (
                       <Button
                         size="sm"
-                        className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
+                        className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10 w-full xs:w-auto text-xs sm:text-sm"
                         disabled={unfollowMutation.isPending}
                         onClick={() => unfollowMutation.mutate(uid!)}
                       >
-                        <Check className="w-4 h-4 mr-2" />
+                        <Check className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
                         {unfollowMutation.isPending ? 'Unfollowing...' : 'Following'}
                       </Button>
                     ) : (
                       <Button
                         size="sm"
-                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
+                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all w-full xs:w-auto text-xs sm:text-sm"
                         disabled={followMutation.isPending}
                         onClick={() => followMutation.mutate(uid!)}
                       >
@@ -325,28 +325,28 @@ export default function UserProfile() {
               </div>
               
               {ownerProfile?.bio && (
-                <p className="text-sm text-stone-900 mb-3 leading-relaxed">{ownerProfile.bio}</p>
+                <p className="text-xs sm:text-sm text-stone-900 mb-3 leading-relaxed">{ownerProfile.bio}</p>
               )}
               
               {/* Meta Info */}
-              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3 mt-1">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-3 mt-1">
                 {ownerProfile?.college && (
                   <span className="inline-flex items-center gap-1.5">
-                    <GraduationCap className="h-4 w-4" /> {ownerProfile.college}
+                    <GraduationCap className="h-3 w-3 sm:h-4 sm:w-4" /> <span className="truncate max-w-[150px] sm:max-w-none">{ownerProfile.college}</span>
                   </span>
                 )}
                 {ownerProfile?.location && (
                   <span className="inline-flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4" /> {ownerProfile.location}
+                    <MapPin className="h-3 w-3 sm:h-4 sm:w-4" /> {ownerProfile.location}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt as number | string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
+                  <Calendar className="h-3 w-3 sm:h-4 sm:w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt as number | string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                 </span>
               </div>
               
               {/* Follower Counts */}
-              <div className="flex gap-6 text-sm">
+              <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm">
                 <button 
                   onClick={() => setFollowersDialogOpen(true)}
                   className="flex flex-col hover:bg-stone-100 rounded-lg px-3 py-2 transition-colors cursor-pointer"

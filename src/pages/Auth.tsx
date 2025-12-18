@@ -59,8 +59,24 @@ export default function Auth() {
       const uid = cred.user?.uid;
       if (!uid) throw new Error('Could not determine user');
 
-      toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
-      navigate(`/profile/${uid}/edit`);
+      // For signup, check if this is a newly created account
+      if (!isLogin) {
+        // Import Firestore to check user creation time
+        const { doc, getDoc } = await import('firebase/firestore');
+        const { db } = await import('@/integrations/firebase/config');
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        const userData = userDoc.data();
+        const createdAt = userData?.createdAt;
+        
+        // If created within last 10 seconds, redirect to edit profile
+        const isNewUser = createdAt && (Date.now() - createdAt) < 10000;
+        
+        toast.success('Account created successfully!');
+        navigate(isNewUser ? `/profile/${uid}/edit` : `/profile/${uid}`);
+      } else {
+        toast.success('Welcome back!');
+        navigate(`/profile/${uid}`);
+      }
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const errorMessage = firebaseError.code === 'auth/not-configured'
@@ -86,8 +102,18 @@ export default function Auth() {
       const uid = cred.user?.uid;
       if (!uid) throw new Error('Could not determine user');
 
+      // Check if this is a newly created account
+      const { doc, getDoc } = await import('firebase/firestore');
+      const { db } = await import('@/integrations/firebase/config');
+      const userDoc = await getDoc(doc(db, 'users', uid));
+      const userData = userDoc.data();
+      const createdAt = userData?.createdAt;
+      
+      // If created within last 10 seconds, redirect to edit profile
+      const isNewUser = createdAt && (Date.now() - createdAt) < 10000;
+
       toast.success('Welcome!');
-      navigate(`/profile/${uid}/edit`);
+      navigate(isNewUser ? `/profile/${uid}/edit` : `/profile/${uid}`);
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const msg = firebaseError.code === 'auth/not-configured'
@@ -112,21 +138,21 @@ export default function Auth() {
       </div>
 
       {/* Logo */}
-      <div className="absolute top-6 left-6 z-10">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-xl tracking-tight">
-          <img src="/beehive-honey-svgrepo-com.svg" alt="IssueHive" className="h-9 w-9" />
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
+        <Link to="/" className="flex items-center gap-2 font-semibold text-lg sm:text-xl tracking-tight">
+          <img src="/beehive-honey-svgrepo-com.svg" alt="IssueHive" className="h-8 w-8 sm:h-9 sm:w-9" />
           <span>Issue<span className="text-orange-500">Hive</span></span>
         </Link>
       </div>
 
       {/* Auth Card */}
       <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-12">
-        <Card className="w-full max-w-md border-white/40 shadow-xl bg-white/80 backdrop-blur-xl">
+        <Card className="w-full max-w-md border-white/40 shadow-xl bg-white/80 backdrop-blur-xl mx-auto">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-semibold tracking-tight">
+            <CardTitle className="text-xl sm:text-2xl font-semibold tracking-tight">
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm">
               {isLogin 
                 ? 'Sign in to access your dashboard' 
                 : 'Join IssueHive to report and track issues'}
