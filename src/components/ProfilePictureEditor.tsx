@@ -1,24 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { AlertCircle, Upload, Loader2, Check, Scissors } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { uploadProfilePicture, updateUserProfilePicture, setDefaultAvatar } from '@/integrations/firebase/profile';
-import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl, getUserAvatarUrl } from '@/lib/avatar';
+import { setDefaultAvatar } from '@/integrations/firebase/profile';
+import { DEFAULT_AVATAR_STYLES, getDefaultAvatarUrl } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
 import { toast } from 'sonner';
-import ImageCropDialog from './ImageCropDialog';
-import ImageCropDialogNoPortal from './ImageCropDialogNoPortal';
 import { useQueryClient } from '@tanstack/react-query';
-import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { USER_PROFILE_KEY } from '@/lib/queryKeys';
-import { useLocation } from 'react-router-dom';
 import { logger } from '@/lib/logger';
 
 interface ProfilePictureEditorProps {
@@ -26,120 +19,14 @@ interface ProfilePictureEditorProps {
 }
 
 export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictureEditorProps) {
-  const location = useLocation();
-  const isEditProfilePage = location.pathname.includes('/edit');
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [croppedImage, setCroppedImage] = useState<Blob | null>(null);
-  const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedStyle, setSelectedStyle] = useState<AvatarStyleId | null>(null);
 
-  // Close crop dialog if parent sheet closes to avoid portal unmount race conditions
-  useEffect(() => {
-    if (!parentOpen && cropDialogOpen) {
-      setCropDialogOpen(false);
-    }
-  }, [parentOpen, cropDialogOpen]);
-
   if (!user) return null;
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setError('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
-      return;
-    }
-
-    // Validate file size (max 5MB for Firestore base64 storage)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      setError('File too large. Maximum size is 5MB.');
-      toast.error('Please choose an image smaller than 5MB');
-      return;
-    }
-
-    setError(null);
-    setSelectedFile(file);
-
-    // Create preview and open crop dialog
-    const reader = new FileReader();
-    reader.onload = () => {
-      setPreviewUrl(reader.result as string);
-      setCropDialogOpen(true);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleCropComplete = (croppedBlob: Blob) => {
-    setCroppedImage(croppedBlob);
-    // Create preview URL from cropped image
-    const croppedUrl = URL.createObjectURL(croppedBlob);
-    setPreviewUrl(croppedUrl);
-  };
-
-  const handleUpload = async () => {
-    if (!croppedImage || !user) return;
-
-    // Check rate limit
-    if (!rateLimits.uploadImage(user.uid)) {
-      const resetTime = rateLimits.getResetTime('upload-image', user.uid);
-      toast.error(`Rate limit exceeded. Please wait ${formatResetTime(resetTime)} before uploading again.`);
-      return;
-    }
-
-    setUploading(true);
-    setError(null);
-
-    try {
-      // Convert blob to file
-      const file = new File([croppedImage], 'profile.jpg', { type: 'image/jpeg' });
-      
-      // Upload to Firebase Storage
-      logger.debug('Uploading to Firebase Storage...');
-      const downloadURL = await uploadProfilePicture(file, user.uid);
-      logger.debug('Upload complete, URL:', downloadURL);
-      
-      // Update user profile
-      logger.debug('Updating user profile...');
-      await updateUserProfilePicture(user, downloadURL);
-      
-      // Sync to Firestore users collection
-      logger.debug('Syncing to Firestore...');
-      const { syncUserProfile, updateUserPhotoInIssues } = await import('@/integrations/firebase/user-sync');
-      await syncUserProfile({ ...user, photoURL: downloadURL });
-      
-      // Update profile photo in all issues created by this user (optional, don't block)
-      logger.debug('Updating issues in background...');
-      updateUserPhotoInIssues(user.uid, downloadURL).catch(err => {
-        logger.warn('Failed to update issues:', err);
-        // Don't fail the whole operation if this fails
-      });
-      
-      toast.success('Profile picture updated!');
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setCroppedImage(null);
-      
-      // Invalidate queries to refetch updated profile (standardized key)
-      await queryClient.invalidateQueries({ queryKey: [USER_PROFILE_KEY, user.uid] });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to upload profile picture';
-      logger.error('Upload error:', err);
-      setError(message);
-      toast.error(message);
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const handleSetDefaultAvatar = async (style: AvatarStyleId) => {
     if (!user) return;
@@ -197,80 +84,12 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
-
-        {/* Tabs for Upload / Default */}
-        <Tabs defaultValue="upload" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upload">Upload Custom</TabsTrigger>
-            <TabsTrigger value="defaults">Choose Default</TabsTrigger>
-          </TabsList>
-
-          {/* Upload Tab */}
-          <TabsContent value="upload" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="picture">Upload your profile picture</Label>
-              <Input
-                id="picture"
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                onChange={handleFileSelect}
-                disabled={uploading}
-                className="cursor-pointer"
-              />
-              <p className="text-xs text-muted-foreground">
-                Maximum file size: 5MB. Supported formats: JPEG, PNG, GIF, WebP
-              </p>
-            </div>
-
-            {/* Preview */}
-            {previewUrl && (
-              <div className="space-y-3">
-                <Label>Preview</Label>
-                <div className="flex flex-col gap-4">
-                  <Avatar className="w-32 h-32 border-2 border-orange-300 mx-auto">
-                    <AvatarImage src={previewUrl} alt="Preview" />
-                  </Avatar>
-                  <div className="flex gap-2 justify-center">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setCropDialogOpen(true);
-                      }}
-                      disabled={uploading}
-                      className="rounded-full"
-                    >
-                      <Scissors className="mr-2 h-4 w-4" />
-                      Adjust Crop
-                    </Button>
-                    <Button
-                      onClick={handleUpload}
-                      disabled={uploading}
-                      className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
-                    >
-                      {uploading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload & Save
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Default Avatars Tab */}
-          <TabsContent value="defaults" className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Choose from our collection of generated avatars
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Default Avatars Only */}
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Choose from our collection of generated avatars
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {DEFAULT_AVATAR_STYLES.map(({ id, label, description }) => {
                 const avatarUrl = getDefaultAvatarUrl(user.uid, id);
                 const isSelected = selectedStyle === id;
@@ -298,28 +117,8 @@ export default function ProfilePictureEditor({ parentOpen = true }: ProfilePictu
                   </button>
                 );
               })}
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Image Crop Dialog - Use no-portal version on edit profile page to avoid portal conflicts */}
-        {selectedFile && previewUrl && (
-          isEditProfilePage ? (
-            <ImageCropDialogNoPortal
-              open={cropDialogOpen}
-              onClose={() => setCropDialogOpen(false)}
-              imageSrc={previewUrl}
-              onCropComplete={handleCropComplete}
-            />
-          ) : (
-            <ImageCropDialog
-              open={cropDialogOpen}
-              onClose={() => setCropDialogOpen(false)}
-              imageSrc={previewUrl}
-              onCropComplete={handleCropComplete}
-            />
-          )
-        )}
+          </div>
+        </div>
       </div>
     </Card>
   );

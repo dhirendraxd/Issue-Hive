@@ -8,13 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Save, Upload, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db, storage } from '@/integrations/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '@/integrations/firebase';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateUserDisplayName, uploadProfilePicture, updateUserProfilePicture, setDefaultAvatar } from '@/integrations/firebase/profile';
+import { updateUserDisplayName, setDefaultAvatar } from '@/integrations/firebase/profile';
 import { sanitizeText, sanitizeURL, limitLength } from '@/lib/sanitize';
 import { getAvatarPreviews } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
@@ -198,33 +197,7 @@ export default function EditProfile() {
 
   const sanitizeUsername = (value: string) => sanitizeText(value.toLowerCase().replace(/[^a-z0-9_]/g, ''));
 
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('Image must be less than 5MB');
-      return;
-    }
-
-    setUploadingAvatar(true);
-    try {
-      const downloadURL = await uploadProfilePicture(file, user.uid);
-      await updateUserProfilePicture(user, downloadURL);
-      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
-      toast.success('Profile picture updated!');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to upload profile picture';
-      toast.error(message);
-    } finally {
-      setUploadingAvatar(false);
-    }
-  };
+  // Custom image uploads are disabled by policy — defaults only
 
   const handleSetDefaultAvatar = async (style: AvatarStyleId) => {
     if (!user) return;
@@ -299,10 +272,10 @@ export default function EditProfile() {
           <Card className="glass-card overflow-hidden">
             <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 px-6 py-4 border-b border-stone-200/50">
               <h2 className="text-lg font-bold text-stone-900">Profile Picture</h2>
-              <p className="text-sm text-muted-foreground mt-1">Upload a photo or choose a default avatar</p>
+              <p className="text-sm text-muted-foreground mt-1">Choose a default avatar</p>
             </div>
             <div className="p-6">
-              {/* Current Avatar and Upload */}
+              {/* Current Avatar */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8">
                 <Avatar className="w-28 h-28 ring-4 ring-orange-100">
                   <AvatarImage src={avatarUrl || undefined} alt={displayName} />
@@ -310,37 +283,7 @@ export default function EditProfile() {
                     {displayName?.charAt(0)?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1 space-y-3">
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Upload Custom Photo</h3>
-                    <input
-                      type="file"
-                      id="avatar-upload"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={() => document.getElementById('avatar-upload')?.click()}
-                      disabled={uploadingAvatar}
-                      className="w-full sm:w-auto border-orange-200 hover:bg-orange-50"
-                    >
-                      {uploadingAvatar ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="w-4 h-4 mr-2" />
-                          Choose Photo
-                        </>
-                      )}
-                    </Button>
-                    <p className="text-xs text-muted-foreground mt-2">JPG, PNG, GIF or WebP • Max 5MB</p>
-                  </div>
-                </div>
+                <div className="flex-1 space-y-3" />
               </div>
 
               {/* Default Avatars */}
