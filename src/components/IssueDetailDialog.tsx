@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, MoreVertical, Flag } from "lucide-react";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, MoreVertical, Flag, ThumbsUp, ThumbsDown } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -15,6 +15,7 @@ import ReportUserDialog from "./ReportUserDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
 import { useUserProfile } from "@/hooks/use-user-profile";
+import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
@@ -38,6 +39,7 @@ export default function IssueDetailDialog({
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
   const { data: creatorProfile } = useUserProfile(issue?.createdBy);
+  const { upvoteIssue, downvoteIssue } = useIssuesFirebase();
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -289,6 +291,45 @@ export default function IssueDetailDialog({
                 </div>
               )}
             </div>
+
+            {/* Voting Section - Available to authenticated users (except issue creator) */}
+            {user && user.uid !== issue.createdBy && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex-1 rounded-full transition-all",
+                      hasUpvoted 
+                        ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200" 
+                        : "hover:bg-green-50 hover:border-green-200"
+                    )}
+                    onClick={() => upvoteIssue.mutate(issue.id)}
+                    disabled={upvoteIssue.isPending}
+                  >
+                    <ThumbsUp className={cn("h-4 w-4 mr-2", hasUpvoted && "fill-current")} />
+                    {hasUpvoted ? 'Upvoted' : 'Upvote'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "flex-1 rounded-full transition-all",
+                      hasDownvoted 
+                        ? "bg-red-100 border-red-300 text-red-700 hover:bg-red-200" 
+                        : "hover:bg-red-50 hover:border-red-200"
+                    )}
+                    onClick={() => downvoteIssue.mutate(issue.id)}
+                    disabled={downvoteIssue.isPending}
+                  >
+                    <ThumbsDown className={cn("h-4 w-4 mr-2", hasDownvoted && "fill-current")} />
+                    {hasDownvoted ? 'Downvoted' : 'Downvote'}
+                  </Button>
+                </div>
+              </>
+            )}
 
             {/* Resolution Section */}
             {issue.resolution && (

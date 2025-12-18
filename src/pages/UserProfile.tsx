@@ -271,11 +271,26 @@ export default function UserProfile() {
                 )}
               </div>
               
-              {/* Action Buttons with Glassmorphism */}
-              <div className="absolute top-2 right-2 flex flex-wrap justify-end items-start gap-2">
+              {/* Social Icons - Top Right */}
+              <div className="absolute top-2 right-2">
                 {socialIcons}
+              </div>
+            </div>
+            
+            {/* Profile Info Section with Glassmorphism */}
+            <div className="mt-12 px-6 pb-4 border-b border-white/30">
+              <div className="mb-4">
+                <div className="flex items-center gap-2 flex-wrap mb-2">
+                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
+                  {ownerProfile?.pronouns && (
+                    <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
+                
+                {/* Message and Follow Buttons - Below Username for Visitors */}
                 {!isOwner && user && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mb-4">
                     <Button
                       size="sm"
                       variant="outline"
@@ -307,19 +322,6 @@ export default function UserProfile() {
                     )}
                   </div>
                 )}
-              </div>
-            </div>
-            
-            {/* Profile Info Section with Glassmorphism */}
-            <div className="mt-12 px-6 pb-4 border-b border-white/30">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 flex-wrap mb-2">
-                  <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
-                  {ownerProfile?.pronouns && (
-                    <span className="text-sm text-muted-foreground font-normal">({ownerProfile.pronouns})</span>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
               </div>
               
               {ownerProfile?.bio && (

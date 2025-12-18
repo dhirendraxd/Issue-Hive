@@ -226,7 +226,7 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
                   {c.content}
                 </p>
                 <div className="flex items-center gap-2 flex-wrap">
-                  {user && (
+                  {user && user.uid !== c.userId && (
                     <Button
                       size="sm"
                       variant="ghost"
@@ -241,7 +241,7 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
                       {c.likes || 0}
                     </Button>
                   )}
-                  {!user && c.likes > 0 && (
+                  {(!user || user.uid === c.userId) && c.likes > 0 && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <ThumbsUp className="h-3 w-3" />
                       {c.likes}
