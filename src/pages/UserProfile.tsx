@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, Image as ImageIcon } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, Image as ImageIcon, GraduationCap } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -66,6 +66,75 @@ export default function UserProfile() {
   
   // Resolve avatar URL (handles firestore:// references)
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
+  const hasSocialLinks = !!(
+    ownerProfile?.social && (
+      ownerProfile.social.website ||
+      ownerProfile.social.github ||
+      ownerProfile.social.twitter ||
+      ownerProfile.social.linkedin ||
+      ownerProfile.social.instagram
+    )
+  );
+
+  const socialIcons = hasSocialLinks ? (
+    <div className="flex flex-wrap gap-3 justify-end">
+      {ownerProfile?.social?.website && (
+        <a 
+          href={ownerProfile?.social?.website} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-600 hover:text-orange-700 transition-all hover:shadow-md"
+          title="Website"
+        >
+          <Link2 className="h-5 w-5" />
+        </a>
+      )}
+      {ownerProfile?.social?.github && (
+        <a 
+          href={ownerProfile?.social?.github} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md"
+          title="GitHub"
+        >
+          <Github className="h-5 w-5" />
+        </a>
+      )}
+      {ownerProfile?.social?.twitter && (
+        <a 
+          href={ownerProfile?.social?.twitter} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md"
+          title="Twitter"
+        >
+          <Twitter className="h-5 w-5" />
+        </a>
+      )}
+      {ownerProfile?.social?.linkedin && (
+        <a 
+          href={ownerProfile?.social?.linkedin} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md"
+          title="LinkedIn"
+        >
+          <Linkedin className="h-5 w-5" />
+        </a>
+      )}
+      {ownerProfile?.social?.instagram && (
+        <a 
+          href={ownerProfile?.social?.instagram} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md"
+          title="Instagram"
+        >
+          <Instagram className="h-5 w-5" />
+        </a>
+      )}
+    </div>
+  ) : null;
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -181,18 +250,14 @@ export default function UserProfile() {
             {/* Profile Section */}
             <div className="relative pt-8">
               {/* Profile Picture */}
-              <div className="flex justify-start mb-8">
+              <div className="flex flex-col items-start gap-3 mb-8">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
                   <AvatarImage src={avatarUrl} />
                   <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
                     {ownerProfile?.displayName?.[0]?.toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-              </div>
-              
-              {/* Action Buttons with Glassmorphism */}
-              <div className="absolute top-4 right-4 flex gap-2 backdrop-blur-md">
-                {isOwner ? (
+                {isOwner && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -202,40 +267,44 @@ export default function UserProfile() {
                     <Edit2 className="w-4 h-4 mr-2" />
                     Edit Profile
                   </Button>
-                ) : (
-                  user && (
-                    <div className="flex gap-2">
+                )}
+              </div>
+              
+              {/* Action Buttons with Glassmorphism */}
+              <div className="absolute top-4 right-4 flex flex-wrap justify-end gap-2 backdrop-blur-md">
+                {socialIcons}
+                {!isOwner && user && (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
+                      onClick={() => setMessageDialogOpen(true)}
+                    >
+                      <Mail className="w-4 h-4 mr-2" />
+                      Message
+                    </Button>
+                    {isFollowing ? (
                       <Button
                         size="sm"
-                        variant="outline"
                         className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
-                        onClick={() => setMessageDialogOpen(true)}
+                        disabled={unfollowMutation.isPending}
+                        onClick={() => unfollowMutation.mutate(uid!)}
                       >
-                        <Mail className="w-4 h-4 mr-2" />
-                        Message
+                        <Check className="w-4 h-4 mr-2" />
+                        {unfollowMutation.isPending ? 'Unfollowing...' : 'Following'}
                       </Button>
-                      {isFollowing ? (
-                        <Button
-                          size="sm"
-                          className="rounded-full bg-white/80 backdrop-blur-xl border border-white/60 hover:bg-white/95 text-stone-900 shadow-lg shadow-black/10"
-                          disabled={unfollowMutation.isPending}
-                          onClick={() => unfollowMutation.mutate(uid!)}
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          {unfollowMutation.isPending ? 'Unfollowing...' : 'Following'}
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
-                          disabled={followMutation.isPending}
-                          onClick={() => followMutation.mutate(uid!)}
-                        >
-                          {followMutation.isPending ? 'Following...' : 'Follow'}
-                        </Button>
-                      )}
-                    </div>
-                  )
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white backdrop-blur-xl shadow-lg shadow-orange-500/30 hover:shadow-lg hover:shadow-orange-600/40 transition-all"
+                        disabled={followMutation.isPending}
+                        onClick={() => followMutation.mutate(uid!)}
+                      >
+                        {followMutation.isPending ? 'Following...' : 'Follow'}
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -250,67 +319,6 @@ export default function UserProfile() {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">@{ownerProfile?.username || ownerProfile?.displayName?.toLowerCase().replace(/\s+/g, '') || 'user'}</p>
-                
-                {/* Social Links - Colored Icons Only */}
-                {ownerProfile?.social && (
-                  <div className="flex flex-wrap gap-3 mb-3 w-full justify-end">
-                    {ownerProfile.social.website && (
-                      <a 
-                        href={ownerProfile.social.website} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-600 hover:text-orange-700 transition-all hover:shadow-md"
-                        title="Website"
-                      >
-                        <Link2 className="h-5 w-5" />
-                      </a>
-                    )}
-                    {ownerProfile.social.github && (
-                      <a 
-                        href={ownerProfile.social.github} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md"
-                        title="GitHub"
-                      >
-                        <Github className="h-5 w-5" />
-                      </a>
-                    )}
-                    {ownerProfile.social.twitter && (
-                      <a 
-                        href={ownerProfile.social.twitter} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md"
-                        title="Twitter"
-                      >
-                        <Twitter className="h-5 w-5" />
-                      </a>
-                    )}
-                    {ownerProfile.social.linkedin && (
-                      <a 
-                        href={ownerProfile.social.linkedin} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md"
-                        title="LinkedIn"
-                      >
-                        <Linkedin className="h-5 w-5" />
-                      </a>
-                    )}
-                    {ownerProfile.social.instagram && (
-                      <a 
-                        href={ownerProfile.social.instagram} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
-                        className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md"
-                        title="Instagram"
-                      >
-                        <Instagram className="h-5 w-5" />
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
               
               {ownerProfile?.bio && (
@@ -318,14 +326,19 @@ export default function UserProfile() {
               )}
               
               {/* Meta Info */}
-              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground mb-3">
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-3 mt-1">
+                {ownerProfile?.college && (
+                  <span className="inline-flex items-center gap-1.5">
+                    <GraduationCap className="h-4 w-4" /> {ownerProfile.college}
+                  </span>
+                )}
                 {ownerProfile?.location && (
                   <span className="inline-flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" /> {ownerProfile.location}
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
+                  <Calendar className="h-4 w-4" /> Joined {ownerProfile?.createdAt ? new Date(ownerProfile.createdAt as number | string).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                 </span>
               </div>
               

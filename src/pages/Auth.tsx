@@ -52,14 +52,15 @@ export default function Auth() {
 
     setLoading(true);
     try {
-      if (isLogin) {
-        await signIn(sanitizedEmail, password);
-        toast.success('Welcome back!');
-      } else {
-        await signUp(sanitizedEmail, password);
-        toast.success('Account created successfully!');
-      }
-      navigate('/raise-issue');
+      const cred = isLogin
+        ? await signIn(sanitizedEmail, password)
+        : await signUp(sanitizedEmail, password);
+
+      const uid = cred.user?.uid;
+      if (!uid) throw new Error('Could not determine user');
+
+      toast.success(isLogin ? 'Welcome back!' : 'Account created successfully!');
+      navigate(`/profile/${uid}/edit`);
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const errorMessage = firebaseError.code === 'auth/not-configured'
@@ -81,9 +82,12 @@ export default function Auth() {
   const handleGoogleAuth = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle();
+      const cred = await signInWithGoogle();
+      const uid = cred.user?.uid;
+      if (!uid) throw new Error('Could not determine user');
+
       toast.success('Welcome!');
-      navigate('/raise-issue');
+      navigate(`/profile/${uid}/edit`);
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const msg = firebaseError.code === 'auth/not-configured'

@@ -43,6 +43,7 @@ export default function EditProfile() {
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [location, setLocation] = useState('');
+  const [college, setCollege] = useState('');
   const [website, setWebsite] = useState('');
   const [github, setGithub] = useState('');
   const [twitter, setTwitter] = useState('');
@@ -65,6 +66,7 @@ export default function EditProfile() {
       setUsername(ownerProfile.username || '');
       setBio(ownerProfile.bio || '');
       setLocation(ownerProfile.location || '');
+      setCollege(ownerProfile.college || '');
       setWebsite(ownerProfile.social?.website || '');
       setGithub(ownerProfile.social?.github || '');
       setTwitter(ownerProfile.social?.twitter || '');
@@ -96,6 +98,7 @@ export default function EditProfile() {
 
     const sanitizedBio = limitLength(sanitizeText(bio), 160);
     const sanitizedLocation = limitLength(sanitizeText(location), 100);
+    const sanitizedCollege = limitLength(sanitizeText(college), 120);
     const sanitizedWebsite = normalizeUrl(website);
     const sanitizedGithub = normalizeUrl(github);
     const sanitizedTwitter = normalizeUrl(twitter);
@@ -107,6 +110,7 @@ export default function EditProfile() {
       await updateDoc(doc(db, 'users', user.uid), {
         bio: sanitizedBio,
         location: sanitizedLocation,
+        college: sanitizedCollege,
         'social.website': sanitizedWebsite,
         'social.github': sanitizedGithub,
         'social.twitter': sanitizedTwitter,
@@ -122,7 +126,7 @@ export default function EditProfile() {
     } finally {
       setAutoSaving(false);
     }
-  }, [user, bio, location, website, github, twitter, linkedin, instagram, queryClient]);
+  }, [user, bio, location, college, website, github, twitter, linkedin, instagram, queryClient]);
 
   // Debounced auto-save (2.5 seconds)
   const debouncedAutoSave = useDebounce(autoSaveProfile, 2500);
@@ -132,7 +136,7 @@ export default function EditProfile() {
     if (!initialLoadRef.current) {
       debouncedAutoSave();
     }
-  }, [bio, location, website, github, twitter, linkedin, instagram, debouncedAutoSave]);
+  }, [bio, location, college, website, github, twitter, linkedin, instagram, debouncedAutoSave]);
 
   if (authLoading || profileLoading || !user) {
     return (
@@ -148,6 +152,7 @@ export default function EditProfile() {
     const sanitizedUsername = sanitizeUsername(username);
     const sanitizedBio = limitLength(sanitizeText(bio), 160);
     const sanitizedLocation = limitLength(sanitizeText(location), 100);
+    const sanitizedCollege = limitLength(sanitizeText(college), 120);
     const sanitizedWebsite = normalizeUrl(website);
     const sanitizedGithub = normalizeUrl(github);
     const sanitizedTwitter = normalizeUrl(twitter);
@@ -172,6 +177,7 @@ export default function EditProfile() {
         username: sanitizedUsername,
         bio: sanitizedBio,
         location: sanitizedLocation,
+        college: sanitizedCollege,
         'social.website': sanitizedWebsite,
         'social.github': sanitizedGithub,
         'social.twitter': sanitizedTwitter,
@@ -481,6 +487,17 @@ export default function EditProfile() {
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="City, Country"
                 maxLength={100}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="college">College / University</Label>
+              <Input
+                id="college"
+                value={college}
+                onChange={(e) => setCollege(e.target.value)}
+                placeholder="e.g., Stanford University"
+                maxLength={120}
               />
             </div>
 
