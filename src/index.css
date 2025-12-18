@@ -144,10 +144,6 @@
   .glass-subtle {
     @apply bg-white/40 backdrop-blur-lg border border-white/30 shadow-sm;
   }
-  
-  .glass-dark {
-    @apply bg-black/20 backdrop-blur-xl border border-white/20 shadow-lg;
-  }
 
   /* Breathing / wave blur animation for hero overlay */
   @keyframes heroBreathingBlur {

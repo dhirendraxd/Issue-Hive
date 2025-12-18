@@ -72,3 +72,65 @@ export function useUnfollowUser() {
     }
   });
 }
+
+export function useFollowersList(userId?: string) {
+  return useQuery({
+    queryKey: ['followers-list', userId],
+    enabled: !!userId && !!db,
+    queryFn: async () => {
+      if (!userId || !db) return [];
+      const { collection, getDocs } = await import('firebase/firestore');
+      const followersSnap = await getDocs(collection(db, 'users', userId, 'followers'));
+      
+      const followers = await Promise.all(
+        followersSnap.docs.map(async (followerDoc) => {
+          const followerUserId = followerDoc.id;
+          const userDocRef = doc(db, 'users', followerUserId);
+          const userDoc = await getDoc(userDocRef);
+          const userData = userDoc.data() || {};
+          
+          return {
+            userId: followerUserId,
+            displayName: userData.displayName || 'Anonymous',
+            username: userData.username,
+            photoURL: userData.photoURL,
+            followedAt: followerDoc.data().followedAt
+          };
+        })
+      );
+      
+      return followers.sort((a, b) => (b.followedAt || 0) - (a.followedAt || 0));
+    }
+  });
+}
+
+export function useFollowingList(userId?: string) {
+  return useQuery({
+    queryKey: ['following-list', userId],
+    enabled: !!userId && !!db,
+    queryFn: async () => {
+      if (!userId || !db) return [];
+      const { collection, getDocs } = await import('firebase/firestore');
+      const followingSnap = await getDocs(collection(db, 'users', userId, 'following'));
+      
+      const following = await Promise.all(
+        followingSnap.docs.map(async (followingDoc) => {
+          const followingUserId = followingDoc.id;
+          const userDocRef = doc(db, 'users', followingUserId);
+          const userDoc = await getDoc(userDocRef);
+          const userData = userDoc.data() || {};
+          
+          return {
+            userId: followingUserId,
+            displayName: userData.displayName || 'Anonymous',
+            username: userData.username,
+            photoURL: userData.photoURL,
+            followedAt: followingDoc.data().followedAt
+          };
+        })
+      );
+      
+      return following.sort((a, b) => (b.followedAt || 0) - (a.followedAt || 0));
+    }
+  });
+}

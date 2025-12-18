@@ -4,7 +4,7 @@ import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
-import { useReceivedMessages } from '@/hooks/use-messaging';
+import { useReceivedMessages, useSentMessages } from '@/hooks/use-messaging';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, Image as ImageIcon, GraduationCap } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -28,140 +28,59 @@ import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Separator } from '@/components/ui/separator';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
-import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts } from '@/hooks/use-follow';
+import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function UserProfile() {
   const { uid } = useParams();
-  
-  // Early validation
-  if (!uid) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="p-6">
-          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
-          <p className="text-center">Invalid user profile</p>
-        </Card>
-      </div>
-    );
-  }
-  
   const [search] = useSearchParams();
   const { user } = useAuth();
   const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
-  
-  // Conditionally call useReceivedMessages only if user is authenticated
   const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
-  
+  const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
   // Get user profile data
-  const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid);
+  const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid || '');
   
-  // Resolve avatar URL (handles firestore:// references)
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
-  const hasSocialLinks = !!(
-    ownerProfile?.social && (
-      ownerProfile.social.website ||
-      ownerProfile.social.github ||
-      ownerProfile.social.twitter ||
-      ownerProfile.social.linkedin ||
-      ownerProfile.social.instagram
-    )
-  );
-
-  const socialIcons = hasSocialLinks ? (
-    <div className="flex flex-wrap gap-3 justify-end">
-      {ownerProfile?.social?.website && (
-        <a 
-          href={ownerProfile?.social?.website} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 text-orange-600 hover:text-orange-700 transition-all hover:shadow-md"
-          title="Website"
-        >
-          <Link2 className="h-5 w-5" />
-        </a>
-      )}
-      {ownerProfile?.social?.github && (
-        <a 
-          href={ownerProfile?.social?.github} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md"
-          title="GitHub"
-        >
-          <Github className="h-5 w-5" />
-        </a>
-      )}
-      {ownerProfile?.social?.twitter && (
-        <a 
-          href={ownerProfile?.social?.twitter} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md"
-          title="Twitter"
-        >
-          <Twitter className="h-5 w-5" />
-        </a>
-      )}
-      {ownerProfile?.social?.linkedin && (
-        <a 
-          href={ownerProfile?.social?.linkedin} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md"
-          title="LinkedIn"
-        >
-          <Linkedin className="h-5 w-5" />
-        </a>
-      )}
-      {ownerProfile?.social?.instagram && (
-        <a 
-          href={ownerProfile?.social?.instagram} 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md"
-          title="Instagram"
-        >
-          <Instagram className="h-5 w-5" />
-        </a>
-      )}
-    </div>
-  ) : null;
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
+  const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
+  const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
 
-  // Filter issues belonging to this user
+  // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
   const previewVisitor = search.get('previewVisitor') === '1' || search.get('as') === 'visitor';
   const rawIsOwner = user?.uid === uid;
   const isOwner = previewVisitor ? false : rawIsOwner;
+  
   const { data: isFollowing = false } = useIsFollowing(!isOwner ? uid : undefined);
   const followMutation = useFollowUser();
   const unfollowMutation = useUnfollowUser();
-  
   const { data: followCounts = { followers: 0, following: 0 } } = useFollowCounts(uid);
+  const { data: followersList = [] } = useFollowersList(uid);
+  const { data: followingList = [] } = useFollowingList(uid);
   
-  // Fetch engagement metrics for all owned issues
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} } = useIssueEngagement(ownedIssueIds);
+  
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
     const vis = (i as unknown as WithVisibility).visibility;
     return vis === 'public';
   });
-  // Private issues visible to follower if owner opted in
   const followerPrivateIssues = !isOwner && isFollowing && ownerProfile?.showPrivateToFollowers
     ? owned.filter(i => (i as unknown as WithVisibility).visibility === 'private')
     : [];
@@ -178,9 +97,9 @@ export default function UserProfile() {
     owned.forEach(issue => {
       const engagement = engagementMap[issue.id];
       if (engagement) {
-        totalUpvotes += engagement.upvotes;
-        totalDownvotes += engagement.downvotes;
-        totalComments += engagement.comments;
+        totalUpvotes += engagement.upvotes || 0;
+        totalDownvotes += engagement.downvotes || 0;
+        totalComments += engagement.comments || 0;
       }
       totalSupports += issue.votes || 0;
     });
@@ -197,7 +116,89 @@ export default function UserProfile() {
       resolvedIssues: owned.filter(i => i.status === 'resolved').length,
     };
   }, [owned, engagementMap]);
+  
+  // Early validation after all hooks
+  if (!uid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-6">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <p className="text-center">Invalid user profile</p>
+        </Card>
+      </div>
+    );
+  }
+  
+  const hasSocialLinks = !!(
+    ownerProfile?.social && (
+      ownerProfile.social.website ||
+      ownerProfile.social.github ||
+      ownerProfile.social.twitter ||
+      ownerProfile.social.linkedin ||
+      ownerProfile.social.instagram
+    )
+  );
 
+  const socialIcons = hasSocialLinks ? (
+    <div className="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur-xl border border-white/60 rounded-full px-2 py-2 shadow-lg shadow-black/5">
+      {ownerProfile?.social?.website && (
+        <a 
+          href={ownerProfile?.social?.website} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-orange-100/50 text-orange-600 hover:text-orange-700 transition-all duration-200"
+          title="Website"
+        >
+          <Link2 className="h-4 w-4" />
+        </a>
+      )}
+      {ownerProfile?.social?.github && (
+        <a 
+          href={ownerProfile?.social?.github} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100/50 text-slate-800 hover:text-slate-900 transition-all duration-200"
+          title="GitHub"
+        >
+          <Github className="h-4 w-4" />
+        </a>
+      )}
+      {ownerProfile?.social?.twitter && (
+        <a 
+          href={ownerProfile?.social?.twitter} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-500 hover:text-blue-600 transition-all duration-200"
+          title="Twitter"
+        >
+          <Twitter className="h-4 w-4" />
+        </a>
+      )}
+      {ownerProfile?.social?.linkedin && (
+        <a 
+          href={ownerProfile?.social?.linkedin} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-700 hover:text-blue-800 transition-all duration-200"
+          title="LinkedIn"
+        >
+          <Linkedin className="h-4 w-4" />
+        </a>
+      )}
+      {ownerProfile?.social?.instagram && (
+        <a 
+          href={ownerProfile?.social?.instagram} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-pink-100/50 text-pink-600 hover:text-pink-700 transition-all duration-200"
+          title="Instagram"
+        >
+          <Instagram className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  ) : null;
+  
   const handleSignOut = async () => {
     try {
       await signOut();
@@ -250,7 +251,7 @@ export default function UserProfile() {
             {/* Profile Section */}
             <div className="relative pt-8">
               {/* Profile Picture */}
-              <div className="flex flex-col items-start gap-3 mb-8">
+              <div className="flex flex-col items-start gap-3 mb-6">
                 <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
                   <AvatarImage src={avatarUrl} />
                   <AvatarFallback className="text-3xl font-bold bg-gradient-to-br from-orange-500 to-amber-500 text-white">
@@ -271,7 +272,7 @@ export default function UserProfile() {
               </div>
               
               {/* Action Buttons with Glassmorphism */}
-              <div className="absolute top-4 right-4 flex flex-wrap justify-end gap-2 backdrop-blur-md">
+              <div className="absolute top-2 right-2 flex flex-wrap justify-end items-start gap-2">
                 {socialIcons}
                 {!isOwner && user && (
                   <div className="flex gap-2">
@@ -310,7 +311,7 @@ export default function UserProfile() {
             </div>
             
             {/* Profile Info Section with Glassmorphism */}
-            <div className="mt-20 px-6 pb-4 border-b border-white/30">
+            <div className="mt-12 px-6 pb-4 border-b border-white/30">
               <div className="mb-4">
                 <div className="flex items-center gap-2 flex-wrap mb-2">
                   <h1 className="text-2xl font-bold tracking-tight">{ownerProfile?.displayName || 'User'}</h1>
@@ -344,14 +345,20 @@ export default function UserProfile() {
               
               {/* Follower Counts */}
               <div className="flex gap-6 text-sm">
-                <div className="flex flex-col">
+                <button 
+                  onClick={() => setFollowersDialogOpen(true)}
+                  className="flex flex-col hover:bg-stone-100 rounded-lg px-3 py-2 transition-colors cursor-pointer"
+                >
                   <span className="font-semibold text-stone-900">{followCounts.followers}</span>
                   <span className="text-muted-foreground text-xs">Followers</span>
-                </div>
-                <div className="flex flex-col">
+                </button>
+                <button 
+                  onClick={() => setFollowingDialogOpen(true)}
+                  className="flex flex-col hover:bg-stone-100 rounded-lg px-3 py-2 transition-colors cursor-pointer"
+                >
                   <span className="font-semibold text-stone-900">{followCounts.following}</span>
                   <span className="text-muted-foreground text-xs">Following</span>
-                </div>
+                </button>
               </div>
             </div>
             
@@ -571,10 +578,23 @@ export default function UserProfile() {
               {isOwner && (
                 <TabsContent value="messages" className="mt-6">
                   <div className="max-w-4xl space-y-6">
-                    <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-2">Your Messages</h2>
-                      <p className="text-sm text-muted-foreground mb-4">Messages sent to you by other users</p>
-                    </div>
+                    <Tabs defaultValue="incoming" className="w-full">
+                      <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
+                        <TabsTrigger value="incoming" className="flex-1 data-[state=active]:bg-white rounded-md">
+                          <Inbox className="h-4 w-4 mr-2" />
+                          Incoming {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-0.5 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
+                        </TabsTrigger>
+                        <TabsTrigger value="outgoing" className="flex-1 data-[state=active]:bg-white rounded-md">
+                          <MailPlus className="h-4 w-4 mr-2" />
+                          Sent {sentMessages && sentMessages.length > 0 && <span className="ml-2 px-2 py-0.5 rounded-full bg-blue-500 text-white text-xs font-bold">{sentMessages.length}</span>}
+                        </TabsTrigger>
+                      </TabsList>
+                      
+                      <TabsContent value="incoming" className="mt-6">
+                        <div>
+                          <h2 className="text-xl font-semibold tracking-tight mb-2">Incoming Messages</h2>
+                          <p className="text-sm text-muted-foreground mb-4">Messages sent to you by other users</p>
+                        </div>
 
                     {messagesLoading ? (
                       <div className="space-y-3">
@@ -667,6 +687,77 @@ export default function UserProfile() {
                         </Button>
                       </Card>
                     )}
+                      </TabsContent>
+                      
+                      <TabsContent value="outgoing" className="mt-6">
+                        <div>
+                          <h2 className="text-xl font-semibold tracking-tight mb-2">Sent Messages</h2>
+                          <p className="text-sm text-muted-foreground mb-4">Messages you sent to other users</p>
+                        </div>
+
+                        {sentMessagesLoading ? (
+                          <div className="space-y-3">
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <Skeleton key={i} className="h-24 rounded-xl" />
+                            ))}
+                          </div>
+                        ) : sentMessages && sentMessages.length > 0 ? (
+                          <div className="space-y-4">
+                            {sentMessages.map((message, idx) => {
+                              const receiverName = message.receiverName || 'Anonymous User';
+                              const receiverAvatar = message.receiverAvatar;
+                              
+                              return (
+                                <Card key={idx} className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 hover:shadow-xl hover:shadow-green-200/30 transition-all overflow-hidden">
+                                  <CardContent className="p-6">
+                                    <div className="flex gap-4">
+                                      <Avatar className="h-12 w-12 flex-shrink-0 ring-2 ring-green-200">
+                                        <AvatarImage src={receiverAvatar} />
+                                        <AvatarFallback className="bg-green-100 text-green-700 font-semibold">
+                                          {receiverName.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-start justify-between mb-2">
+                                          <div>
+                                            <p className="font-semibold text-stone-900">To: {receiverName}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {formatRelativeTime(
+                                                message.createdAt?.toDate?.() || new Date(message.createdAt || Date.now())
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Link to={`/profile/${message.otherUserId}`}>
+                                            <Button 
+                                              variant="outline" 
+                                              size="sm" 
+                                              className="rounded-full text-xs"
+                                            >
+                                              View Profile
+                                            </Button>
+                                          </Link>
+                                        </div>
+                                        <div className="bg-stone-50 rounded-lg p-4 mt-3 border border-stone-200/50">
+                                          <p className="text-sm text-stone-900 leading-relaxed break-words">{message.content}</p>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                            <MailPlus className="h-16 w-16 mx-auto mb-4 opacity-40 text-muted-foreground" />
+                            <h3 className="text-lg font-semibold text-stone-900 mb-2">No Sent Messages</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Messages you send to other users will appear here.
+                            </p>
+                          </Card>
+                        )}
+                      </TabsContent>
+                    </Tabs>
                   </div>
                 </TabsContent>
               )}
@@ -1053,6 +1144,88 @@ export default function UserProfile() {
             targetUserAvatar={avatarUrl}
           />
         )}
+
+        {/* Followers Dialog */}
+        <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+          <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Followers ({followCounts.followers})
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-1 -mx-6 px-6">
+              {followersList.length > 0 ? (
+                <div className="space-y-3">
+                  {followersList.map((follower) => (
+                    <div key={follower.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
+                      <Link to={`/profile/${follower.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowersDialogOpen(false)}>
+                        <Avatar className="h-10 w-10 ring-2 ring-orange-200">
+                          <AvatarImage src={follower.photoURL} />
+                          <AvatarFallback className="bg-orange-100 text-orange-700 font-semibold">
+                            {follower.displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-stone-900 truncate">{follower.displayName}</p>
+                          {follower.username && (
+                            <p className="text-xs text-muted-foreground truncate">@{follower.username}</p>
+                          )}
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">No followers yet</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Following Dialog */}
+        <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+          <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Following ({followCounts.following})
+              </DialogTitle>
+            </DialogHeader>
+            <div className="overflow-y-auto flex-1 -mx-6 px-6">
+              {followingList.length > 0 ? (
+                <div className="space-y-3">
+                  {followingList.map((following) => (
+                    <div key={following.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
+                      <Link to={`/profile/${following.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowingDialogOpen(false)}>
+                        <Avatar className="h-10 w-10 ring-2 ring-blue-200">
+                          <AvatarImage src={following.photoURL} />
+                          <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+                            {following.displayName.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-stone-900 truncate">{following.displayName}</p>
+                          {following.username && (
+                            <p className="text-xs text-muted-foreground truncate">@{following.username}</p>
+                          )}
+                        </div>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Not following anyone yet</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </ParticlesBackground>
     </div>
   );

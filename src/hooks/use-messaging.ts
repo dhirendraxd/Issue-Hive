@@ -88,6 +88,65 @@ export function useSendMessage() {
   });
 }
 
+export function useSentMessages() {
+  const { user } = useAuth();
+  return useQuery({
+    queryKey: ['sentMessages', user?.uid],
+    enabled: !!user && !!db,
+    queryFn: async () => {
+      if (!user || !db) return [];
+      
+      try {
+        const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
+        const conversationSnaps = await getDocs(q);
+        
+        const allMessages: any[] = [];
+        
+        for (const convDoc of conversationSnaps.docs) {
+          const convData = convDoc.data() as ConversationDoc;
+          const otherUserId = convData.participants.find(id => id !== user.uid);
+          
+          if (otherUserId) {
+            const receiverDocRef = doc(db, 'users', otherUserId);
+            const receiverDoc = await getDoc(receiverDocRef);
+            const receiverData = receiverDoc.data() || {};
+            
+            const messagesQuery = query(
+              collection(db, 'conversations', convDoc.id, 'messages'),
+              where('senderId', '==', user.uid)
+            );
+            const messageSnaps = await getDocs(messagesQuery);
+            
+            messageSnaps.docs.forEach(msgDoc => {
+              const msgData = msgDoc.data() as MessageDoc;
+              allMessages.push({
+                id: msgDoc.id,
+                conversationId: convDoc.id,
+                senderId: msgData.senderId,
+                receiverName: receiverData.displayName || 'Anonymous',
+                receiverAvatar: receiverData.photoURL,
+                content: msgData.content,
+                createdAt: msgData.createdAt,
+                otherUserId
+              });
+            });
+          }
+        }
+        
+        return allMessages.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+      } catch (error) {
+        console.error('Error fetching sent messages:', error);
+        return [];
+      }
+    },
+    refetchInterval: 5000
+  });
+}
+
 export function useReceivedMessages() {
   const { user } = useAuth();
   return useQuery({
