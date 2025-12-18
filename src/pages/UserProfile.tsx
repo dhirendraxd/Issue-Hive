@@ -37,6 +37,19 @@ import { useAvatarUrl } from '@/hooks/use-avatar-url';
 
 export default function UserProfile() {
   const { uid } = useParams();
+  
+  // Early validation
+  if (!uid) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="p-6">
+          <AlertCircle className="h-12 w-12 mx-auto mb-4 text-red-500" />
+          <p className="text-center">Invalid user profile</p>
+        </Card>
+      </div>
+    );
+  }
+  
   const [search] = useSearchParams();
   const { user } = useAuth();
   const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
@@ -47,8 +60,7 @@ export default function UserProfile() {
   const navigate = useNavigate();
   
   // Get user profile data
-  const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid!);
-  const { data: senderProfiles } = useUserProfile(uid!);
+  const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid);
   
   // Resolve avatar URL (handles firestore:// references)
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
@@ -555,6 +567,12 @@ export default function UserProfile() {
                           <Skeleton key={i} className="h-24 rounded-xl" />
                         ))}
                       </div>
+                    ) : messagesError ? (
+                      <Card className="rounded-2xl border border-amber-200/60 bg-amber-50/50 backdrop-blur-2xl">
+                        <CardContent className="p-6 text-center">
+                          <p className="text-sm text-amber-800">Unable to load messages. Please try again later.</p>
+                        </CardContent>
+                      </Card>
                     ) : receivedMessages && receivedMessages.length > 0 ? (
                       <div className="space-y-4">
                         {receivedMessages.map((message, idx) => {

@@ -14,71 +14,96 @@ let reactRoot: ReturnType<typeof createRoot> | null = null;
 function mountGlobalErrorHandlers() {
 	if (typeof window === 'undefined') return;
 
-		window.addEventListener('error', (ev) => {
-			try {
-				console.error('[Global] Uncaught error', ev.error || ev.message, ev);
-				// Unmount React before manipulating DOM directly
-				if (reactRoot) {
-					try {
-						reactRoot.unmount();
-						reactRoot = null;
-					} catch (unmountErr) {
-						console.warn('[Global] Failed to unmount React root', unmountErr);
-					}
+	window.addEventListener('error', (ev) => {
+		try {
+			console.error('[Global] Uncaught error', ev.error || ev.message, ev);
+			
+			// Prevent default error handling to avoid conflicts
+			ev.preventDefault();
+			
+			// Unmount React before manipulating DOM directly
+			if (reactRoot) {
+				try {
+					reactRoot.unmount();
+					reactRoot = null;
+				} catch (unmountErr) {
+					console.warn('[Global] Failed to unmount React root', unmountErr);
+				}
+			}
+			
+			// show minimal overlay so user sees something instead of white screen
+			const root = document.getElementById('root');
+			if (root) {
+				// Clear all children first
+				while (root.firstChild) {
+					root.removeChild(root.firstChild);
 				}
 				
-				// show minimal overlay so user sees something instead of white screen
-				const root = document.getElementById('root');
-				if (root) {
-					// Sanitize error message to prevent XSS
-					const errorMsg = String(ev.error || ev.message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-					root.innerHTML = `
-	<div style="padding:24px;font-family:Inter,system-ui,Arial;">
-		<h2 style="color:#b91c1c;">Unhandled Error</h2>
-		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
-		<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
-	</div>
-	`;
-				}
-			} catch (err) {
-				console.warn('[Global] Failed to render error overlay', err);
+				// Sanitize error message to prevent XSS
+				const errorMsg = String(ev.error || ev.message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				root.innerHTML = `
+<div style="padding:24px;font-family:Inter,system-ui,Arial;">
+	<h2 style="color:#b91c1c;">Unhandled Error</h2>
+	<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
+	<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
+</div>
+`;
 			}
-		});
+		} catch (err) {
+			console.warn('[Global] Failed to render error overlay', err);
+		}
+	});
 
-		window.addEventListener('unhandledrejection', (ev) => {
-			try {
-				console.error('[Global] Unhandled Rejection', ev.reason);
-				// Unmount React before manipulating DOM directly
-				if (reactRoot) {
-					try {
-						reactRoot.unmount();
-						reactRoot = null;
-					} catch (unmountErr) {
-						console.warn('[Global] Failed to unmount React root', unmountErr);
-					}
+	window.addEventListener('unhandledrejection', (ev) => {
+		try {
+			console.error('[Global] Unhandled Rejection', ev.reason);
+			
+			// Prevent default handling
+			ev.preventDefault();
+			
+			// Unmount React before manipulating DOM directly
+			if (reactRoot) {
+				try {
+					reactRoot.unmount();
+					reactRoot = null;
+				} catch (unmountErr) {
+					console.warn('[Global] Failed to unmount React root', unmountErr);
+				}
+			}
+			
+			const root = document.getElementById('root');
+			if (root) {
+				// Clear all children first
+				while (root.firstChild) {
+					root.removeChild(root.firstChild);
 				}
 				
-				const root = document.getElementById('root');
-				if (root) {
-					// Sanitize error message to prevent XSS
-					const errorMsg = String(ev.reason).replace(/</g, '&lt;').replace(/>/g, '&gt;');
-					root.innerHTML = `
-	<div style="padding:24px;font-family:Inter,system-ui,Arial;">
-		<h2 style="color:#b91c1c;">Unhandled Promise Rejection</h2>
-		<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
-		<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
-	</div>
-	`;
-				}
-			} catch (err) {
-				console.warn('[Global] Failed to render rejection overlay', err);
+				// Sanitize error message to prevent XSS
+				const errorMsg = String(ev.reason).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				root.innerHTML = `
+<div style="padding:24px;font-family:Inter,system-ui,Arial;">
+	<h2 style="color:#b91c1c;">Unhandled Promise Rejection</h2>
+	<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
+	<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
+</div>
+`;
 			}
-		});
+		} catch (err) {
+			console.warn('[Global] Failed to render rejection overlay', err);
+		}
+	});
 }
 
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+	throw new Error('Root element not found');
+}
+
+reactRoot = createRoot(rootElement);
+
+// Mount error handlers after React root is created
 mountGlobalErrorHandlers();
 
-reactRoot = createRoot(document.getElementById("root")!);
 reactRoot.render(
 	<ErrorBoundary>
 		<App />

@@ -96,52 +96,58 @@ export function useReceivedMessages() {
     queryFn: async () => {
       if (!user || !db) return [];
       
-      // Get all conversations for this user
-      const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
-      const conversationSnaps = await getDocs(q);
-      
-      const allMessages: any[] = [];
-      
-      // For each conversation, get messages from other users
-      for (const convDoc of conversationSnaps.docs) {
-        const convData = convDoc.data() as ConversationDoc;
-        const otherUserId = convData.participants.find(id => id !== user.uid);
+      try {
+        // Get all conversations for this user
+        const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
+        const conversationSnaps = await getDocs(q);
         
-        if (otherUserId) {
-          // Fetch sender profile details
-          const senderDocRef = doc(db, 'users', otherUserId);
-          const senderDoc = await getDoc(senderDocRef);
-          const senderData = senderDoc.data() || {};
+        const allMessages: any[] = [];
+        
+        // For each conversation, get messages from other users
+        for (const convDoc of conversationSnaps.docs) {
+          const convData = convDoc.data() as ConversationDoc;
+          const otherUserId = convData.participants.find(id => id !== user.uid);
           
-          const messagesQuery = query(
-            collection(db, 'conversations', convDoc.id, 'messages'),
-            where('senderId', '==', otherUserId),
-            orderBy('createdAt', 'desc')
-          );
-          const messageSnaps = await getDocs(messagesQuery);
-          
-          messageSnaps.docs.forEach(msgDoc => {
-            const msgData = msgDoc.data() as MessageDoc;
-            allMessages.push({
-              id: msgDoc.id,
-              conversationId: convDoc.id,
-              senderId: msgData.senderId,
-              senderName: senderData.displayName || 'Anonymous',
-              senderAvatar: senderData.photoURL,
-              content: msgData.content,
-              createdAt: msgData.createdAt,
-              otherUserId
+          if (otherUserId) {
+            // Fetch sender profile details
+            const senderDocRef = doc(db, 'users', otherUserId);
+            const senderDoc = await getDoc(senderDocRef);
+            const senderData = senderDoc.data() || {};
+            
+            // Remove orderBy to avoid composite index requirement
+            const messagesQuery = query(
+              collection(db, 'conversations', convDoc.id, 'messages'),
+              where('senderId', '==', otherUserId)
+            );
+            const messageSnaps = await getDocs(messagesQuery);
+            
+            messageSnaps.docs.forEach(msgDoc => {
+              const msgData = msgDoc.data() as MessageDoc;
+              allMessages.push({
+                id: msgDoc.id,
+                conversationId: convDoc.id,
+                senderId: msgData.senderId,
+                senderName: senderData.displayName || 'Anonymous',
+                senderAvatar: senderData.photoURL,
+                content: msgData.content,
+                createdAt: msgData.createdAt,
+                otherUserId
+              });
             });
-          });
+          }
         }
+        
+        // Sort in memory instead (most recent first)
+        return allMessages.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0;
+          const bTime = b.createdAt?.toMillis?.() || 0;
+          return bTime - aTime;
+        });
+      } catch (error) {
+        console.error('Error fetching received messages:', error);
+        // Return empty array instead of throwing to prevent UI crashes
+        return [];
       }
-      
-      // Sort by createdAt descending (most recent first)
-      return allMessages.sort((a, b) => {
-        const aTime = a.createdAt?.toMillis?.() || 0;
-        const bTime = b.createdAt?.toMillis?.() || 0;
-        return bTime - aTime;
-      });
     },
     refetchInterval: 5000
   });
