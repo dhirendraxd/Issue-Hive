@@ -57,3 +57,4 @@ public/test-firebase.js
 # Mac system files
 .DS_Store
 public/og-image.webp
+serviceAccountKey.json

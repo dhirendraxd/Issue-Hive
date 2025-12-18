@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from 'react-router-dom';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Save, Upload, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Upload, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, storage } from '@/integrations/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -20,6 +20,7 @@ import { getAvatarPreviews } from '@/lib/avatar';
 import type { AvatarStyleId } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { useDebounce } from '@/hooks/use-debounce';
 
 export default function EditProfile() {
   const navigate = useNavigate();
@@ -47,6 +48,9 @@ export default function EditProfile() {
   const [editingBio, setEditingBio] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [savingUsername, setSavingUsername] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const initialLoadRef = useRef(true);
 
   // Initialize state
   useEffect(() => {
@@ -63,6 +67,10 @@ export default function EditProfile() {
       setLinkedin(ownerProfile.social?.linkedin || '');
       setInstagram(ownerProfile.social?.instagram || '');
     }
+    // Mark initial load complete after profile is loaded
+    if (ownerProfile && initialLoadRef.current) {
+      initialLoadRef.current = false;
+    }
   }, [user, ownerProfile]);
 
   // Auth redirect
@@ -77,6 +85,50 @@ export default function EditProfile() {
       navigate(`/profile/${user.uid}`, { replace: true });
     }
   }, [user, uid, navigate, authLoading]);
+
+  // Auto-save function for profile fields
+  const autoSaveProfile = useCallback(async () => {
+    if (!user || initialLoadRef.current) return;
+
+    const sanitizedBio = limitLength(sanitizeText(bio), 160);
+    const sanitizedLocation = limitLength(sanitizeText(location), 100);
+    const sanitizedWebsite = website ? sanitizeURL(website) : '';
+    const sanitizedGithub = github ? sanitizeURL(github) : '';
+    const sanitizedTwitter = twitter ? sanitizeURL(twitter) : '';
+    const sanitizedLinkedin = linkedin ? sanitizeURL(linkedin) : '';
+    const sanitizedInstagram = instagram ? sanitizeURL(instagram) : '';
+
+    setAutoSaving(true);
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        bio: sanitizedBio,
+        location: sanitizedLocation,
+        'social.website': sanitizedWebsite,
+        'social.github': sanitizedGithub,
+        'social.twitter': sanitizedTwitter,
+        'social.linkedin': sanitizedLinkedin,
+        'social.instagram': sanitizedInstagram,
+        updatedAt: new Date()
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Auto-save failed:', error);
+    } finally {
+      setAutoSaving(false);
+    }
+  }, [user, bio, location, website, github, twitter, linkedin, instagram, queryClient]);
+
+  // Debounced auto-save (2.5 seconds)
+  const debouncedAutoSave = useDebounce(autoSaveProfile, 2500);
+
+  // Trigger auto-save when fields change
+  useEffect(() => {
+    if (!initialLoadRef.current) {
+      debouncedAutoSave();
+    }
+  }, [bio, location, website, github, twitter, linkedin, instagram, debouncedAutoSave]);
 
   if (authLoading || profileLoading || !user) {
     return (

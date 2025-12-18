@@ -1,4 +1,4 @@
-import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, collection, query, where, getDocs, writeBatch, getDoc } from 'firebase/firestore';
 import { db } from './config';
 import type { User } from 'firebase/auth';
 
@@ -8,12 +8,24 @@ import type { User } from 'firebase/auth';
 export async function syncUserProfile(user: User) {
   if (!user || !user.uid) return;
   const userRef = doc(db, 'users', user.uid);
-  await setDoc(userRef, {
+  
+  // Check if user document exists
+  const userDoc = await getDoc(userRef);
+  const isNewUser = !userDoc.exists();
+  
+  const userData: any = {
     displayName: user.displayName || '',
     photoURL: user.photoURL || '',
     email: user.email || '',
     updatedAt: Date.now(),
-  }, { merge: true });
+  };
+  
+  // Set createdAt only for new users
+  if (isNewUser) {
+    userData.createdAt = Date.now();
+  }
+  
+  await setDoc(userRef, userData, { merge: true });
 }
 
 /**
