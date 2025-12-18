@@ -1,17 +1,6 @@
-import { useLocation } from "react-router-dom";
-import { useEffect } from "react";
 import ParticlesBackground from "@/components/ParticlesBackground";
 
 const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname
-    );
-  }, [location.pathname]);
-
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center relative overflow-hidden animate-in fade-in duration-300">
       <ParticlesBackground fullPage hexOpacity={0.10}>

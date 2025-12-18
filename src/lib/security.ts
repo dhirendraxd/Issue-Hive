@@ -36,6 +36,11 @@ export function sanitizeUrl(url: string): string {
       return '';
     }
     
+    // Block javascript: data: and other dangerous protocols
+    if (url.toLowerCase().includes('javascript:') || url.toLowerCase().includes('data:')) {
+      return '';
+    }
+    
     return parsed.toString();
   } catch {
     return '';
@@ -181,9 +186,15 @@ export class RateLimiter {
   
   private setAttempts(attempts: number[]): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(attempts));
+      // Limit stored attempts to prevent quota issues
+      const limitedAttempts = attempts.slice(-this.config.maxAttempts * 2);
+      localStorage.setItem(this.storageKey, JSON.stringify(limitedAttempts));
     } catch (error) {
-      console.error('Failed to store rate limit data:', error);
+      // Silent fail - rate limiting will still work from memory
+      // Only log in development
+      if (import.meta.env.DEV) {
+        console.error('Failed to store rate limit data:', error);
+      }
     }
   }
 }

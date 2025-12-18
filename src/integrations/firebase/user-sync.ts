@@ -30,7 +30,6 @@ export async function updateUserNameInIssues(userId: string, newDisplayName: str
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-      console.log('No issues found for this user');
       return;
     }
 
@@ -41,7 +40,6 @@ export async function updateUserNameInIssues(userId: string, newDisplayName: str
     });
     
     await batch.commit();
-    console.log(`Updated ${snapshot.size} issues with new display name`);
   } catch (error) {
     console.error('Error updating user name in issues:', error);
     throw error;
