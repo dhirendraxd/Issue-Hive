@@ -34,10 +34,8 @@ function mountGlobalErrorHandlers() {
 			// show minimal overlay so user sees something instead of white screen
 			const root = document.getElementById('root');
 			if (root) {
-				// Clear all children first
-				while (root.firstChild) {
-					root.removeChild(root.firstChild);
-				}
+				// Use textContent = '' instead of removeChild to avoid DOM errors
+				root.textContent = '';
 				
 				// Sanitize error message to prevent XSS
 				const errorMsg = String(ev.error || ev.message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -73,10 +71,8 @@ function mountGlobalErrorHandlers() {
 			
 			const root = document.getElementById('root');
 			if (root) {
-				// Clear all children first
-				while (root.firstChild) {
-					root.removeChild(root.firstChild);
-				}
+				// Use textContent = '' instead of removeChild to avoid DOM errors
+				root.textContent = '';
 				
 				// Sanitize error message to prevent XSS
 				const errorMsg = String(ev.reason).replace(/</g, '&lt;').replace(/>/g, '&gt;');

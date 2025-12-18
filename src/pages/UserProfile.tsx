@@ -29,7 +29,6 @@ import { Separator } from '@/components/ui/separator';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { ISSUE_STATUSES } from '@/types/issue';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts } from '@/hooks/use-follow';
-import { useUserProfile } from '@/hooks/use-user-profile';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -55,7 +54,10 @@ export default function UserProfile() {
   const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
-  const { data: receivedMessages, isLoading: messagesLoading } = useReceivedMessages();
+  
+  // Conditionally call useReceivedMessages only if user is authenticated
+  const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
+  
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
