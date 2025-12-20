@@ -7,7 +7,7 @@ import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
-import { formatRelativeTime } from "@/lib/utils";
+import { formatRelativeTime, formatDateWithRelative, formatDateShort } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -207,7 +207,7 @@ export default function Issues() {
                                   fallbackName={i.createdByName}
                                   className="text-sm font-medium truncate"
                                 />
-                                <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
+                                <p className="text-xs text-muted-foreground">
                                   {formatRelativeTime(i.createdAt)}
                                 </p>
                                 {collegeName ? (
@@ -328,11 +328,16 @@ export default function Issues() {
                               </Button>
                             </div>
 
-                            {/* Urgency & Anonymous Status */}
-                            <div className="mt-2 text-xs text-gray-500">
-                              Urgency:{" "}
-                              <span className={i.urgency === "high" ? "text-red-500" : i.urgency === "medium" ? "text-yellow-500" : "text-green-500"}>
-                                {i.urgency}
+                            {/* Urgency & Date */}
+                            <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                              <div>
+                                Urgency:{" "}
+                                <span className={i.urgency === "high" ? "text-red-500" : i.urgency === "medium" ? "text-yellow-500" : "text-green-500"}>
+                                  {i.urgency}
+                                </span>
+                              </div>
+                              <span className="text-gray-400" title={new Date(i.createdAt).toLocaleString()}>
+                                {formatDateShort(i.createdAt)}
                               </span>
                             </div>
                             {i.anonymous && <div className="mt-1 text-xs text-gray-400">Posted anonymously</div>}

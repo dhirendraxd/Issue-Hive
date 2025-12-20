@@ -25,3 +25,19 @@ export function formatRelativeTime(input: number | Date): string {
   const year = Math.floor(month / 12);
   return year + 'y ago';
 }
+
+// Format date as Month Day, Year
+export function formatDateShort(input: number | Date): string {
+  const date = input instanceof Date ? input : new Date(input);
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December'];
+  const month = monthNames[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+  return `${month} ${day}, ${year}`;
+}
+
+// Format date with both short format and relative time
+export function formatDateWithRelative(input: number | Date): string {
+  return `${formatDateShort(input)} • ${formatRelativeTime(input)}`;
+}

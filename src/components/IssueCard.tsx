@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { TrendingUp, Clock, MessageSquare, ThumbsUp, ThumbsDown, CheckCircle2, MoreHorizontal, Globe, Lock, FileText, Eye } from 'lucide-react';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, formatDateWithRelative } from '@/lib/utils';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { cn } from '@/lib/utils';
 
@@ -220,8 +220,8 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onSetSta
             <Badge variant="outline" className="text-xs">
               {issue.category}
             </Badge>
-            <span title={`Updated ${formatRelativeTime(new Date(issue.updatedAt))}`}>
-              Updated {formatRelativeTime(new Date(issue.updatedAt))}
+            <span title={new Date(issue.updatedAt).toLocaleString()}>
+              {formatDateWithRelative(new Date(issue.updatedAt))}
             </span>
           </div>
 

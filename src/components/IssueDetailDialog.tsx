@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, MoreVertical, Flag, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -18,7 +18,7 @@ import { useUserVote } from "@/hooks/use-user-vote";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
-import { cn, formatRelativeTime } from "@/lib/utils";
+import { cn, formatRelativeTime, formatDateWithRelative } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
 import { useState, useEffect } from "react";
 
@@ -229,22 +229,16 @@ export default function IssueDetailDialog({
               </DropdownMenu>
             )}
             {!isOwner && user && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => setReportDialogOpen(true)}
-                    className="text-red-600 focus:text-red-600 cursor-pointer"
-                  >
-                    <Flag className="h-4 w-4 mr-2" />
-                    Report User
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2 px-3 py-2 h-auto hover:text-red-600 hover:bg-red-50 border-red-200 hover:border-red-400"
+                onClick={() => setReportDialogOpen(true)}
+                title="Report this issue"
+              >
+                <Flag className="h-5 w-5 text-red-600" />
+                <span className="text-sm font-medium text-red-600">Report</span>
+              </Button>
             )}
           </div>
         </DialogHeader>
@@ -311,7 +305,7 @@ export default function IssueDetailDialog({
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-blue-700">Issue Reported</span>
                       <span className="text-xs text-blue-600" title={new Date(issue.createdAt).toLocaleString()}>
-                        {formatRelativeTime(issue.createdAt)}
+                        {formatDateWithRelative(issue.createdAt)}
                       </span>
                     </div>
                   </div>
@@ -334,7 +328,7 @@ export default function IssueDetailDialog({
                             <div className="flex items-center justify-between">
                               <span className={`text-sm font-semibold ${colors.text}`}>{colors.label}</span>
                               <span className={`text-xs ${colors.text}`} title={new Date(historyItem.changedAt).toLocaleString()}>
-                                {formatRelativeTime(historyItem.changedAt)}
+                                {formatDateWithRelative(historyItem.changedAt)}
                               </span>
                             </div>
                             
@@ -378,7 +372,7 @@ export default function IssueDetailDialog({
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-semibold text-emerald-700">Issue Resolved</span>
                         <span className="text-xs text-emerald-600" title={new Date(issue.resolution.resolvedAt).toLocaleString()}>
-                          {formatRelativeTime(issue.resolution.resolvedAt)}
+                          {formatDateWithRelative(issue.resolution.resolvedAt)}
                         </span>
                       </div>
                     </div>

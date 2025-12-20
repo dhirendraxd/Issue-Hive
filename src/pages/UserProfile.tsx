@@ -15,12 +15,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
 import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
 import SendMessageDialog from '@/components/SendMessageDialog';
+import ReportUserDialog from '@/components/ReportUserDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatRelativeTime } from '@/lib/utils';
 import { sanitizeUrl } from '@/lib/security';
@@ -59,6 +60,7 @@ export default function UserProfile() {
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
+  const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
 
   // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -141,19 +143,19 @@ export default function UserProfile() {
   
   const hasSocialLinks = !!(
     ownerProfile?.social && (
-      ownerProfile.social.website ||
-      ownerProfile.social.github ||
-      ownerProfile.social.twitter ||
-      ownerProfile.social.linkedin ||
-      ownerProfile.social.instagram
+      ownerProfile.social.website?.trim() ||
+      ownerProfile.social.github?.trim() ||
+      ownerProfile.social.twitter?.trim() ||
+      ownerProfile.social.linkedin?.trim() ||
+      ownerProfile.social.instagram?.trim()
     )
   );
 
   const socialIcons = hasSocialLinks ? (
     <div className="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur-xl border border-white/60 rounded-full px-2 py-2 shadow-lg shadow-black/5">
-      {sanitizeUrl(ownerProfile?.social?.website || '') && (
+      {ownerProfile?.social?.website?.trim() && (
         <a 
-          href={sanitizeUrl(ownerProfile?.social?.website || '')} 
+          href={sanitizeUrl(ownerProfile.social.website)} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-orange-100/50 text-orange-600 hover:text-orange-700 transition-all duration-200"
@@ -162,9 +164,9 @@ export default function UserProfile() {
           <Link2 className="h-4 w-4" />
         </a>
       )}
-      {sanitizeUrl(ownerProfile?.social?.github || '') && (
+      {ownerProfile?.social?.github?.trim() && (
         <a 
-          href={sanitizeUrl(ownerProfile?.social?.github || '')} 
+          href={sanitizeUrl(ownerProfile.social.github)} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100/50 text-slate-800 hover:text-slate-900 transition-all duration-200"
@@ -173,9 +175,9 @@ export default function UserProfile() {
           <Github className="h-4 w-4" />
         </a>
       )}
-      {sanitizeUrl(ownerProfile?.social?.twitter || '') && (
+      {ownerProfile?.social?.twitter?.trim() && (
         <a 
-          href={sanitizeUrl(ownerProfile?.social?.twitter || '')} 
+          href={sanitizeUrl(ownerProfile.social.twitter)} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-500 hover:text-blue-600 transition-all duration-200"
@@ -184,9 +186,9 @@ export default function UserProfile() {
           <Twitter className="h-4 w-4" />
         </a>
       )}
-      {sanitizeUrl(ownerProfile?.social?.linkedin || '') && (
+      {ownerProfile?.social?.linkedin?.trim() && (
         <a 
-          href={sanitizeUrl(ownerProfile?.social?.linkedin || '')} 
+          href={sanitizeUrl(ownerProfile.social.linkedin)} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-700 hover:text-blue-800 transition-all duration-200"
@@ -195,9 +197,9 @@ export default function UserProfile() {
           <Linkedin className="h-4 w-4" />
         </a>
       )}
-      {sanitizeUrl(ownerProfile?.social?.instagram || '') && (
+      {ownerProfile?.social?.instagram?.trim() && (
         <a 
-          href={sanitizeUrl(ownerProfile?.social?.instagram || '')} 
+          href={sanitizeUrl(ownerProfile.social.instagram)} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-pink-100/50 text-pink-600 hover:text-pink-700 transition-all duration-200"
@@ -341,6 +343,15 @@ export default function UserProfile() {
                         {followMutation.isPending ? 'Following...' : 'Follow'}
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full bg-white/80 backdrop-blur-xl border border-red-200 hover:bg-red-50 hover:text-red-600 text-red-600 shadow-lg shadow-black/10 w-full xs:w-auto text-xs sm:text-sm"
+                      onClick={() => setReportUserDialogOpen(true)}
+                    >
+                      <Flag className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                      Report User
+                    </Button>
                   </div>
                 )}
               </div>
@@ -394,27 +405,31 @@ export default function UserProfile() {
                 >
                   Issues
                 </TabsTrigger>
-                <TabsTrigger 
-                  value="messages" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                >
-                  <Mail className="h-4 w-4 mr-2" />
-                  Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="analytics" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Activity
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="settings" 
-                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </TabsTrigger>
+                {isOwner && (
+                  <>
+                    <TabsTrigger 
+                      value="messages" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="analytics" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Activity
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="settings" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <Settings className="h-4 w-4 mr-2" />
+                      Settings
+                    </TabsTrigger>
+                  </>
+                )}
               </TabsList>
               
               {/* Issues Tab */}
@@ -1038,6 +1053,16 @@ export default function UserProfile() {
             targetUserId={uid!}
             targetUserName={ownerProfile?.displayName || 'User'}
             targetUserAvatar={avatarUrl}
+          />
+        )}
+
+        {/* Report User Dialog */}
+        {!isOwner && user && (
+          <ReportUserDialog
+            open={reportUserDialogOpen}
+            onOpenChange={setReportUserDialogOpen}
+            reportedUserId={uid!}
+            reportedUserName={ownerProfile?.displayName || 'User'}
           />
         )}
 

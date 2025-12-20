@@ -5,10 +5,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { validateCommentData } from '@/lib/security';
-import { MessageSquare, Reply, ThumbsUp, Pin } from 'lucide-react';
+import { MessageSquare, Reply, ThumbsUp, Pin, Flag, MoreVertical } from 'lucide-react';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
 import { logActivity } from '@/lib/activity-tracker';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface IssueCommentsProps {
   issueId: string;
@@ -26,6 +27,7 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
   const [value, setValue] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
   const isIssueOwner = user?.uid === issueOwnerId;
 
   const canAdd = !!user && !disabled;
@@ -256,22 +258,44 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
                     >
                       <Reply className="h-3 w-3 mr-1" />
                       Reply
-                                      {allowPin && isIssueOwner && !isReply && (
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          className={cn(
-                                            "h-6 px-2 text-[10px]",
-                                            c.pinnedAt && "text-orange-600"
-                                          )}
-                                          onClick={() => pinComment.mutate(c.id)}
-                                          disabled={pinComment.isPending}
-                                        >
-                                          <Pin className={cn("h-3 w-3 mr-1", c.pinnedAt && "fill-orange-600")} />
-                                          {c.pinnedAt ? 'Unpin' : 'Pin'}
-                                        </Button>
-                                      )}
                     </Button>
+                  )}
+                  {allowPin && isIssueOwner && !isReply && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className={cn(
+                        "h-6 px-2 text-[10px]",
+                        c.pinnedAt && "text-orange-600"
+                      )}
+                      onClick={() => pinComment.mutate(c.id)}
+                      disabled={pinComment.isPending}
+                    >
+                      <Pin className={cn("h-3 w-3 mr-1", c.pinnedAt && "fill-orange-600")} />
+                      {c.pinnedAt ? 'Unpin' : 'Pin'}
+                    </Button>
+                  )}
+                  {user && user.uid !== c.userId && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2 text-[10px]"
+                        >
+                          <MoreVertical className="h-3 w-3" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setReportedCommentId(c.id)}
+                          className="text-red-600 focus:text-red-600 cursor-pointer"
+                        >
+                          <Flag className="h-3 w-3 mr-2" />
+                          <span className="text-xs">Report Comment</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   )}
                 </div>
               </div>
