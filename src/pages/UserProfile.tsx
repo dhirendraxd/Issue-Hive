@@ -373,37 +373,32 @@ export default function UserProfile() {
                 >
                   Issues
                 </TabsTrigger>
-                {isOwner && (
-                  <>
-                    <TabsTrigger 
-                      value="messages" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                    >
-                      <Mail className="h-4 w-4 mr-2" />
-                      Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="analytics" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Activity
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="settings" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
-                    >
-                      <Settings className="h-4 w-4 mr-2" />
-                      Settings
-                    </TabsTrigger>
-                  </>
-                )}
+                <TabsTrigger 
+                  value="messages" 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="analytics" 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                >
+                  <TrendingUp className="h-4 w-4 mr-2" />
+                  Activity
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="settings" 
+                  className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </TabsTrigger>
               </TabsList>
               
               {/* Issues Tab */}
               <TabsContent value="issues" className="mt-6">
-                {isOwner ? (
-                  <Tabs defaultValue="all" className="w-full">
+                <Tabs defaultValue="all" className="w-full">
                     <TabsList className="grid w-full grid-cols-4 mb-6">
                       <TabsTrigger value="all">All ({owned.length})</TabsTrigger>
                       <TabsTrigger value="public">Public ({publicIssues.length})</TabsTrigger>
@@ -499,86 +494,10 @@ export default function UserProfile() {
                       </TabsContent>
                     ))}
                   </Tabs>
-                ) : (
-                  /* Visitor view - show public and follower-accessible private issues */
-                  <>
-                    {isLoading && (
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <Skeleton key={i} className="h-40 rounded-2xl" />
-                        ))}
-                      </div>
-                    )}
-                    {!isLoading && publicIssues.length === 0 && followerPrivateIssues.length === 0 && (
-                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-xl shadow-orange-100/20 p-10 text-center">
-                        <p className="text-muted-foreground">No public issues yet.</p>
-                      </Card>
-                    )}
-                    {!isLoading && (publicIssues.length > 0 || followerPrivateIssues.length > 0) && (
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {[...publicIssues, ...followerPrivateIssues].map(issue => {
-                          const vis = (issue as unknown as WithVisibility).visibility;
-                          const engagement = engagementMap[issue.id] || { upvotes: 0, downvotes: 0, comments: 0, commentLikes: 0 };
-                          return (
-                            <Card 
-                              key={issue.id} 
-                              className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl flex flex-col hover:shadow-2xl hover:shadow-orange-300/30 hover:border-orange-300/60 hover:bg-white/60 transition-all cursor-pointer"
-                              onClick={() => handleViewDetails(issue)}
-                            >
-                              <CardHeader className="pb-3">
-                                <div className="flex items-start justify-between gap-2">
-                                  <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
-                                  {vis && vis !== 'public' && (
-                                    <Badge variant="outline" className="text-xs capitalize shrink-0 border-orange-300/60 text-orange-700/80 bg-orange-50/50">{vis}</Badge>
-                                  )}
-                                </div>
-                              </CardHeader>
-                              <CardContent className="flex flex-col gap-3 text-sm flex-1">
-                                <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
-                                <div className="flex flex-wrap gap-2 mt-auto">
-                                  <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-stone-50">{issue.category}</Badge>
-                                  <Badge 
-                                    variant={issue.status === 'resolved' ? 'default' : 'secondary'} 
-                                    className={`text-xs capitalize ${
-                                      issue.status === 'resolved' 
-                                        ? 'bg-emerald-100 text-emerald-700 border-emerald-200' 
-                                        : issue.status === 'in_progress'
-                                        ? 'bg-amber-100 text-amber-700 border-amber-200'
-                                        : 'bg-stone-100 text-stone-700 border-stone-200'
-                                    }`}
-                                  >
-                                    {issue.status.replace('_',' ')}
-                                  </Badge>
-                                  <span className="text-xs px-2 py-1 rounded-full bg-orange-50/70 text-orange-700/90 border border-orange-200/60">
-                                    {issue.votes} {issue.votes === 1 ? 'support' : 'supports'}
-                                  </span>
-                                </div>
-                                <div className="flex gap-3 text-xs pt-2 border-t border-stone-200/60">
-                                  <span className="flex items-center gap-1 text-emerald-600/80">
-                                    <ThumbsUp className="h-3 w-3" /> {engagement.upvotes}
-                                  </span>
-                                  {!ownerProfile?.hideDislikeCounts && (
-                                    <span className="flex items-center gap-1 text-rose-600/80">
-                                      <ThumbsDown className="h-3 w-3" /> {engagement.downvotes}
-                                    </span>
-                                  )}
-                                  <span className="flex items-center gap-1 text-stone-600/80">
-                                    <MessageSquare className="h-3 w-3" /> {engagement.comments}
-                                  </span>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </>
-                )}
-              </TabsContent>
+                </TabsContent>
               
-              {/* Messages Tab (Owner Only) */}
-              {isOwner && (
-                <TabsContent value="messages" className="mt-6">
+              {/* Messages Tab */}
+              <TabsContent value="messages" className="mt-6">
                   <div className="max-w-4xl space-y-6">
                     <Tabs defaultValue="incoming" className="w-full">
                       <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
@@ -762,98 +681,11 @@ export default function UserProfile() {
                     </Tabs>
                   </div>
                 </TabsContent>
-              )}
               
-              {/* Activity Tab (Owner Only) */}
-              {isOwner && (
-                <TabsContent value="analytics" className="mt-6">
+              {/* Activity Tab */}
+              <TabsContent value="analytics" className="mt-6">
                   <div className="space-y-6">
-                    {/* Engagement Stats Section */}
-                    <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-4">Engagement Stats</h2>
-                      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6 hover:shadow-xl hover:shadow-orange-200/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-orange-100">
-                              <TrendingUp className="h-6 w-6 text-orange-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Total Issues</p>
-                              <p className="text-2xl font-bold">{analytics.totalIssues}</p>
-                            </div>
-                          </div>
-                        </Card>
-                        
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-6 hover:shadow-xl hover:shadow-green-200/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-green-100">
-                              <ThumbsUp className="h-6 w-6 text-green-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Total Upvotes</p>
-                              <p className="text-2xl font-bold">{analytics.totalUpvotes}</p>
-                            </div>
-                          </div>
-                        </Card>
-                        
-                        {(!ownerProfile?.hideDislikeCounts || isOwner) && (
-                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6 hover:shadow-xl hover:shadow-red-200/30 transition-all">
-                            <div className="flex items-center gap-4">
-                              <div className="p-3 rounded-full bg-red-100">
-                                <ThumbsDown className="h-6 w-6 text-red-600" />
-                              </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Total Downvotes</p>
-                                <p className="text-2xl font-bold">{analytics.totalDownvotes}</p>
-                              </div>
-                            </div>
-                          </Card>
-                        )}
-                        
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-6 hover:shadow-xl hover:shadow-blue-200/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-blue-100">
-                              <MessageSquare className="h-6 w-6 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Total Comments</p>
-                              <p className="text-2xl font-bold">{analytics.totalComments}</p>
-                            </div>
-                          </div>
-                        </Card>
-                        
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-purple-100/20 p-6 hover:shadow-xl hover:shadow-purple-200/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-purple-100">
-                              <TrendingUp className="h-6 w-6 text-purple-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Total Supports</p>
-                              <p className="text-2xl font-bold">{analytics.totalSupports}</p>
-                            </div>
-                          </div>
-                        </Card>
-                        
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6 hover:shadow-xl hover:shadow-amber-200/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-amber-100">
-                              <Check className="h-6 w-6 text-amber-600" />
-                            </div>
-                            <div>
-                              <p className="text-sm text-muted-foreground">Resolved Issues</p>
-                              <p className="text-2xl font-bold">{analytics.resolvedIssues}</p>
-                            </div>
-                          </div>
-                        </Card>
-                      </div>
-                    </div>
-
-                    {/* Activity Section */}
-                    <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-2">Activity</h2>
-                      <p className="text-sm text-muted-foreground mb-4">Your latest interactions and updates</p>
-                    </div>
-                    
+                    {/* Combined Activity & Engagement Section */}
                     {isActivityLoading ? (
                       <div className="space-y-3">
                         {Array.from({ length: 5 }).map((_, i) => (
@@ -861,53 +693,86 @@ export default function UserProfile() {
                         ))}
                       </div>
                     ) : userActivity ? (
-                      <div className="space-y-4">
-                        {/* Activity Summary - Always show */}
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
-                          <h3 className="font-semibold text-lg mb-4">Activity Summary</h3>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                            <div className="text-center p-3 rounded-lg bg-orange-50 border border-orange-200">
-                              <div className="text-2xl font-bold text-orange-600">{owned.length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Total Issues</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-blue-50 border border-blue-200">
-                              <div className="text-2xl font-bold text-blue-600">{followCounts.followers}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Followers</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-indigo-50 border border-indigo-200">
-                              <div className="text-2xl font-bold text-indigo-600">{followCounts.following}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Following</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-purple-50 border border-purple-200">
-                              <div className="text-2xl font-bold text-purple-600">{userActivity.likedComments.length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Likes Given</div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            <div className="text-center p-3 rounded-lg bg-green-50 border border-green-200">
-                              <div className="text-2xl font-bold text-green-600">{userActivity.votedIssues.filter(v => v.vote === 1).length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Upvotes</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-red-50 border border-red-200">
-                              <div className="text-2xl font-bold text-red-600">{userActivity.votedIssues.filter(v => v.vote === -1).length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Downvotes</div>
-                            </div>
-                            <div className="text-center p-3 rounded-lg bg-sky-50 border border-sky-200">
-                              <div className="text-2xl font-bold text-sky-600">{userActivity.comments.length}</div>
-                              <div className="text-xs text-muted-foreground mt-1">Comments</div>
-                            </div>
-                          </div>
-                        </Card>
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
+                        <h2 className="text-xl font-semibold tracking-tight mb-6">Activity & Engagement</h2>
                         
-                        {/* Activity Feed - Only show if there's activity */}
-                        {(userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || owned.length > 0) ? (
-                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20">
-                          <CardHeader>
-                            <CardTitle className="text-lg">Activity Feed</CardTitle>
-                            <p className="text-xs text-muted-foreground">Recent updates on your issues and interactions</p>
+                        {/* Issues Received Engagement */}
+                        <div className="mb-8">
+                          <h3 className="text-sm font-medium text-stone-600 mb-4">Issues You Created</h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50">
+                              <div className="text-2xl font-bold text-orange-600">{analytics.totalIssues}</div>
+                              <div className="text-xs text-stone-500 mt-1">Total Issues</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{analytics.totalUpvotes}</div>
+                              <div className="text-xs text-stone-500 mt-1">Upvotes</div>
+                            </div>
+                            {(!ownerProfile?.hideDislikeCounts || isOwner) && (
+                              <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                                <div className="text-2xl font-bold text-stone-700">{analytics.totalDownvotes}</div>
+                                <div className="text-xs text-stone-500 mt-1">Downvotes</div>
+                              </div>
+                            )}
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{analytics.totalComments}</div>
+                              <div className="text-xs text-stone-500 mt-1">Comments</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{analytics.totalSupports}</div>
+                              <div className="text-xs text-stone-500 mt-1">Supports</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/50">
+                              <div className="text-2xl font-bold text-amber-600">{analytics.resolvedIssues}</div>
+                              <div className="text-xs text-stone-500 mt-1">Resolved</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent my-8" />
+                        
+                        {/* Your Engagement Activity */}
+                        <div>
+                          <h3 className="text-sm font-medium text-stone-600 mb-4">Your Activity</h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{userActivity.votedIssues.filter(v => v.vote === 1).length}</div>
+                              <div className="text-xs text-stone-500 mt-1">Upvotes Given</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{userActivity.votedIssues.filter(v => v.vote === -1).length}</div>
+                              <div className="text-xs text-stone-500 mt-1">Downvotes Given</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{userActivity.comments.length}</div>
+                              <div className="text-xs text-stone-500 mt-1">Comments Made</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{userActivity.likedComments.length}</div>
+                              <div className="text-xs text-stone-500 mt-1">Likes Given</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{followCounts.followers}</div>
+                              <div className="text-xs text-stone-500 mt-1">Followers</div>
+                            </div>
+                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
+                              <div className="text-2xl font-bold text-stone-700">{followCounts.following}</div>
+                              <div className="text-xs text-stone-500 mt-1">Following</div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ) : null}
+
+                    {/* Activity Feed */}
+                    {!isActivityLoading && userActivity && (userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || owned.length > 0) && (
+                        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 overflow-hidden">
+                          <CardHeader className="border-b border-stone-100">
+                            <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                            <p className="text-xs text-stone-500">Your latest interactions</p>
                           </CardHeader>
                           <CardContent className="p-0">
-                            <div className="divide-y divide-stone-200/60">
+                            <div className="divide-y divide-stone-100">
                               {(() => {
                                 // Combine all activities with timestamps
                                 const activities: Array<{
@@ -1003,29 +868,33 @@ export default function UserProfile() {
                             </div>
                           </CardContent>
                         </Card>
-                        ) : (
-                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-10 text-center">
-                            <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                            <p className="text-muted-foreground">No recent activity to show</p>
-                          </Card>
-                        )}
-                      </div>
-                    ) : (
-                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-10 text-center">
-                        <AlertCircle className="h-12 w-12 mx-auto mb-3 opacity-50 text-muted-foreground" />
-                        <p className="text-muted-foreground">No activity data available</p>
+                    )}
+
+                    {!isActivityLoading && userActivity && !(userActivity.comments.length > 0 || userActivity.votedIssues.length > 0 || owned.length > 0) && (
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mx-auto mb-4">
+                          <AlertCircle className="h-8 w-8 text-orange-500" />
+                        </div>
+                        <p className="text-stone-600">No recent activity to show</p>
+                      </Card>
+                    )}
+                    
+                    {!userActivity && !isActivityLoading && (
+                      <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center mx-auto mb-4">
+                          <AlertCircle className="h-8 w-8 text-orange-500" />
+                        </div>
+                        <p className="text-stone-600">No activity data available</p>
                       </Card>
                     )}
                   </div>
                 </TabsContent>
-              )}
               
-              {/* Settings Tab (Owner Only) */}
-              {isOwner && (
-                <TabsContent value="settings" className="mt-6">
-                  <div className="max-w-2xl space-y-6">
-                    <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-2">Quick Actions</h2>
+              {/* Settings Tab */}
+              <TabsContent value="settings" className="mt-6">
+                <div className="max-w-2xl space-y-6">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight mb-2">Quick Actions</h2>
                       <p className="text-sm text-muted-foreground mb-4">Manage your profile and issues</p>
                       <div className="flex flex-wrap gap-3">
                         <Link to="/raise-issue">
@@ -1092,7 +961,6 @@ export default function UserProfile() {
                     </Card>
                   </div>
                 </TabsContent>
-              )}
             </Tabs>
           </div>
         </main>
