@@ -94,6 +94,7 @@ export function useIssuesFirebase() {
       createdBy: string;
       createdByName: string;
       createdByPhotoURL?: string;
+      college?: string;
       createdAt: number;
       updatedAt: number;
       urgency?: 'low' | 'medium' | 'high';
@@ -111,6 +112,7 @@ export function useIssuesFirebase() {
         createdBy: data.createdBy,
         createdByName: data.createdByName,
         createdByPhotoURL: data.createdByPhotoURL,
+        college: data.college,
         createdAt: data.createdAt,
         updatedAt: data.updatedAt,
         visibility: 'public' as IssueVisibility,

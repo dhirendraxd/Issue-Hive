@@ -242,6 +242,12 @@ export default function IssueDetailDialog({
                     {issue.status.replace('_', ' ')}
                   </Badge>
                 </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground mb-1">College</p>
+                  <p className={`text-sm font-semibold break-words ${issue.college ? '' : 'text-muted-foreground'}`}>
+                    {issue.college?.trim() || 'College not provided'}
+                  </p>
+                </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Supports</p>
                   <p className="text-sm font-semibold">{issue.votes} {issue.votes === 1 ? 'support' : 'supports'}</p>

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
@@ -84,7 +84,8 @@ export default function Issues() {
         const title = i.title.toLowerCase();
         const desc = i.description.toLowerCase();
         const name = (i.createdByName || "").toLowerCase();
-        return title.includes(n) || desc.includes(n) || name.includes(n);
+        const college = ((i as Issue & { college?: string }).college || "").toLowerCase();
+        return title.includes(n) || desc.includes(n) || name.includes(n) || college.includes(n);
       });
     }
     // sorting
@@ -174,6 +175,7 @@ export default function Issues() {
             )}
 
             {visibleIssues.map((i, idx) => {
+              const collegeName = (i as Issue & { college?: string }).college?.trim();
               const e = engagement?.[i.id];
               return (
                 <motion.div
@@ -207,6 +209,12 @@ export default function Issues() {
                       <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
                         {formatRelativeTime(i.createdAt)}
                       </p>
+                      {i.college && (
+                        <div className="flex items-center gap-1 text-[11px] text-amber-700 truncate" title={i.college}>
+                          <MapPin className="h-3 w-3" />
+                          <span className="truncate">{i.college}</span>
+                        </div>
+                      )}
                     </div>
                     {user && user.uid !== i.createdBy && (
                       <DropdownMenu>
@@ -239,6 +247,16 @@ export default function Issues() {
                         </span>
                       )}
                     </div>
+                    <div className="mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border"
+                      style={{
+                        borderColor: collegeName ? 'rgb(253 230 138)' : 'rgb(229 231 235)',
+                        backgroundColor: collegeName ? 'rgb(255 251 235)' : 'rgb(248 250 252)',
+                        color: collegeName ? 'rgb(180 83 9)' : 'rgb(107 114 128)'
+                      }}
+                    >
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate max-w-[160px]">{collegeName || 'College not provided'}</span>
+                    </div>
                     <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
                   </div>
 
@@ -249,6 +267,10 @@ export default function Issues() {
                     </span>
                     <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
                       {i.category}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${collegeName ? 'border border-amber-200 bg-amber-50 text-amber-700' : 'border border-gray-200 bg-gray-50 text-gray-500'}`}>
+                      <MapPin className="h-3 w-3" />
+                      <span className="truncate max-w-[140px]">{collegeName || 'College not provided'}</span>
                     </span>
                     {'visibility' in i && i.visibility === 'private' && (
                       <span className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">

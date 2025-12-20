@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
+import { useUserProfile } from '@/hooks/use-user-profile';
 import type { IssueCategory } from '@/types/issue';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +35,7 @@ import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
   const { addIssue } = useIssuesFirebase();
+  const { data: profile } = useUserProfile(user?.uid || '');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -140,6 +142,8 @@ export default function RaiseIssuePage() {
       }
       
       const now = Date.now();
+
+      const sanitizedCollege = profile?.college ? limitLength(sanitizeText(profile.college), 120) : '';
       
       // Sanitize inputs to prevent XSS
       const sanitizedTitle = limitLength(sanitizeText(formData.title), 200);
@@ -160,6 +164,7 @@ export default function RaiseIssuePage() {
         urgency: formData.urgency,
         anonymous: isAnonymous,
         attachments: [],
+        college: sanitizedCollege || undefined,
       });
 
       toast.success('Campus issue reported successfully!');

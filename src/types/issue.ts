@@ -21,6 +21,8 @@ export interface Issue {
   createdByName: string;
   /** Profile photo URL of the user who created the issue */
   createdByPhotoURL?: string;
+  /** Optional college name for context */
+  college?: string;
   anonymous?: boolean;
   createdAt: number;
   updatedAt: number;
