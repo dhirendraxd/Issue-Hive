@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
-import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useReceivedMessages, useSentMessages } from '@/hooks/use-messaging';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,21 +14,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, Activity as ActivityIcon, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, AlertCircle, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
-import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
 import SendMessageDialog from '@/components/SendMessageDialog';
 import ReportUserDialog from '@/components/ReportUserDialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { formatRelativeTime } from '@/lib/utils';
 import { sanitizeUrl } from '@/lib/security';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Separator } from '@/components/ui/separator';
-import { useIssueEngagement } from '@/hooks/use-issue-engagement';
-import { ISSUE_STATUSES } from '@/types/issue';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
@@ -41,10 +34,9 @@ export default function UserProfile() {
   const { uid } = useParams();
   const [search] = useSearchParams();
   const { user } = useAuth();
-  const { data: issues, isLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: issues, isLoading, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
-  const activityTracker = useActivityTracker();
-  const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
+  const { data: receivedMessages, isLoading: messagesLoading } = useReceivedMessages();
   const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -730,71 +722,27 @@ export default function UserProfile() {
               {/* Activity Tab */}
               <TabsContent value="analytics" className="mt-6">
                   <div className="space-y-6">
-                    {/* Combined Activity & Engagement Section */}
+                    {/* Simplified Activity Section */}
                     {isActivityLoading ? (
                       <div className="space-y-3">
-                        {Array.from({ length: 5 }).map((_, i) => (
+                        {Array.from({ length: 2 }).map((_, i) => (
                           <Skeleton key={i} className="h-16 rounded-xl" />
                         ))}
                       </div>
                     ) : userActivity ? (
                       <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
-                        <h2 className="text-xl font-semibold tracking-tight mb-6">Activity & Engagement</h2>
+                        <h2 className="text-xl font-semibold tracking-tight mb-6">Activity</h2>
                         
-                        {/* Issues Received Engagement */}
-                        <div className="mb-8">
-                          <h3 className="text-sm font-medium text-stone-600 mb-4">Issues You Created</h3>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {/* Simple Activity Metrics */}
+                        <div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50">
                               <div className="text-2xl font-bold text-orange-600">{analytics.totalIssues}</div>
-                              <div className="text-xs text-stone-500 mt-1">Total Issues</div>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{analytics.totalUpvotes}</div>
-                              <div className="text-xs text-stone-500 mt-1">Upvotes</div>
-                            </div>
-                            {(!ownerProfile?.hideDislikeCounts || isOwner) && (
-                              <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                                <div className="text-2xl font-bold text-stone-700">{analytics.totalDownvotes}</div>
-                                <div className="text-xs text-stone-500 mt-1">Downvotes</div>
-                              </div>
-                            )}
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{analytics.totalComments}</div>
-                              <div className="text-xs text-stone-500 mt-1">Comments</div>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{analytics.totalSupports}</div>
-                              <div className="text-xs text-stone-500 mt-1">Supports</div>
+                              <div className="text-xs text-stone-500 mt-1">Issues</div>
                             </div>
                             <div className="text-center p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100/50">
                               <div className="text-2xl font-bold text-amber-600">{analytics.resolvedIssues}</div>
                               <div className="text-xs text-stone-500 mt-1">Resolved</div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="h-px bg-gradient-to-r from-transparent via-stone-200 to-transparent my-8" />
-                        
-                        {/* Your Engagement Activity */}
-                        <div>
-                          <h3 className="text-sm font-medium text-stone-600 mb-4">Your Activity</h3>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{userActivity.votedIssues.filter(v => v.vote === 1).length}</div>
-                              <div className="text-xs text-stone-500 mt-1">Upvotes Given</div>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{userActivity.votedIssues.filter(v => v.vote === -1).length}</div>
-                              <div className="text-xs text-stone-500 mt-1">Downvotes Given</div>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{userActivity.comments.length}</div>
-                              <div className="text-xs text-stone-500 mt-1">Comments Made</div>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
-                              <div className="text-2xl font-bold text-stone-700">{userActivity.likedComments.length}</div>
-                              <div className="text-xs text-stone-500 mt-1">Likes Given</div>
                             </div>
                             <div className="text-center p-4 rounded-xl bg-white/80 border border-stone-100">
                               <div className="text-2xl font-bold text-stone-700">{followCounts.followers}</div>

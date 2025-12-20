@@ -1,6 +1,3 @@
-  function isDate(obj: unknown): obj is Date {
-    return Object.prototype.toString.call(obj) === '[object Date]';
-  }
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -17,6 +14,11 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { pinComment, type CommentDoc, Timestamp } from "@/integrations/firebase/firestore";
 import { toast } from "sonner";
+
+// Type guard function for Date objects
+function isDate(obj: unknown): obj is Date {
+  return Object.prototype.toString.call(obj) === '[object Date]';
+}
 
 interface IssueAnalyticsDialogProps {
   issue: Issue | null;

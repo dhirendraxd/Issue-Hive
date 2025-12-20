@@ -43,7 +43,7 @@ export default function IssueDetailDialog({
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
   const { data: creatorProfile } = useUserProfile(issue?.createdBy);
-  const { upvoteIssue, downvoteIssue, setStatus } = useIssuesFirebase();
+  const { upvoteIssue, downvoteIssue } = useIssuesFirebase();
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
