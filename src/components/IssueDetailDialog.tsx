@@ -102,6 +102,23 @@ export default function IssueDetailDialog({
     }
   };
 
+  // Helper function to determine if a status option should be disabled
+  // Status progression is one-way: pending → in-progress → resolved
+  const isStatusDisabled = (targetStatus: 'received' | 'in_progress' | 'resolved') => {
+    const currentStatus = issue.status;
+    
+    // Can't change to current status
+    if (currentStatus === targetStatus) return true;
+    
+    // If in progress, can only move to resolved (not back to pending)
+    if (currentStatus === 'in_progress' && targetStatus === 'received') return true;
+    
+    // If resolved, can't move back to any status
+    if (currentStatus === 'resolved') return true;
+    
+    return false;
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] p-0 gap-0 flex flex-col">
@@ -165,6 +182,7 @@ export default function IssueDetailDialog({
                       setPendingStatusChange('received');
                       setStatusUpdateDialogOpen(true);
                     }}
+                    disabled={isStatusDisabled('received')}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'received' ? 'bg-blue-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -180,6 +198,7 @@ export default function IssueDetailDialog({
                       setPendingStatusChange('in_progress');
                       setStatusUpdateDialogOpen(true);
                     }}
+                    disabled={isStatusDisabled('in_progress')}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'in_progress' ? 'bg-amber-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -195,6 +214,7 @@ export default function IssueDetailDialog({
                       setPendingStatusChange('resolved');
                       setStatusUpdateDialogOpen(true);
                     }}
+                    disabled={isStatusDisabled('resolved')}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'resolved' ? 'bg-emerald-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -706,6 +726,8 @@ export default function IssueDetailDialog({
             }
             setStatusUpdateDialogOpen(false);
             setPendingStatusChange(null);
+            // Close the issue detail dialog to return user to issues section
+            onOpenChange(false);
           }}
         />
       )}

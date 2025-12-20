@@ -18,8 +18,9 @@ import {
   QueryConstraint,
   writeBatch,
   onSnapshot,
-    deleteField,
+  deleteField,
   type Unsubscribe,
+  type FieldValue,
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './config';
 import type { Issue } from '@/types/issue';
@@ -501,4 +502,4 @@ export const getUserActivity = async (userId: string): Promise<UserActivity> => 
 
 // Export Firestore utilities for custom queries
 export { collection, query, where, orderBy, limit, increment, arrayUnion, doc, updateDoc, Timestamp, setDoc, onSnapshot };
-export type { DocumentData, QueryConstraint, Unsubscribe };
+export type { DocumentData, QueryConstraint, Unsubscribe, FieldValue };

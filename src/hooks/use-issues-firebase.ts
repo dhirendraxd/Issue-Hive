@@ -18,6 +18,7 @@ import {
   updateDoc,
   db,
   arrayUnion,
+  type FieldValue,
 } from "@/integrations/firebase";
 import { useAuth } from "./use-auth";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
@@ -433,10 +434,14 @@ export function useIssuesFirebase() {
         ...(params.photos && params.photos.length > 0 && { photos: params.photos }),
       };
       
-      await updateIssue(params.id, { 
+      // Use updateDoc directly to support FieldValue types like arrayUnion
+      const issueRef = doc(db, 'issues', params.id);
+      await updateDoc(issueRef, {
         status: params.status,
-        'statusHistory': arrayUnion(statusHistoryEntry)
+        statusHistory: arrayUnion(statusHistoryEntry),
+        updatedAt: Timestamp.now(),
       });
+      
       return params.id;
     },
     // No invalidation needed - real-time subscription handles it
