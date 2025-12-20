@@ -21,7 +21,6 @@ import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
-import IssueAnalyticsDialog from '@/components/IssueAnalyticsDialog';
 import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { 
   LogOut, 
@@ -83,6 +82,9 @@ export default function Dashboard() {
   }, [user, authLoading, navigate]);
 
   const handleSignOut = async () => {
+    const confirmed = window.confirm('Are you sure you want to sign out?');
+    if (!confirmed) return;
+
     try {
       await signOut();
       toast.success('Signed out successfully');
@@ -371,17 +373,6 @@ export default function Dashboard() {
                 )}
               </CardContent>
             </Card>
-            
-            {/* Issue Analytics Dialog for recent issues */}
-            <IssueAnalyticsDialog
-              issue={selectedIssue}
-              open={!!selectedIssue}
-              onOpenChange={(open) => {
-                if (!open) setSelectedIssue(null);
-              }}
-              engagement={selectedIssue ? engagement?.[selectedIssue.id] : undefined}
-              activitySummary={activityTracker.local}
-            />
           </div>
 
           {/* User Profile Sidebar */}

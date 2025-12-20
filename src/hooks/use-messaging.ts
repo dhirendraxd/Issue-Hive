@@ -14,6 +14,36 @@ export interface MessageDoc {
   createdAt?: Timestamp | number;
 }
 
+export interface SentMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  receiverName: string;
+  receiverAvatar?: string;
+  content: string;
+  createdAt?: Timestamp | number;
+  otherUserId?: string;
+}
+
+export interface ReceivedMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  content: string;
+  createdAt?: Timestamp | number;
+  otherUserId?: string;
+}
+
+const toMillis = (value?: Timestamp | number) => {
+  if (typeof value === 'number') return value;
+  if (value && 'toMillis' in value && typeof value.toMillis === 'function') {
+    return value.toMillis();
+  }
+  return 0;
+};
+
 export function useUserConversations() {
   const { user } = useAuth();
   return useQuery({
@@ -100,7 +130,7 @@ export function useSentMessages() {
         const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
         const conversationSnaps = await getDocs(q);
         
-        const allMessages: any[] = [];
+        const allMessages: SentMessage[] = [];
         
         for (const convDoc of conversationSnaps.docs) {
           const convData = convDoc.data() as ConversationDoc;
@@ -134,8 +164,8 @@ export function useSentMessages() {
         }
         
         return allMessages.sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
+          const aTime = toMillis(a.createdAt);
+          const bTime = toMillis(b.createdAt);
           return bTime - aTime;
         });
       } catch (error) {
@@ -160,7 +190,7 @@ export function useReceivedMessages() {
         const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
         const conversationSnaps = await getDocs(q);
         
-        const allMessages: any[] = [];
+        const allMessages: ReceivedMessage[] = [];
         
         // For each conversation, get messages from other users
         for (const convDoc of conversationSnaps.docs) {
@@ -198,8 +228,8 @@ export function useReceivedMessages() {
         
         // Sort in memory instead (most recent first)
         return allMessages.sort((a, b) => {
-          const aTime = a.createdAt?.toMillis?.() || 0;
-          const bTime = b.createdAt?.toMillis?.() || 0;
+          const aTime = toMillis(a.createdAt);
+          const bTime = toMillis(b.createdAt);
           return bTime - aTime;
         });
       } catch (error) {

@@ -130,6 +130,9 @@ export default function RaiseIssuePage() {
       return;
     }
 
+    const confirmed = window.confirm('Submit this issue now?');
+    if (!confirmed) return;
+
     setIsSubmitting(true);
 
     try {
@@ -310,7 +313,14 @@ export default function RaiseIssuePage() {
                     value={formData.category}
                     onValueChange={(value) => {
                       handleChange('category', value as IssueCategory);
-                      handleBlur('category');
+                      // Mark touched and validate immediately with the selected value so the error clears
+                      setTouched((prev) => ({ ...prev, category: true }));
+                      const errors = validateField('category', value);
+                      setFormErrors((prev) => {
+                        const next = { ...prev, ...errors };
+                        if (!errors.category) delete next.category;
+                        return next;
+                      });
                     }}
                     disabled={isSubmitting}
                   >

@@ -56,7 +56,6 @@ export default function UserProfile() {
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
-  const [analyticsDialogOpen, setAnalyticsDialogOpen] = useState(false);
   const [messageDialogOpen, setMessageDialogOpen] = useState(false);
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
@@ -201,6 +200,9 @@ export default function UserProfile() {
   ) : null;
   
   const handleSignOut = async () => {
+    const confirmed = window.confirm('Are you sure you want to sign out?');
+    if (!confirmed) return;
+
     try {
       await signOut();
       toast.success('Signed out successfully');
@@ -225,10 +227,7 @@ export default function UserProfile() {
     setDetailDialogOpen(true);
   };
 
-  const handleViewAnalytics = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setAnalyticsDialogOpen(true);
-  };
+
 
   const handleVisibilityChange = async (issueId: string, newVisibility: string) => {
     try {
@@ -388,7 +387,7 @@ export default function UserProfile() {
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
                       <TrendingUp className="h-4 w-4 mr-2" />
-                      Analytics & Activity
+                      Activity
                     </TabsTrigger>
                     <TabsTrigger 
                       value="settings" 
@@ -765,13 +764,13 @@ export default function UserProfile() {
                 </TabsContent>
               )}
               
-              {/* Analytics & Activity Tab (Owner Only) */}
+              {/* Activity Tab (Owner Only) */}
               {isOwner && (
                 <TabsContent value="analytics" className="mt-6">
                   <div className="space-y-6">
-                    {/* Analytics Section */}
+                    {/* Engagement Stats Section */}
                     <div>
-                      <h2 className="text-xl font-semibold tracking-tight mb-4">Analytics</h2>
+                      <h2 className="text-xl font-semibold tracking-tight mb-4">Engagement Stats</h2>
                       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6 hover:shadow-xl hover:shadow-orange-200/30 transition-all">
                           <div className="flex items-center gap-4">
@@ -1128,11 +1127,6 @@ export default function UserProfile() {
               onOpenChange={setDetailDialogOpen}
               issue={selectedIssue}
               onVisibilityChange={handleVisibilityChange}
-            />
-            <IssueAnalyticsDialog
-              open={analyticsDialogOpen}
-              onOpenChange={setAnalyticsDialogOpen}
-              issue={selectedIssue}
             />
           </>
         )}

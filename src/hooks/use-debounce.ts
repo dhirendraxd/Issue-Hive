@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
  * @param callback - The function to debounce
  * @param delay - Delay in milliseconds (default: 2000ms)
  */
-export function useDebounce<T extends (...args: any[]) => any>(
+export function useDebounce<T extends (...args: unknown[]) => unknown>(
   callback: T,
   delay: number = 2000
 ): T {
