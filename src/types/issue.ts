@@ -27,6 +27,12 @@ export interface Issue {
   createdAt: number;
   updatedAt: number;
   attachments?: string[]; // store URLs for now
+  /** Status change history - tracks when status was changed and by whom */
+  statusHistory?: Array<{
+    status: IssueStatus;
+    changedAt: number;
+    changedBy: string;
+  }>;
   /** Resolution details when issue is marked as resolved by owner */
   resolution?: {
     message: string;

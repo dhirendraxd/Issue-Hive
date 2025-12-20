@@ -260,7 +260,76 @@ export default function IssueDetailDialog({
               </p>
             </div>
 
-            {/* Attachments */}
+            {/* Status Timeline */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-blue-500" />
+                <h3 className="text-base font-semibold">Status Timeline</h3>
+              </div>
+              
+              {/* Timeline */}
+              <div className="relative space-y-3 pl-6">
+                {/* Timeline line */}
+                <div className="absolute left-2 top-2 bottom-0 w-0.5 bg-gradient-to-b from-blue-400 to-blue-200" />
+                
+                {/* Created event */}
+                <div className="relative">
+                  <div className="absolute -left-4 top-1.5 w-5 h-5 rounded-full bg-blue-500 border-4 border-white shadow-md" />
+                  <div className="rounded-lg bg-blue-50 border border-blue-200 p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-blue-700">Issue Reported</span>
+                      <span className="text-xs text-blue-600" title={new Date(issue.createdAt).toLocaleString()}>
+                        {formatRelativeTime(issue.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status history events */}
+                {issue.statusHistory && issue.statusHistory.length > 0 && (
+                  <>
+                    {issue.statusHistory.map((historyItem, idx) => {
+                      const statusColors = {
+                        received: { bg: 'bg-gray-50', border: 'border-gray-200', text: 'text-gray-700', label: 'Pending' },
+                        in_progress: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', label: 'In Progress' },
+                        resolved: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', label: 'Resolved' },
+                      };
+                      const colors = statusColors[historyItem.status];
+                      return (
+                        <div key={idx} className="relative">
+                          <div className={`absolute -left-4 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br ${historyItem.status === 'resolved' ? 'from-emerald-500 to-emerald-600' : historyItem.status === 'in_progress' ? 'from-amber-500 to-amber-600' : 'from-gray-500 to-gray-600'} border-4 border-white shadow-md`} />
+                          <div className={`rounded-lg ${colors.bg} border ${colors.border} p-3`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-semibold ${colors.text}`}>{colors.label}</span>
+                              <span className={`text-xs ${colors.text}`} title={new Date(historyItem.changedAt).toLocaleString()}>
+                                {formatRelativeTime(historyItem.changedAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Resolution event */}
+                {issue.resolution && (
+                  <div className="relative">
+                    <div className="absolute -left-4 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-600 border-4 border-white shadow-md" />
+                    <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-emerald-700">Issue Resolved</span>
+                        <span className="text-xs text-emerald-600" title={new Date(issue.resolution.resolvedAt).toLocaleString()}>
+                          {formatRelativeTime(issue.resolution.resolvedAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Separator />
             {issue.attachments && issue.attachments.length > 0 && (
               <>
                 <Separator />
@@ -437,11 +506,11 @@ export default function IssueDetailDialog({
               </>
             )}
 
-            {/* Progress Updates Section */}
+            {/* Progress Updates Timeline */}
             {issue.progressUpdates && issue.progressUpdates.length > 0 && (
               <>
                 <Separator />
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-5 w-5 text-orange-500" />
                     <h3 className="text-base font-semibold">Progress Updates</h3>
@@ -450,38 +519,57 @@ export default function IssueDetailDialog({
                     </Badge>
                   </div>
                   
-                  <div className="space-y-3">
+                  {/* Timeline */}
+                  <div className="relative space-y-4 pl-6">
+                    {/* Timeline line */}
+                    <div className="absolute left-2 top-2 bottom-0 w-0.5 bg-gradient-to-b from-orange-400 to-orange-200" />
+                    
                     {issue.progressUpdates.slice().reverse().map((update, idx) => (
-                      <div 
-                        key={idx} 
-                        className="rounded-lg bg-orange-50 border border-orange-200 p-4 space-y-2"
-                      >
-                        <div className="flex items-center justify-between text-xs text-orange-700">
-                          <span className="font-medium">
-                            Update {issue.progressUpdates!.length - idx}
-                          </span>
-                          <span title={new Date(update.updatedAt).toLocaleString()}>
-                            {formatRelativeTime(update.updatedAt)}
-                          </span>
-                        </div>
+                      <div key={idx} className="relative">
+                        {/* Timeline dot */}
+                        <div className="absolute -left-4 top-1.5 w-5 h-5 rounded-full bg-orange-500 border-4 border-white shadow-md" />
                         
-                        <p className="text-sm text-orange-900 whitespace-pre-wrap break-words bg-white rounded p-3 border border-orange-200">
-                          {update.message}
-                        </p>
-
-                        {update.photos && update.photos.length > 0 && (
-                          <div className="grid grid-cols-2 gap-2 pt-2">
-                            {update.photos.map((photo, photoIdx) => (
-                              <img
-                                key={photoIdx}
-                                src={photo}
-                                alt={`Progress ${photoIdx + 1}`}
-                                className="rounded border border-orange-200 w-full h-24 object-cover cursor-pointer hover:opacity-90 transition-opacity"
-                                onClick={() => window.open(photo, '_blank', 'noopener,noreferrer')}
-                              />
-                            ))}
+                        {/* Update card */}
+                        <div className="rounded-xl bg-white border border-orange-200 hover:border-orange-300 shadow-sm hover:shadow-md transition-all p-4 space-y-3">
+                          {/* Header */}
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-orange-700 bg-orange-50 px-3 py-1 rounded-full">
+                              Update {issue.progressUpdates!.length - idx}
+                            </span>
+                            <span className="text-xs text-muted-foreground" title={new Date(update.updatedAt).toLocaleString()}>
+                              {formatRelativeTime(update.updatedAt)}
+                            </span>
                           </div>
-                        )}
+                          
+                          {/* Message */}
+                          {update.message && (
+                            <p className="text-sm text-gray-700 whitespace-pre-wrap break-words leading-relaxed">
+                              {update.message}
+                            </p>
+                          )}
+
+                          {/* Photos Grid */}
+                          {update.photos && update.photos.length > 0 && (
+                            <div className={`grid gap-2 ${update.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                              {update.photos.map((photo, photoIdx) => (
+                                <div
+                                  key={photoIdx}
+                                  className="relative group rounded-lg overflow-hidden border border-orange-100 hover:border-orange-300 transition-colors"
+                                >
+                                  <img
+                                    src={photo}
+                                    alt={`Progress ${photoIdx + 1}`}
+                                    className="w-full h-48 object-cover cursor-pointer group-hover:opacity-80 transition-opacity"
+                                    onClick={() => window.open(photo, '_blank', 'noopener,noreferrer')}
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                    <span className="text-white text-xs font-medium">Click to view full size</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

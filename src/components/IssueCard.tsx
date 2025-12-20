@@ -80,12 +80,14 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onSetSta
                   {issue.visibility}
                 </Badge>
               )}
-              <Badge 
-                variant={issue.status === 'resolved' ? 'default' : 'secondary'}
-                className="text-[10px] capitalize flex-shrink-0"
-              >
-                {issue.status.replace('_', ' ')}
-              </Badge>
+              {issue.status !== 'received' && (
+                <Badge 
+                  variant={issue.status === 'resolved' ? 'default' : 'secondary'}
+                  className="text-[10px] capitalize flex-shrink-0"
+                >
+                  {issue.status.replace('_', ' ')}
+                </Badge>
+              )}
             </div>
             {onSetStatus && (
               <DropdownMenu>

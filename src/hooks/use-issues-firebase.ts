@@ -17,6 +17,7 @@ import {
   doc,
   updateDoc,
   db,
+  arrayUnion,
 } from "@/integrations/firebase";
 import { useAuth } from "./use-auth";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
@@ -421,7 +422,19 @@ export function useIssuesFirebase() {
   const setStatus = useMutation({
     mutationFn: async (params: { id: string; status: IssueStatus }) => {
       if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
-      await updateIssue(params.id, { status: params.status });
+      if (!user) throw new Error('Must be signed in');
+      
+      // Add status change to history
+      const statusHistoryEntry = {
+        status: params.status,
+        changedAt: Date.now(),
+        changedBy: user.uid,
+      };
+      
+      await updateIssue(params.id, { 
+        status: params.status,
+        'statusHistory': arrayUnion(statusHistoryEntry)
+      });
       return params.id;
     },
     // No invalidation needed - real-time subscription handles it
