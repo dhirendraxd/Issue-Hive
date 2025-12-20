@@ -16,7 +16,11 @@ import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
 import { signOut } from "@/integrations/firebase/auth";
 import { useState } from "react";
 
-export default function Navbar() {
+interface NavbarProps {
+  hideProfileIcon?: boolean;
+}
+
+export default function Navbar({ hideProfileIcon = false }: NavbarProps) {
   const location = useLocation();
   const currentPath = location.pathname;
   const { user } = useAuth();
@@ -80,7 +84,7 @@ export default function Navbar() {
 
         {/* Right side: Auth + Mobile Menu Toggle */}
         <div className="flex items-center gap-3">
-          {user ? (
+          {user && !hideProfileIcon ? (
             <Link to="/dashboard" className="focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 rounded-full">
               <Avatar className="h-8 w-8 md:h-9 md:w-9 border-2 border-orange-500 hover:border-orange-400 transition-colors cursor-pointer">
                 <AvatarImage src={avatarUrl} alt={user.displayName || user.email || 'User'} />
@@ -89,13 +93,13 @@ export default function Navbar() {
                 </AvatarFallback>
               </Avatar>
             </Link>
-          ) : (
+          ) : !hideProfileIcon && !user ? (
             <Link to="/auth" className="hidden md:inline-block">
               <Button className="rounded-full px-4 bg-black text-white hover:bg-orange-500 transition-colors font-medium text-sm">
                 Join Now
               </Button>
             </Link>
-          )}
+          ) : null}
           
           {/* Mobile menu toggle */}
           <button

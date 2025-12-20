@@ -267,7 +267,7 @@ export default function UserProfile() {
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
       <ParticlesBackground fullPage hexOpacity={0.10}>
-        <Navbar />
+        <Navbar hideProfileIcon={isOwner} />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
           {/* Unified Twitter/X Style Profile for everyone */}
           <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -596,7 +596,7 @@ export default function UserProfile() {
                                         <p className="font-semibold text-stone-900">{senderName}</p>
                                         <p className="text-xs text-muted-foreground">
                                           {formatRelativeTime(
-                                            message.createdAt?.toDate?.() || new Date(message.createdAt || Date.now())
+                                            typeof message.createdAt === 'number' ? message.createdAt : (message.createdAt?.toDate ? message.createdAt.toDate() : new Date())
                                           )}
                                         </p>
                                       </div>
@@ -689,7 +689,7 @@ export default function UserProfile() {
                                             <p className="font-semibold text-stone-900">To: {receiverName}</p>
                                             <p className="text-xs text-muted-foreground">
                                               {formatRelativeTime(
-                                                message.createdAt?.toDate?.() || new Date(message.createdAt || Date.now())
+                                                typeof message.createdAt === 'number' ? message.createdAt : (message.createdAt?.toDate ? message.createdAt.toDate() : new Date())
                                               )}
                                             </p>
                                           </div>
