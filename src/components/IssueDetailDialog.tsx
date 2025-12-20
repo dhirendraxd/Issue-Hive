@@ -26,6 +26,7 @@ interface IssueDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVisibilityChange?: (issueId: string, visibility: 'public' | 'private' | 'draft') => void;
+  onSetStatus?: (issueId: string, status: 'received' | 'in_progress' | 'resolved') => void;
   enablePin?: boolean; // allow pin UI in comments for this context
 }
 
@@ -34,6 +35,7 @@ export default function IssueDetailDialog({
   open,
   onOpenChange,
   onVisibilityChange,
+  onSetStatus,
   enablePin = false,
 }: IssueDetailDialogProps) {
   const { user } = useAuth();
@@ -139,6 +141,60 @@ export default function IssueDetailDialog({
                 <Lock className="h-3 w-3" />
                 Private Issue
               </Badge>
+            )}
+            {isOwner && onSetStatus && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 px-3 py-2 h-auto hover:bg-emerald-50"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">
+                      {issue.status === 'received' ? 'Pending' : issue.status === 'in_progress' ? 'In Progress' : 'Resolved'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onClick={() => onSetStatus(issue.id, 'received')}
+                    className={`cursor-pointer py-3 px-4 ${issue.status === 'received' ? 'bg-blue-50' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-blue-500" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">Pending</div>
+                        <div className="text-xs text-muted-foreground">Issue is waiting for attention</div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onSetStatus(issue.id, 'in_progress')}
+                    className={`cursor-pointer py-3 px-4 ${issue.status === 'in_progress' ? 'bg-amber-50' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-amber-500" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">In Progress</div>
+                        <div className="text-xs text-muted-foreground">Work is ongoing</div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => onSetStatus(issue.id, 'resolved')}
+                    className={`cursor-pointer py-3 px-4 ${issue.status === 'resolved' ? 'bg-emerald-50' : ''}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <div className="flex-1">
+                        <div className="font-semibold text-sm">Resolved</div>
+                        <div className="text-xs text-muted-foreground">Issue is complete</div>
+                      </div>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {!isOwner && user && (
               <DropdownMenu>

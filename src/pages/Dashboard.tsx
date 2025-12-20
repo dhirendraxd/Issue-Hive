@@ -55,7 +55,7 @@ import IssueCard from '@/components/IssueCard';
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: userProfile } = useUserProfile(user?.uid || '');
-  const { data: issues, isLoading: issuesLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: issues, isLoading: issuesLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
@@ -334,6 +334,7 @@ export default function Dashboard() {
                                 issue={issue}
                                 engagement={engagement?.[issue.id]}
                                 onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                                onSetStatus={(id, status) => setStatus.mutate({ id, status })}
                                 onAddProgress={handleOpenProgressDialog}
                                 onResolve={handleOpenResolveDialog}
                               />
@@ -361,6 +362,7 @@ export default function Dashboard() {
                                 issue={issue}
                                 engagement={engagement?.[issue.id]}
                                 onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
+                                onSetStatus={(id, status) => setStatus.mutate({ id, status })}
                                 onAddProgress={handleOpenProgressDialog}
                                 onResolve={handleOpenResolveDialog}
                               />

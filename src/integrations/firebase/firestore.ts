@@ -11,6 +11,7 @@ import {
   where,
   orderBy,
   limit,
+  increment,
   Timestamp,
   DocumentData,
   QueryConstraint,
@@ -498,5 +499,5 @@ export const getUserActivity = async (userId: string): Promise<UserActivity> => 
 };
 
 // Export Firestore utilities for custom queries
-export { collection, query, where, orderBy, limit, Timestamp, setDoc, onSnapshot };
+export { collection, query, where, orderBy, limit, increment, doc, updateDoc, Timestamp, setDoc, onSnapshot };
 export type { DocumentData, QueryConstraint, Unsubscribe };

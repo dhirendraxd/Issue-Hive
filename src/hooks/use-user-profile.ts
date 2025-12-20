@@ -24,6 +24,18 @@ export interface UserProfileDoc {
     linkedin?: string | null;
     instagram?: string | null;
   };
+  stats?: {
+    totalIssues?: number;
+    resolvedIssues?: number;
+    totalUpvotesReceived?: number;
+    totalDownvotesReceived?: number;
+    totalCommentsReceived?: number;
+    totalSupports?: number;
+    upvotesGiven?: number;
+    downvotesGiven?: number;
+    commentsMade?: number;
+    likesGiven?: number;
+  };
 }
 
 export function useUserProfile(userId?: string) {

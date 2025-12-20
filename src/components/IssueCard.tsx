@@ -19,6 +19,7 @@ interface IssueCardProps {
     downvotes?: number;
   };
   onSetVisibility: (id: string, visibility: IssueVisibility) => void;
+  onSetStatus?: (id: string, status: 'received' | 'in_progress' | 'resolved') => void;
   onAddProgress?: (issue: Issue) => void;
   onResolve?: (issue: Issue) => void;
 }
@@ -29,7 +30,7 @@ const statusColors = {
   resolved: 'bg-green-500',
 };
 
-export default function IssueCard({ issue, engagement, onSetVisibility, onAddProgress, onResolve }: IssueCardProps) {
+export default function IssueCard({ issue, engagement, onSetVisibility, onSetStatus, onAddProgress, onResolve }: IssueCardProps) {
   const getVisibilityIcon = (visibility: IssueVisibility) => {
     switch (visibility) {
       case 'public':
@@ -86,6 +87,59 @@ export default function IssueCard({ issue, engagement, onSetVisibility, onAddPro
                 {issue.status.replace('_', ' ')}
               </Badge>
             </div>
+            {onSetStatus && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="h-8 w-8 flex-shrink-0 hover:bg-emerald-100 hover:text-emerald-600 transition-colors"
+                    title="Change status"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="flex items-center gap-2 pb-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Change Status</span>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup
+                    value={issue.status}
+                    onValueChange={(value) => onSetStatus(issue.id, value as 'received' | 'in_progress' | 'resolved')}
+                  >
+                    <DropdownMenuRadioItem 
+                      value="received"
+                      className="cursor-pointer py-2 px-3 focus:bg-blue-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="font-medium text-sm">Pending</span>
+                      </div>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem 
+                      value="in_progress"
+                      className="cursor-pointer py-2 px-3 focus:bg-amber-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-amber-500" />
+                        <span className="font-medium text-sm">In Progress</span>
+                      </div>
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem 
+                      value="resolved"
+                      className="cursor-pointer py-2 px-3 focus:bg-emerald-50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="font-medium text-sm">Resolved</span>
+                      </div>
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 

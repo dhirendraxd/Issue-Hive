@@ -13,6 +13,10 @@ import {
   where,
   orderBy,
   Timestamp,
+  increment,
+  doc,
+  updateDoc,
+  db,
 } from "@/integrations/firebase";
 import { useAuth } from "./use-auth";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
@@ -121,6 +125,19 @@ export function useIssuesFirebase() {
         attachments: data.attachments,
       };
       const newIssueId = await createIssue(issueData);
+      
+      // Update user stats: increment totalIssues
+      if (db && data.createdBy) {
+        try {
+          await updateDoc(doc(db, 'users', data.createdBy), {
+            'stats.totalIssues': increment(1)
+          });
+        } catch (error) {
+          console.error('Failed to update user stats:', error);
+          // Don't fail the issue creation if stats update fails
+        }
+      }
+      
       return { id: newIssueId, ...issueData };
     },
     // No need to invalidate - real-time subscription handles updates
@@ -205,7 +222,37 @@ export function useIssuesFirebase() {
     mutationFn: async (id: string) => {
       if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
+      
+      // Get current vote to determine stat update
+      const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+      
       await setVote(id, user.uid, 1);
+      
+      // Update user stats
+      if (db) {
+        try {
+          if (!currentVote || currentVote.vote === 0) {
+            // Adding new upvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.upvotesGiven': increment(1)
+            });
+          } else if (currentVote.vote === -1) {
+            // Switching from downvote to upvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.upvotesGiven': increment(1),
+              'stats.downvotesGiven': increment(-1)
+            });
+          } else if (currentVote.vote === 1) {
+            // Removing upvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.upvotesGiven': increment(-1)
+            });
+          }
+        } catch (error) {
+          console.error('Failed to update user stats:', error);
+        }
+      }
+      
       return id;
     },
     onMutate: async (id: string) => {
@@ -264,7 +311,37 @@ export function useIssuesFirebase() {
     mutationFn: async (id: string) => {
       if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
+      
+      // Get current vote to determine stat update
+      const currentVote = qc.getQueryData<{ vote: number }>(["user-vote", id, user?.uid]);
+      
       await setVote(id, user.uid, -1);
+      
+      // Update user stats
+      if (db) {
+        try {
+          if (!currentVote || currentVote.vote === 0) {
+            // Adding new downvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.downvotesGiven': increment(1)
+            });
+          } else if (currentVote.vote === 1) {
+            // Switching from upvote to downvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.downvotesGiven': increment(1),
+              'stats.upvotesGiven': increment(-1)
+            });
+          } else if (currentVote.vote === -1) {
+            // Removing downvote
+            await updateDoc(doc(db, 'users', user.uid), {
+              'stats.downvotesGiven': increment(-1)
+            });
+          }
+        } catch (error) {
+          console.error('Failed to update user stats:', error);
+        }
+      }
+      
       return id;
     },
     onMutate: async (id: string) => {

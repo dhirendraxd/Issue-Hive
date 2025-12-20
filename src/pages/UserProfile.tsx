@@ -40,7 +40,7 @@ export default function UserProfile() {
   const { uid } = useParams();
   const [search] = useSearchParams();
   const { user } = useAuth();
-  const { data: issues, isLoading, stats, setVisibility, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: issues, isLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
   const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
@@ -87,8 +87,21 @@ export default function UserProfile() {
   const privateCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'private').length;
   const draftCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'draft').length;
   
-  // Calculate total analytics from engagement data
+  // Use cached stats from profile with fallback to real-time calculation
   const analytics = useMemo(() => {
+    // Try to use cached stats first (fast)
+    if (ownerProfile?.stats) {
+      return {
+        totalIssues: ownerProfile.stats.totalIssues ?? owned.length,
+        totalUpvotes: ownerProfile.stats.totalUpvotesReceived ?? 0,
+        totalDownvotes: ownerProfile.stats.totalDownvotesReceived ?? 0,
+        totalComments: ownerProfile.stats.totalCommentsReceived ?? 0,
+        totalSupports: ownerProfile.stats.totalSupports ?? 0,
+        resolvedIssues: ownerProfile.stats.resolvedIssues ?? owned.filter(i => i.status === 'resolved').length,
+      };
+    }
+    
+    // Fallback: calculate from engagement data (slower)
     let totalUpvotes = 0;
     let totalDownvotes = 0;
     let totalComments = 0;
@@ -104,18 +117,15 @@ export default function UserProfile() {
       totalSupports += issue.votes || 0;
     });
     
-    const totalEngagement = totalUpvotes + totalDownvotes + totalComments;
-    
     return {
       totalIssues: owned.length,
       totalUpvotes,
       totalDownvotes,
       totalComments,
       totalSupports,
-      totalEngagement,
       resolvedIssues: owned.filter(i => i.status === 'resolved').length,
     };
-  }, [owned, engagementMap]);
+  }, [owned, engagementMap, ownerProfile?.stats]);
   
   // Early validation after all hooks
   if (!uid) {
@@ -238,6 +248,17 @@ export default function UserProfile() {
       toast.success(`Issue visibility updated to ${newVisibility}`);
     } catch (error) {
       toast.error('Failed to update visibility');
+    }
+  };
+
+  const handleStatusChange = async (issueId: string, newStatus: 'received' | 'in_progress' | 'resolved') => {
+    try {
+      await setStatus.mutateAsync({ id: issueId, status: newStatus });
+      queryClient.invalidateQueries({ queryKey: ['issues'] });
+      const statusLabels = { received: 'Pending', in_progress: 'In Progress', resolved: 'Resolved' };
+      toast.success(`Issue status updated to ${statusLabels[newStatus]}`);
+    } catch (error) {
+      toast.error('Failed to update status');
     }
   };
 
@@ -441,19 +462,28 @@ export default function UserProfile() {
                               return (
                                 <Card 
                                   key={issue.id} 
-                                  className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl flex flex-col hover:shadow-2xl hover:shadow-orange-300/30 hover:border-orange-300/60 hover:bg-white/60 transition-all cursor-pointer"
-                                  onClick={() => handleViewDetails(issue)}
+                                  className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl flex flex-col hover:shadow-2xl hover:shadow-orange-300/30 hover:border-orange-300/60 hover:bg-white/60 transition-all group"
                                 >
                                   <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between gap-2">
-                                      <CardTitle className="text-base font-semibold leading-snug line-clamp-2">{issue.title}</CardTitle>
+                                      <CardTitle 
+                                        className="text-base font-semibold leading-snug line-clamp-2 cursor-pointer hover:text-orange-600"
+                                        onClick={() => handleViewDetails(issue)}
+                                      >
+                                        {issue.title}
+                                      </CardTitle>
                                       {vis && vis !== 'public' && (
-                                        <Badge variant="outline" className="text-xs capitalize shrink-0 border-orange-300/60 text-orange-700/80 bg-orange-50/50">{vis}</Badge>
+                                        <Badge variant="outline" className="text-xs capitalize border-orange-300/60 text-orange-700/80 bg-orange-50/50">{vis}</Badge>
                                       )}
                                     </div>
                                   </CardHeader>
                                   <CardContent className="flex flex-col gap-3 text-sm flex-1">
-                                    <p className="text-muted-foreground line-clamp-3">{issue.description}</p>
+                                    <p 
+                                      className="text-muted-foreground line-clamp-3 cursor-pointer"
+                                      onClick={() => handleViewDetails(issue)}
+                                    >
+                                      {issue.description}
+                                    </p>
                                     <div className="flex flex-wrap gap-2 mt-auto">
                                       <Badge variant="outline" className="text-xs border-stone-300 text-stone-700 bg-stone-50">{issue.category}</Badge>
                                       <Badge 
@@ -995,6 +1025,7 @@ export default function UserProfile() {
               onOpenChange={setDetailDialogOpen}
               issue={selectedIssue}
               onVisibilityChange={handleVisibilityChange}
+              onSetStatus={isOwner ? handleStatusChange : undefined}
             />
           </>
         )}
