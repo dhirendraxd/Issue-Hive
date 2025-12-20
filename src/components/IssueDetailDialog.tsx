@@ -244,8 +244,8 @@ export default function IssueDetailDialog({
                 </div>
                 <div className="col-span-2">
                   <p className="text-xs text-muted-foreground mb-1">College</p>
-                  <p className={`text-sm font-semibold break-words ${issue.college ? '' : 'text-muted-foreground'}`}>
-                    {issue.college?.trim() || 'College not provided'}
+                  <p className={`text-sm font-semibold break-words ${(issue.college || creatorProfile?.college) ? '' : 'text-muted-foreground'}`}>
+                    {creatorProfile?.college?.trim() || issue.college?.trim() || 'College not provided'}
                   </p>
                 </div>
                 <div>

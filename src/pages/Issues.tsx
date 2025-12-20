@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
@@ -7,15 +7,24 @@ import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Link } from 'react-router-dom';
 import { IssuesFilterBar, type SortKey } from "@/components/IssuesFilterBar";
 import IssueDetailDialog from "@/components/IssueDetailDialog";
 import ReportUserDialog from "@/components/ReportUserDialog";
 import UserDisplay, { UserDisplayName } from "@/components/UserDisplay";
+import { useUserProfile } from "@/hooks/use-user-profile";
+
+function IssueCollegeProvider({ issue, children }: { issue: Issue; children: (collegeName?: string) => ReactNode }) {
+  const { data: profile } = useUserProfile(issue.createdBy);
+  const collegeFromProfile = profile?.college?.trim();
+  const collegeFromIssue = (issue as Issue & { college?: string }).college?.trim();
+  const resolvedCollege = collegeFromProfile || collegeFromIssue;
+
+  return <>{children(resolvedCollege)}</>;
+}
 
 export default function Issues() {
   const { user } = useAuth();
@@ -57,18 +66,19 @@ export default function Issues() {
   // Show all statuses by default (empty means no filter)
   const [statuses, setStatuses] = useState<IssueStatus[]>([]);
   const [sort, setSort] = useState<SortKey>("new");
+
   const visibleIssues = useMemo(() => {
     const base = data ?? [];
     // Hide draft issues completely; hide private issues unless owned by current user
-    type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
+    type WithVisibility = { visibility?: "public" | "private" | "draft" };
     let arr = base.filter((i) => {
       const vis = (i as unknown as WithVisibility).visibility;
       // Exclude all draft issues from public listing
-      if (vis === 'draft') return false;
+      if (vis === "draft") return false;
       // Show public issues to everyone
-      if (!vis || vis === 'public') return true;
+      if (!vis || vis === "public") return true;
       // Show private issues only to the owner
-      if (vis === 'private') return i.createdBy === user?.uid;
+      if (vis === "private") return i.createdBy === user?.uid;
       return true;
     });
     // status filter (default in_progress + resolved)
@@ -97,16 +107,8 @@ export default function Issues() {
   }, [data, categories, q, statuses, sort, user?.uid]);
 
   // Fetch engagement metrics for visible issues
-  const visibleIssueIds = useMemo(() => visibleIssues.map(i => i.id), [visibleIssues]);
+  const visibleIssueIds = useMemo(() => visibleIssues.map((i) => i.id), [visibleIssues]);
   const { data: engagement } = useIssueEngagement(visibleIssueIds);
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -125,7 +127,7 @@ export default function Issues() {
   const isNewIssue = (createdAt: number) => {
     const now = Date.now();
     const twentyFourHours = 24 * 60 * 60 * 1000;
-    return (now - createdAt) < twentyFourHours;
+    return now - createdAt < twentyFourHours;
   };
 
   return (
@@ -138,221 +140,210 @@ export default function Issues() {
               <div className="text-center mb-10">
                 <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight">Campus Issues</h1>
                 <p className="mt-3 text-muted-foreground">Browse top issues and show support by upvoting.</p>
-                  </div>
-
-          {/* Filters: improved UX and UI */}
-          <div className="mb-6 relative z-10">
-            <IssuesFilterBar
-              q={q}
-              onQChange={setQ}
-              categories={categories}
-              onCategoriesChange={setCategories}
-              statuses={statuses}
-              onStatusesChange={setStatuses}
-              sort={sort}
-              onSortChange={setSort}
-            />
-          </div>
-
-          <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {visibleIssues.length === 0 && (
-              <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center">
-                <p className="text-muted-foreground">No matching issues.</p>
-                <Button
-                  variant="ghost"
-                  className="mt-3 rounded-full flex items-center justify-center"
-                  aria-label="Reset filters"
-                  onClick={() => {
-                    setQ("");
-                    setCategories([]);
-                    setStatuses([]);
-                    setSort("new");
-                  }}
-                >
-                  <RotateCcw className="h-5 w-5" />
-                </Button>
               </div>
-            )}
 
-            {visibleIssues.map((i, idx) => {
-              const collegeName = (i as Issue & { college?: string }).college?.trim();
-              const e = engagement?.[i.id];
-              return (
-                <motion.div
-                  key={i.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3) }}
-                >
-                  <Card 
-                    className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
-                    onClick={() => handleCardClick(i)}
-                  >
-                <CardContent className="p-6 md:p-7 flex flex-col h-full">
-                  {/* Header: User Info */}
-                  <div className="flex items-center gap-3 mb-4">
-                    <UserDisplay
-                      userId={i.createdBy}
-                      photoURL={i.createdByPhotoURL}
-                      fallbackName={i.createdByName}
-                      anonymous={i.anonymous}
-                      showLink={!i.anonymous}
-                      avatarClassName="h-10 w-10 flex-shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <UserDisplayName 
-                        userId={i.createdBy}
-                        fallbackName={i.createdByName}
-                        className="text-sm font-medium truncate"
-                      />
-                      <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
-                        {formatRelativeTime(i.createdAt)}
-                      </p>
-                      {i.college && (
-                        <div className="flex items-center gap-1 text-[11px] text-amber-700 truncate" title={i.college}>
-                          <MapPin className="h-3 w-3" />
-                          <span className="truncate">{i.college}</span>
-                        </div>
-                      )}
-                    </div>
-                    {user && user.uid !== i.createdBy && (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                          <DropdownMenuItem
-                            onClick={(e) => handleReportUser(i, e)}
-                            className="text-red-600 focus:text-red-600 cursor-pointer"
-                          >
-                            <Flag className="h-4 w-4 mr-2" />
-                            Report User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </div>
+              {/* Filters: improved UX and UI */}
+              <div className="mb-6 relative z-10">
+                <IssuesFilterBar
+                  q={q}
+                  onQChange={setQ}
+                  categories={categories}
+                  onCategoriesChange={setCategories}
+                  statuses={statuses}
+                  onStatusesChange={setStatuses}
+                  sort={sort}
+                  onSortChange={setSort}
+                />
+              </div>
 
-                  {/* Issue Title & Description */}
-                  <div className="mb-4 flex-1">
-                    <div className="flex items-start gap-2 mb-2">
-                      <h3 className="text-lg font-display font-semibold break-words leading-snug flex-1">{i.title}</h3>
-                      {isNewIssue(i.createdAt) && (
-                        <span className="inline-flex items-center gap-1 rounded-full border border-orange-300 bg-gradient-to-r from-orange-100 to-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 shadow-sm flex-shrink-0 animate-pulse">
-                          <Sparkles className="h-3 w-3" />
-                          New
-                        </span>
-                      )}
-                    </div>
-                    <div className="mb-2 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border"
-                      style={{
-                        borderColor: collegeName ? 'rgb(253 230 138)' : 'rgb(229 231 235)',
-                        backgroundColor: collegeName ? 'rgb(255 251 235)' : 'rgb(248 250 252)',
-                        color: collegeName ? 'rgb(180 83 9)' : 'rgb(107 114 128)'
-                      }}
-                    >
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate max-w-[160px]">{collegeName || 'College not provided'}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
-                  </div>
-
-                  {/* Status & Category / Update Tags */}
-                  <div className="flex flex-wrap items-center gap-2 mb-4">
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusColor(i.status)}`}>
-                      {ISSUE_STATUSES.find((s) => s.value === i.status)?.label ?? i.status}
-                    </span>
-                    <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
-                      {i.category}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${collegeName ? 'border border-amber-200 bg-amber-50 text-amber-700' : 'border border-gray-200 bg-gray-50 text-gray-500'}`}>
-                      <MapPin className="h-3 w-3" />
-                      <span className="truncate max-w-[140px]">{collegeName || 'College not provided'}</span>
-                    </span>
-                    {'visibility' in i && i.visibility === 'private' && (
-                      <span className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
-                        🔒 Private
-                      </span>
-                    )}
-                    {/* Resolution badge (optional extra clarity beyond status) */}
-                    {i.status === 'resolved' && i.resolution && (
-                      <span className="inline-flex items-center rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                        ✅ Resolution Posted
-                      </span>
-                    )}
-                    {/* Progress badge: show if there are updates */}
-                    {i.progressUpdates && i.progressUpdates.length > 0 && (
-                      <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
-                        🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                    {/* Updated badge: only for status advanced to in_progress and no explicit progress/resolution badges */}
-                    {i.status === 'in_progress' && !(i.progressUpdates && i.progressUpdates.length > 0) && !i.resolution && (
-                      <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
-                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" /> Updated
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Footer: Votes & Engagement */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      {engagement?.[i.id] ? (
-                        <>
-                          <div className="flex items-center gap-1" title="Upvotes">
-                            <ThumbsUp className="h-4 w-4 text-green-600" />
-                            <span>{engagement[i.id].upvotes}</span>
-                          </div>
-                          <div className="flex items-center gap-1" title="Downvotes">
-                            <ThumbsDown className="h-4 w-4 text-red-600" />
-                            <span>{engagement[i.id].downvotes}</span>
-                          </div>
-                          <div className="flex items-center gap-1" title="Comments">
-                            <MessageSquare className="h-4 w-4 text-blue-600" />
-                            <span>{engagement[i.id].comments}</span>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <ThumbsUp className="h-4 w-4 text-orange-500" />
-                          <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
-                        </div>
-                      )}
-                    </div>
+              <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {visibleIssues.length === 0 && (
+                  <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center">
+                    <p className="text-muted-foreground">No matching issues.</p>
                     <Button
-                      size="icon"
                       variant="ghost"
-                      className="rounded-full"
-                      aria-label="View Details"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(i);
+                      className="mt-3 rounded-full flex items-center justify-center"
+                      aria-label="Reset filters"
+                      onClick={() => {
+                        setQ("");
+                        setCategories([]);
+                        setStatuses([]);
+                        setSort("new");
                       }}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      <RotateCcw className="h-5 w-5" />
                     </Button>
                   </div>
+                )}
 
-                  {/* Urgency & Anonymous Status */}
-                  <div className="mt-2 text-xs text-gray-500">
-                    Urgency:{" "}
-                    <span className={i.urgency === "high" ? "text-red-500" : i.urgency === "medium" ? "text-yellow-500" : "text-green-500"}>
-                      {i.urgency}
-                    </span>
-                  </div>
-                  {i.anonymous && (
-                    <div className="mt-1 text-xs text-gray-400">Posted anonymously</div>
-                  )}
-                </CardContent>
-              </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </section>
+                {visibleIssues.map((i, idx) => (
+                  <IssueCollegeProvider issue={i} key={i.id}>
+                    {(collegeName) => (
+                      <motion.div
+                        key={i.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ duration: 0.4, delay: Math.min(idx * 0.05, 0.3) }}
+                      >
+                        <Card
+                          className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300 flex flex-col h-full cursor-pointer"
+                          onClick={() => handleCardClick(i)}
+                        >
+                          <CardContent className="p-6 md:p-7 flex flex-col h-full">
+                            {/* Header: User Info */}
+                            <div className="flex items-center gap-3 mb-4">
+                              <UserDisplay
+                                userId={i.createdBy}
+                                photoURL={i.createdByPhotoURL}
+                                fallbackName={i.createdByName}
+                                anonymous={i.anonymous}
+                                showLink={!i.anonymous}
+                                avatarClassName="h-10 w-10 flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <UserDisplayName
+                                  userId={i.createdBy}
+                                  fallbackName={i.createdByName}
+                                  className="text-sm font-medium truncate"
+                                />
+                                <p className="text-xs text-muted-foreground" title={new Date(i.createdAt).toLocaleString()}>
+                                  {formatRelativeTime(i.createdAt)}
+                                </p>
+                                {collegeName ? (
+                                  <div className="flex items-center gap-1 text-[11px] text-amber-700 truncate" title={collegeName}>
+                                    <MapPin className="h-3 w-3" />
+                                    <span className="truncate">{collegeName}</span>
+                                  </div>
+                                ) : null}
+                              </div>
+                              {user && user.uid !== i.createdBy && (
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                    <DropdownMenuItem
+                                      onClick={(e) => handleReportUser(i, e)}
+                                      className="text-red-600 focus:text-red-600 cursor-pointer"
+                                    >
+                                      <Flag className="h-4 w-4 mr-2" />
+                                      Report User
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              )}
+                            </div>
+
+                            {/* Issue Title & Description */}
+                            <div className="mb-4 flex-1">
+                              <div className="flex items-start gap-2 mb-2">
+                                <h3 className="text-lg font-display font-semibold break-words leading-snug flex-1">{i.title}</h3>
+                                {isNewIssue(i.createdAt) && (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-orange-300 bg-gradient-to-r from-orange-100 to-orange-50 px-2 py-0.5 text-xs font-semibold text-orange-700 shadow-sm flex-shrink-0 animate-pulse">
+                                    <Sparkles className="h-3 w-3" />
+                                    New
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground break-words line-clamp-3">{i.description}</p>
+                            </div>
+
+                            {/* Status & Category / Update Tags */}
+                            <div className="flex flex-wrap items-center gap-2 mb-4">
+                              <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium ${getStatusColor(i.status)}`}>
+                                {ISSUE_STATUSES.find((s) => s.value === i.status)?.label ?? i.status}
+                              </span>
+                              <span className="inline-flex items-center rounded-full border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-50">
+                                {i.category}
+                              </span>
+                              {"visibility" in i && i.visibility === "private" && (
+                                <span className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                                  🔒 Private
+                                </span>
+                              )}
+                              {i.status === "resolved" && i.resolution && (
+                                <span className="inline-flex items-center rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+                                  ✅ Resolution Posted
+                                </span>
+                              )}
+                              {i.progressUpdates && i.progressUpdates.length > 0 && (
+                                <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
+                                  🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? "s" : ""}
+                                </span>
+                              )}
+                              {i.status === "in_progress" && !(i.progressUpdates && i.progressUpdates.length > 0) && !i.resolution && (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" /> Updated
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Footer: Votes & Engagement */}
+                            <div className="flex items-center justify-between pt-4 border-t">
+                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                {engagement?.[i.id] ? (
+                                  <>
+                                    <div className="flex items-center gap-1" title="Upvotes">
+                                      <ThumbsUp className="h-4 w-4 text-green-600" />
+                                      <span>{engagement[i.id].upvotes}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1" title="Downvotes">
+                                      <ThumbsDown className="h-4 w-4 text-red-600" />
+                                      <span>{engagement[i.id].downvotes}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1" title="Comments">
+                                      <MessageSquare className="h-4 w-4 text-blue-600" />
+                                      <span>{engagement[i.id].comments}</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    <ThumbsUp className="h-4 w-4 text-orange-500" />
+                                    <span>{i.votes} support{i.votes !== 1 ? "s" : ""}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="rounded-full"
+                                aria-label="View Details"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleCardClick(i);
+                                }}
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  className="h-5 w-5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </Button>
+                            </div>
+
+                            {/* Urgency & Anonymous Status */}
+                            <div className="mt-2 text-xs text-gray-500">
+                              Urgency:{" "}
+                              <span className={i.urgency === "high" ? "text-red-500" : i.urgency === "medium" ? "text-yellow-500" : "text-green-500"}>
+                                {i.urgency}
+                              </span>
+                            </div>
+                            {i.anonymous && <div className="mt-1 text-xs text-gray-400">Posted anonymously</div>}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    )}
+                  </IssueCollegeProvider>
+                ))}
+              </div>
+            </section>
           </div>
         </ParticlesBackground>
       </main>
