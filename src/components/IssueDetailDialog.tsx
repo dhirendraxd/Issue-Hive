@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown, Check } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -20,6 +20,7 @@ import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime, formatDateWithRelative } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
+import { toast } from "sonner";
 import { useState, useEffect } from "react";
 
 interface IssueDetailDialogProps {
@@ -48,7 +49,9 @@ export default function IssueDetailDialog({
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<'received' | 'in_progress' | 'resolved' | null>(null);
-  
+  const [showUpvoteConfirm, setShowUpvoteConfirm] = useState(false);
+  const [showDownvoteConfirm, setShowDownvoteConfirm] = useState(false);
+
   // Sync visibility state with issue prop
   useEffect(() => {
     if (issue) {
@@ -56,6 +59,43 @@ export default function IssueDetailDialog({
       setVisibility(issueVisibility);
     }
   }, [issue]);
+
+  // Show toast notifications for vote mutations
+  useEffect(() => {
+    if (upvoteIssue.isSuccess && issue) {
+      setShowUpvoteConfirm(true);
+      const wasVoted = userVote?.vote === 1 && upvoteIssue.variables === issue.id;
+      toast.success(wasVoted ? '👍 Upvote removed' : '👍 Vote counted! Thanks for supporting this issue!', {
+        duration: 3000,
+        icon: <Check className="h-4 w-4" />
+      });
+      setTimeout(() => setShowUpvoteConfirm(false), 2000);
+    }
+  }, [upvoteIssue.isSuccess, upvoteIssue.variables, userVote?.vote, issue]);
+
+  useEffect(() => {
+    if (downvoteIssue.isSuccess && issue) {
+      setShowDownvoteConfirm(true);
+      const wasVoted = userVote?.vote === -1 && downvoteIssue.variables === issue.id;
+      toast.success(wasVoted ? '👎 Downvote removed' : '👎 Vote counted! Thanks for your feedback!', {
+        duration: 3000,
+        icon: <Check className="h-4 w-4" />
+      });
+      setTimeout(() => setShowDownvoteConfirm(false), 2000);
+    }
+  }, [downvoteIssue.isSuccess, downvoteIssue.variables, userVote?.vote, issue]);
+
+  useEffect(() => {
+    if (upvoteIssue.isError) {
+      toast.error('Failed to upvote. Please try again.');
+    }
+  }, [upvoteIssue.isError]);
+
+  useEffect(() => {
+    if (downvoteIssue.isError) {
+      toast.error('Failed to downvote. Please try again.');
+    }
+  }, [downvoteIssue.isError]);
 
   if (!issue) return null;
 
@@ -484,31 +524,53 @@ export default function IssueDetailDialog({
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "flex-1 rounded-full transition-all",
+                      "flex-1 rounded-full transition-all duration-200 relative",
                       hasUpvoted 
-                        ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200" 
-                        : "hover:bg-green-50 hover:border-green-200"
+                        ? "bg-green-100 border-green-300 text-green-700 hover:bg-green-200 shadow-sm" 
+                        : "hover:bg-green-50 hover:border-green-200",
+                      upvoteIssue.isPending && "opacity-75"
                     )}
                     onClick={() => upvoteIssue.mutate(issue.id)}
                     disabled={upvoteIssue.isPending}
+                    title={hasUpvoted ? "Remove upvote" : "Upvote this issue"}
                   >
-                    <ThumbsUp className={cn("h-4 w-4 mr-2", hasUpvoted && "fill-current")} />
-                    {hasUpvoted ? 'Upvoted' : 'Upvote'}
+                    {showUpvoteConfirm ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2 animate-bounce" />
+                        Counted!
+                      </>
+                    ) : (
+                      <>
+                        <ThumbsUp className={cn("h-4 w-4 mr-2 transition-all", hasUpvoted && "fill-current")} />
+                        {hasUpvoted ? 'Upvoted' : 'Upvote'}
+                      </>
+                    )}
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
                     className={cn(
-                      "flex-1 rounded-full transition-all",
+                      "flex-1 rounded-full transition-all duration-200 relative",
                       hasDownvoted 
-                        ? "bg-red-100 border-red-300 text-red-700 hover:bg-red-200" 
-                        : "hover:bg-red-50 hover:border-red-200"
+                        ? "bg-red-100 border-red-300 text-red-700 hover:bg-red-200 shadow-sm" 
+                        : "hover:bg-red-50 hover:border-red-200",
+                      downvoteIssue.isPending && "opacity-75"
                     )}
                     onClick={() => downvoteIssue.mutate(issue.id)}
                     disabled={downvoteIssue.isPending}
+                    title={hasDownvoted ? "Remove downvote" : "Downvote this issue"}
                   >
-                    <ThumbsDown className={cn("h-4 w-4 mr-2", hasDownvoted && "fill-current")} />
-                    {hasDownvoted ? 'Downvoted' : 'Downvote'}
+                    {showDownvoteConfirm ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2 animate-bounce" />
+                        Counted!
+                      </>
+                    ) : (
+                      <>
+                        <ThumbsDown className={cn("h-4 w-4 mr-2 transition-all", hasDownvoted && "fill-current")} />
+                        {hasDownvoted ? 'Downvoted' : 'Downvote'}
+                      </>
+                    )}
                   </Button>
                 </div>
               </>

@@ -406,7 +406,7 @@ export const toggleCommentLike = async (commentId: string, userId: string): Prom
 
 // User Activity Analytics
 export interface UserActivity {
-  votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }>;
+  votedIssues: Array<{ issueId: string; vote: 1 | -1; voteDate?: Timestamp; issue?: Issue }>;
   comments: Array<CommentDoc & { issue?: Issue }>;
   likedComments: Array<{ commentId: string; comment?: CommentDoc; issue?: Issue }>;
 }
@@ -422,7 +422,7 @@ export const getUserActivity = async (userId: string): Promise<UserActivity> => 
     }
     // Get all issues user has voted on
     const issuesSnapshot = await getDocs(collection(db, COLLECTIONS.ISSUES));
-    const votedIssues: Array<{ issueId: string; vote: 1 | -1; issue?: Issue }> = [];
+    const votedIssues: Array<{ issueId: string; vote: 1 | -1; voteDate?: Timestamp; issue?: Issue }> = [];
     
     for (const issueDoc of issuesSnapshot.docs) {
       try {
@@ -432,6 +432,7 @@ export const getUserActivity = async (userId: string): Promise<UserActivity> => 
           votedIssues.push({
             issueId: issueDoc.id,
             vote: voteData.vote,
+            voteDate: voteData.createdAt,
             issue: { id: issueDoc.id, ...issueDoc.data() } as Issue,
           });
         }

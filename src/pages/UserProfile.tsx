@@ -846,7 +846,7 @@ export default function UserProfile() {
                                     activities.push({
                                       type: 'upvote',
                                       content: `You upvoted: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
-                                      timestamp: new Date(issue.createdAt || Date.now()),
+                                      timestamp: vote.voteDate?.toDate?.() || new Date(issue.createdAt || Date.now()),
                                       icon: ThumbsUp,
                                       color: 'text-green-600'
                                     });
@@ -860,7 +860,7 @@ export default function UserProfile() {
                                     activities.push({
                                       type: 'downvote',
                                       content: `You downvoted: "${issue.title?.slice(0, 60)}${issue.title && issue.title.length > 60 ? '...' : ''}"`,
-                                      timestamp: new Date(issue.createdAt || Date.now()),
+                                      timestamp: vote.voteDate?.toDate?.() || new Date(issue.createdAt || Date.now()),
                                       icon: ThumbsDown,
                                       color: 'text-red-600'
                                     });
