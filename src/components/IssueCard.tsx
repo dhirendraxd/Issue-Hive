@@ -19,7 +19,7 @@ interface IssueCardProps {
     downvotes?: number;
   };
   onSetVisibility: (id: string, visibility: IssueVisibility) => void;
-  onSetStatus?: (id: string, status: 'received' | 'in_progress' | 'resolved') => void;
+  onSetStatus?: (id: string, status: 'received' | 'in_progress' | 'resolved', message?: string, photos?: string[]) => void;
   onAddProgress?: (issue: Issue) => void;
   onResolve?: (issue: Issue) => void;
 }

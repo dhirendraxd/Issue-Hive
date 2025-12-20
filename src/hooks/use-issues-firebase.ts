@@ -420,7 +420,7 @@ export function useIssuesFirebase() {
   });
 
   const setStatus = useMutation({
-    mutationFn: async (params: { id: string; status: IssueStatus }) => {
+    mutationFn: async (params: { id: string; status: IssueStatus; message?: string; photos?: string[] }) => {
       if (!firebaseEnabled) throw new Error('Cloud features are disabled (Firebase not configured).');
       if (!user) throw new Error('Must be signed in');
       
@@ -429,6 +429,8 @@ export function useIssuesFirebase() {
         status: params.status,
         changedAt: Date.now(),
         changedBy: user.uid,
+        ...(params.message && { message: params.message }),
+        ...(params.photos && params.photos.length > 0 && { photos: params.photos }),
       };
       
       await updateIssue(params.id, { 

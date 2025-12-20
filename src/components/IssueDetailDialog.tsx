@@ -12,6 +12,7 @@ import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
 import ReportUserDialog from "./ReportUserDialog";
+import StatusUpdateDialog from "./StatusUpdateDialog";
 import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
 import { useUserProfile } from "@/hooks/use-user-profile";
@@ -26,7 +27,7 @@ interface IssueDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onVisibilityChange?: (issueId: string, visibility: 'public' | 'private' | 'draft') => void;
-  onSetStatus?: (issueId: string, status: 'received' | 'in_progress' | 'resolved') => void;
+  onSetStatus?: (issueId: string, status: 'received' | 'in_progress' | 'resolved', message?: string, photos?: string[]) => void;
   enablePin?: boolean; // allow pin UI in comments for this context
 }
 
@@ -41,10 +42,12 @@ export default function IssueDetailDialog({
   const { user } = useAuth();
   const { data: userVote } = useUserVote(issue?.id);
   const { data: creatorProfile } = useUserProfile(issue?.createdBy);
-  const { upvoteIssue, downvoteIssue } = useIssuesFirebase();
+  const { upvoteIssue, downvoteIssue, setStatus } = useIssuesFirebase();
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<'received' | 'in_progress' | 'resolved' | null>(null);
   
   // Sync visibility state with issue prop
   useEffect(() => {
@@ -158,7 +161,10 @@ export default function IssueDetailDialog({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
-                    onClick={() => onSetStatus(issue.id, 'received')}
+                    onClick={() => {
+                      setPendingStatusChange('received');
+                      setStatusUpdateDialogOpen(true);
+                    }}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'received' ? 'bg-blue-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -170,7 +176,10 @@ export default function IssueDetailDialog({
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => onSetStatus(issue.id, 'in_progress')}
+                    onClick={() => {
+                      setPendingStatusChange('in_progress');
+                      setStatusUpdateDialogOpen(true);
+                    }}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'in_progress' ? 'bg-amber-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -182,7 +191,10 @@ export default function IssueDetailDialog({
                     </div>
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => onSetStatus(issue.id, 'resolved')}
+                    onClick={() => {
+                      setPendingStatusChange('resolved');
+                      setStatusUpdateDialogOpen(true);
+                    }}
                     className={`cursor-pointer py-3 px-4 ${issue.status === 'resolved' ? 'bg-emerald-50' : ''}`}
                   >
                     <div className="flex items-center gap-3">
@@ -298,13 +310,39 @@ export default function IssueDetailDialog({
                       return (
                         <div key={idx} className="relative">
                           <div className={`absolute -left-4 top-1.5 w-5 h-5 rounded-full bg-gradient-to-br ${historyItem.status === 'resolved' ? 'from-emerald-500 to-emerald-600' : historyItem.status === 'in_progress' ? 'from-amber-500 to-amber-600' : 'from-gray-500 to-gray-600'} border-4 border-white shadow-md`} />
-                          <div className={`rounded-lg ${colors.bg} border ${colors.border} p-3`}>
+                          <div className={`rounded-lg ${colors.bg} border ${colors.border} p-3 space-y-2`}>
                             <div className="flex items-center justify-between">
                               <span className={`text-sm font-semibold ${colors.text}`}>{colors.label}</span>
                               <span className={`text-xs ${colors.text}`} title={new Date(historyItem.changedAt).toLocaleString()}>
                                 {formatRelativeTime(historyItem.changedAt)}
                               </span>
                             </div>
+                            
+                            {/* Status update message */}
+                            {historyItem.message && (
+                              <p className="text-sm text-gray-700 whitespace-pre-wrap break-words mt-2 bg-white/50 rounded p-2 border border-gray-200/50">
+                                {historyItem.message}
+                              </p>
+                            )}
+
+                            {/* Status update photos */}
+                            {historyItem.photos && historyItem.photos.length > 0 && (
+                              <div className={`grid gap-2 mt-2 ${historyItem.photos.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+                                {historyItem.photos.map((photo, photoIdx) => (
+                                  <div
+                                    key={photoIdx}
+                                    className="relative group rounded-lg overflow-hidden border border-gray-200 hover:border-gray-300 transition-colors"
+                                  >
+                                    <img
+                                      src={photo}
+                                      alt={`Status update ${photoIdx + 1}`}
+                                      className="w-full h-32 object-cover cursor-pointer group-hover:opacity-80 transition-opacity"
+                                      onClick={() => window.open(photo, '_blank', 'noopener,noreferrer')}
+                                    />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -655,6 +693,22 @@ export default function IssueDetailDialog({
           issueTitle: issue.title,
         }}
       />
+
+      {/* Status Update Dialog */}
+      {pendingStatusChange && (
+        <StatusUpdateDialog
+          open={statusUpdateDialogOpen}
+          onOpenChange={setStatusUpdateDialogOpen}
+          newStatus={pendingStatusChange}
+          onSubmit={async (message, photos) => {
+            if (onSetStatus) {
+              await onSetStatus(issue.id, pendingStatusChange, message, photos);
+            }
+            setStatusUpdateDialogOpen(false);
+            setPendingStatusChange(null);
+          }}
+        />
+      )}
     </Dialog>
   );
 }

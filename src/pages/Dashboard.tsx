@@ -334,7 +334,7 @@ export default function Dashboard() {
                                 issue={issue}
                                 engagement={engagement?.[issue.id]}
                                 onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
-                                onSetStatus={(id, status) => setStatus.mutate({ id, status })}
+                                onSetStatus={(id, status, message, photos) => setStatus.mutate({ id, status, message, photos })}
                                 onAddProgress={handleOpenProgressDialog}
                                 onResolve={handleOpenResolveDialog}
                               />
@@ -362,7 +362,7 @@ export default function Dashboard() {
                                 issue={issue}
                                 engagement={engagement?.[issue.id]}
                                 onSetVisibility={(id, visibility) => setVisibility.mutate({ id, visibility })}
-                                onSetStatus={(id, status) => setStatus.mutate({ id, status })}
+                                onSetStatus={(id, status, message, photos) => setStatus.mutate({ id, status, message, photos })}
                                 onAddProgress={handleOpenProgressDialog}
                                 onResolve={handleOpenResolveDialog}
                               />

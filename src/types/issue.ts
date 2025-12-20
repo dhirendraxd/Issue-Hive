@@ -32,6 +32,8 @@ export interface Issue {
     status: IssueStatus;
     changedAt: number;
     changedBy: string;
+    message?: string;
+    photos?: string[];
   }>;
   /** Resolution details when issue is marked as resolved by owner */
   resolution?: {

@@ -251,9 +251,9 @@ export default function UserProfile() {
     }
   };
 
-  const handleStatusChange = async (issueId: string, newStatus: 'received' | 'in_progress' | 'resolved') => {
+  const handleStatusChange = async (issueId: string, newStatus: 'received' | 'in_progress' | 'resolved', message?: string, photos?: string[]) => {
     try {
-      await setStatus.mutateAsync({ id: issueId, status: newStatus });
+      await setStatus.mutateAsync({ id: issueId, status: newStatus, message, photos });
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       const statusLabels = { received: 'Pending', in_progress: 'In Progress', resolved: 'Resolved' };
       toast.success(`Issue status updated to ${statusLabels[newStatus]}`);
