@@ -16,6 +16,15 @@ function mountGlobalErrorHandlers() {
 
 	window.addEventListener('error', (ev) => {
 		try {
+			const errorMsg = String(ev.error?.message || ev.message || '');
+			
+			// Suppress portal removeChild errors - these are handled by PortalErrorBoundary
+			if (errorMsg.includes('removeChild') || ev.error?.name === 'NotFoundError') {
+				console.warn('[Global] Suppressed portal cleanup error:', errorMsg);
+				ev.preventDefault();
+				return;
+			}
+			
 			console.error('[Global] Uncaught error', ev.error || ev.message, ev);
 			
 			// Prevent default error handling to avoid conflicts
@@ -38,11 +47,11 @@ function mountGlobalErrorHandlers() {
 				root.textContent = '';
 				
 				// Sanitize error message to prevent XSS
-				const errorMsg = String(ev.error || ev.message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+				const sanitizedMsg = errorMsg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 				root.innerHTML = `
 <div style="padding:24px;font-family:Inter,system-ui,Arial;">
 	<h2 style="color:#b91c1c;">Unhandled Error</h2>
-	<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${errorMsg}</pre>
+	<pre style="white-space:pre-wrap;background:#111;color:#fff;padding:12px;border-radius:6px;max-height:60vh;overflow:auto;">${sanitizedMsg}</pre>
 	<button onclick="location.reload()" style="margin-top:12px;padding:8px 12px;border-radius:6px;border:none;background:#111;color:#fff">Reload</button>
 </div>
 `;

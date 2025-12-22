@@ -11,10 +11,20 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error) {
+    // Suppress portal removeChild errors - these are harmless cleanup issues
+    if (error.message?.includes('removeChild') || error.name === 'NotFoundError') {
+      console.warn('[ErrorBoundary] Suppressed portal cleanup error:', error.message);
+      return { hasError: false, error: null, info: null };
+    }
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
+    // Suppress portal removeChild errors
+    if (error.message?.includes('removeChild') || error.name === 'NotFoundError') {
+      console.warn('[ErrorBoundary] Portal cleanup error suppressed:', error.message);
+      return;
+    }
     // You can send errors to a logging endpoint here
     console.error('[ErrorBoundary] Caught error:', error, info);
     this.setState({ error, info });

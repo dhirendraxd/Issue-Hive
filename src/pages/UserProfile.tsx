@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -24,11 +24,13 @@ import { formatRelativeTime } from '@/lib/utils';
 import { sanitizeUrl } from '@/lib/security';
 import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
+import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import PortalErrorBoundary from '@/components/PortalErrorBoundary';
 
 export default function UserProfile() {
   const { uid } = useParams();
@@ -36,7 +38,7 @@ export default function UserProfile() {
   const { user } = useAuth();
   const { data: issues, isLoading, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
-  const { data: receivedMessages, isLoading: messagesLoading } = useReceivedMessages();
+  const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
   const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -255,6 +257,29 @@ export default function UserProfile() {
       toast.error('Failed to update status');
     }
   };
+
+  // Show loading state while critical data loads
+  if (isLoading || profileLoading) {
+    return (
+      <div className="min-h-screen bg-stone-50">
+        <Navbar />
+        <main className="pt-24 pb-24 px-4 mx-auto max-w-5xl">
+          <div className="space-y-4">
+            <Skeleton className="h-32 w-32 rounded-full" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  // If no uid, redirect to home
+  if (!uid) {
+    navigate('/');
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
@@ -958,143 +983,145 @@ export default function UserProfile() {
           </div>
         </main>
         
-        {/* Dialogs */}
-        {selectedIssue && (
-          <>
-            <ResolveIssueDialog
-              open={resolveDialogOpen}
-              onOpenChange={setResolveDialogOpen}
-              issueTitle={selectedIssue.title}
-              onResolve={async (resolution) => {
-                await resolveIssue.mutateAsync({
-                  id: selectedIssue.id,
-                  ...resolution
-                });
-              }}
+        {/* Dialogs - Wrapped in PortalErrorBoundary to prevent removeChild errors */}
+        <PortalErrorBoundary>
+          {selectedIssue && (
+            <>
+              <ResolveIssueDialog
+                open={resolveDialogOpen}
+                onOpenChange={setResolveDialogOpen}
+                issueTitle={selectedIssue.title}
+                onResolve={async (resolution) => {
+                  await resolveIssue.mutateAsync({
+                    id: selectedIssue.id,
+                    ...resolution
+                  });
+                }}
+              />
+              <AddProgressDialog
+                open={progressDialogOpen}
+                onOpenChange={setProgressDialogOpen}
+                issueTitle={selectedIssue.title}
+                onAddProgress={(data) => {
+                  addProgress.mutate({
+                    id: selectedIssue.id,
+                    ...data
+                  });
+                }}
+              />
+              <IssueDetailDialog
+                open={detailDialogOpen}
+                onOpenChange={setDetailDialogOpen}
+                issue={selectedIssue}
+                onVisibilityChange={handleVisibilityChange}
+                onSetStatus={isOwner ? handleStatusChange : undefined}
+              />
+            </>
+          )}
+
+          {/* Message Dialog */}
+          {!isOwner && user && (
+            <SendMessageDialog
+              open={messageDialogOpen}
+              onOpenChange={setMessageDialogOpen}
+              targetUserId={uid!}
+              targetUserName={ownerProfile?.displayName || 'User'}
+              targetUserAvatar={avatarUrl}
             />
-            <AddProgressDialog
-              open={progressDialogOpen}
-              onOpenChange={setProgressDialogOpen}
-              issueTitle={selectedIssue.title}
-              onAddProgress={(data) => {
-                addProgress.mutate({
-                  id: selectedIssue.id,
-                  ...data
-                });
-              }}
+          )}
+
+          {/* Report User Dialog */}
+          {!isOwner && user && (
+            <ReportUserDialog
+              open={reportUserDialogOpen}
+              onOpenChange={setReportUserDialogOpen}
+              reportedUserId={uid!}
+              reportedUserName={ownerProfile?.displayName || 'User'}
             />
-            <IssueDetailDialog
-              open={detailDialogOpen}
-              onOpenChange={setDetailDialogOpen}
-              issue={selectedIssue}
-              onVisibilityChange={handleVisibilityChange}
-              onSetStatus={isOwner ? handleStatusChange : undefined}
-            />
-          </>
-        )}
+          )}
 
-        {/* Message Dialog */}
-        {!isOwner && user && (
-          <SendMessageDialog
-            open={messageDialogOpen}
-            onOpenChange={setMessageDialogOpen}
-            targetUserId={uid!}
-            targetUserName={ownerProfile?.displayName || 'User'}
-            targetUserAvatar={avatarUrl}
-          />
-        )}
+          {/* Followers Dialog */}
+          <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
+            <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Followers ({followCounts.followers})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                {followersList.length > 0 ? (
+                  <div className="space-y-3">
+                    {followersList.map((follower) => (
+                      <div key={follower.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
+                        <Link to={`/profile/${follower.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowersDialogOpen(false)}>
+                          <Avatar className="h-10 w-10 ring-2 ring-orange-200">
+                            <AvatarImage src={follower.photoURL} />
+                            <AvatarFallback className="bg-orange-100 text-orange-700 font-semibold">
+                              {follower.displayName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-stone-900 truncate">{follower.displayName}</p>
+                            {follower.username && (
+                              <p className="text-xs text-muted-foreground truncate">@{follower.username}</p>
+                            )}
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">No followers yet</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-        {/* Report User Dialog */}
-        {!isOwner && user && (
-          <ReportUserDialog
-            open={reportUserDialogOpen}
-            onOpenChange={setReportUserDialogOpen}
-            reportedUserId={uid!}
-            reportedUserName={ownerProfile?.displayName || 'User'}
-          />
-        )}
-
-        {/* Followers Dialog */}
-        <Dialog open={followersDialogOpen} onOpenChange={setFollowersDialogOpen}>
-          <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Followers ({followCounts.followers})
-              </DialogTitle>
-            </DialogHeader>
-            <div className="overflow-y-auto flex-1 -mx-6 px-6">
-              {followersList.length > 0 ? (
-                <div className="space-y-3">
-                  {followersList.map((follower) => (
-                    <div key={follower.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
-                      <Link to={`/profile/${follower.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowersDialogOpen(false)}>
-                        <Avatar className="h-10 w-10 ring-2 ring-orange-200">
-                          <AvatarImage src={follower.photoURL} />
-                          <AvatarFallback className="bg-orange-100 text-orange-700 font-semibold">
-                            {follower.displayName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-stone-900 truncate">{follower.displayName}</p>
-                          {follower.username && (
-                            <p className="text-xs text-muted-foreground truncate">@{follower.username}</p>
-                          )}
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">No followers yet</p>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Following Dialog */}
-        <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
-          <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Following ({followCounts.following})
-              </DialogTitle>
-            </DialogHeader>
-            <div className="overflow-y-auto flex-1 -mx-6 px-6">
-              {followingList.length > 0 ? (
-                <div className="space-y-3">
-                  {followingList.map((following) => (
-                    <div key={following.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
-                      <Link to={`/profile/${following.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowingDialogOpen(false)}>
-                        <Avatar className="h-10 w-10 ring-2 ring-blue-200">
-                          <AvatarImage src={following.photoURL} />
-                          <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
-                            {following.displayName.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-stone-900 truncate">{following.displayName}</p>
-                          {following.username && (
-                            <p className="text-xs text-muted-foreground truncate">@{following.username}</p>
-                          )}
-                        </div>
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">Not following anyone yet</p>
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
+          {/* Following Dialog */}
+          <Dialog open={followingDialogOpen} onOpenChange={setFollowingDialogOpen}>
+            <DialogContent className="max-w-md max-h-[600px] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Following ({followCounts.following})
+                </DialogTitle>
+              </DialogHeader>
+              <div className="overflow-y-auto flex-1 -mx-6 px-6">
+                {followingList.length > 0 ? (
+                  <div className="space-y-3">
+                    {followingList.map((following) => (
+                      <div key={following.userId} className="flex items-center gap-3 p-3 hover:bg-stone-50 rounded-lg transition-colors">
+                        <Link to={`/profile/${following.userId}`} className="flex items-center gap-3 flex-1" onClick={() => setFollowingDialogOpen(false)}>
+                          <Avatar className="h-10 w-10 ring-2 ring-blue-200">
+                            <AvatarImage src={following.photoURL} />
+                            <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+                              {following.displayName.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-stone-900 truncate">{following.displayName}</p>
+                            {following.username && (
+                              <p className="text-xs text-muted-foreground truncate">@{following.username}</p>
+                            )}
+                          </div>
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Not following anyone yet</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </PortalErrorBoundary>
       </ParticlesBackground>
     </div>
   );

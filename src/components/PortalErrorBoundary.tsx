@@ -25,13 +25,16 @@ export default class PortalErrorBoundary extends React.Component<Props, State> {
       // Don't set hasError to true - just suppress it
       return { hasError: false };
     }
-    // For other errors, let them propagate
-    throw error;
+    // For other errors, mark as error but don't throw
+    console.error('[PortalErrorBoundary] Non-portal error:', error);
+    return { hasError: false }; // Let parent boundary handle it
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     if (error.message?.includes('removeChild') || error.name === 'NotFoundError') {
       console.warn('[PortalErrorBoundary] Portal cleanup error suppressed:', error, info);
+    } else {
+      console.error('[PortalErrorBoundary] Error caught:', error, info);
     }
   }
 

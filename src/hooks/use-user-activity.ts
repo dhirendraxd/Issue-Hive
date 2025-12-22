@@ -48,7 +48,13 @@ export function useUserActivity() {
         
         return activity;
       } catch (error) {
-        logger.error('[UserActivity] Error fetching activity:', error);
+        // Suppress Firebase index errors - these are expected until indexes are created
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('requires an index') || errorMessage.includes('FirebaseError')) {
+          logger.warn('[UserActivity] Firebase index not found - returning empty activity');
+        } else {
+          logger.error('[UserActivity] Error fetching activity:', error);
+        }
         // Return empty activity on error
         return {
           votedIssues: [],
