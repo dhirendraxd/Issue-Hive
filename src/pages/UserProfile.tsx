@@ -35,7 +35,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import PortalErrorBoundary from '@/components/PortalErrorBoundary';
 
 // Helper component to show comments for issues
-function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { issues: Issue[], engagementMap: any, onIssueClick: (issue: Issue) => void }) {
+type TimestampLike = number | Date | { toMillis?: () => number; seconds?: number; nanoseconds?: number };
+type EngagementStats = { comments?: number; upvotes?: number; downvotes?: number; commentLikes?: number };
+type EngagementMap = Record<string, EngagementStats>;
+type IssueComment = { id?: string; userAvatar?: string; userName?: string; createdAt?: TimestampLike; text?: string; content?: string };
+type ReportSummary = {
+  id: string;
+  reportedUserName?: string;
+  reporterName?: string;
+  reason?: string;
+  context?: { issueTitle?: string };
+  details?: string;
+  createdAt?: TimestampLike;
+  status?: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+};
+type VoteMutation = { mutate: (args: { reportId: string; upvote: boolean }) => void; isPending?: boolean };
+
+function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { issues: Issue[], engagementMap: EngagementMap, onIssueClick: (issue: Issue) => void }) {
   return (
     <div className="space-y-4">
       {issues.map((issue) => {
@@ -60,15 +76,19 @@ function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { iss
 
 // Component to display a single issue's comments
 function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, commentCount: number, onViewIssue: () => void }) {
-  const { data: comments = [] } = useComments(issue.id);
+  const { data: comments = [] as IssueComment[] } = useComments(issue.id);
   
   // Helper to convert Firestore timestamp to milliseconds
-  const getTimeInMs = (timestamp: any): number => {
+  const getTimeInMs = (timestamp: TimestampLike | undefined): number => {
     if (!timestamp) return Date.now();
     if (typeof timestamp === 'number') return timestamp;
     if (timestamp instanceof Date) return timestamp.getTime();
-    if (timestamp?.toMillis && typeof timestamp.toMillis === 'function') return timestamp.toMillis();
-    if (timestamp?.seconds) return timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000;
+    if (typeof (timestamp as { toMillis?: () => number }).toMillis === 'function') return (timestamp as { toMillis: () => number }).toMillis();
+    if ((timestamp as { seconds?: number }).seconds) {
+      const seconds = (timestamp as { seconds: number; nanoseconds?: number }).seconds;
+      const nanos = (timestamp as { nanoseconds?: number }).nanoseconds || 0;
+      return seconds * 1000 + nanos / 1_000_000;
+    }
     return Date.now();
   };
   
@@ -104,7 +124,7 @@ function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, 
       </Card>
       
       {/* Comments Preview */}
-      {comments.slice(0, 3).map((comment: any, idx) => (
+      {comments.slice(0, 3).map((comment, idx) => (
         <Card key={comment.id || idx} className="rounded-2xl border border-stone-200/50 bg-white/50 backdrop-blur-xl shadow-lg shadow-stone-100/20 p-4 ml-4 hover:shadow-stone-100/40 transition-all cursor-pointer" onClick={onViewIssue}>
           <CardContent className="p-0">
             <div className="flex gap-3">
@@ -140,17 +160,21 @@ function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, 
 }
 
 // Component to display a report card with voting
-function ReportCard({ report, voteOnReport }: { report: any; voteOnReport: any }) {
+function ReportCard({ report, voteOnReport }: { report: ReportSummary; voteOnReport: VoteMutation }) {
   const { data: voteCounts = { upvotes: 0, downvotes: 0 } } = useReportVoteCounts(report.id);
   const { data: userVote = 0 } = useReportVote(report.id);
   const { user } = useAuth();
 
-  const getTimeInMs = (timestamp: any): number => {
+  const getTimeInMs = (timestamp: TimestampLike | undefined): number => {
     if (!timestamp) return Date.now();
     if (typeof timestamp === 'number') return timestamp;
     if (timestamp instanceof Date) return timestamp.getTime();
-    if (timestamp?.toMillis && typeof timestamp.toMillis === 'function') return timestamp.toMillis();
-    if (timestamp?.seconds) return timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000;
+    if (typeof (timestamp as { toMillis?: () => number }).toMillis === 'function') return (timestamp as { toMillis: () => number }).toMillis();
+    if ((timestamp as { seconds?: number }).seconds) {
+      const seconds = (timestamp as { seconds: number; nanoseconds?: number }).seconds;
+      const nanos = (timestamp as { nanoseconds?: number }).nanoseconds || 0;
+      return seconds * 1000 + nanos / 1_000_000;
+    }
     return Date.now();
   };
 
@@ -297,12 +321,12 @@ export default function UserProfile() {
   const { data: followingList = [] } = useFollowingList(uid);
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
-  const { data: engagementMap = {} } = useIssueEngagement(ownedIssueIds);
+  const { data: engagementMap = {} as EngagementMap } = useIssueEngagement(ownedIssueIds);
   const { data: reportsAgainstMe = [] } = useReportsAgainstMe();
   const { data: reviewableReports = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
   const totalComments = useMemo(() => {
-    return Object.values(engagementMap).reduce((sum: number, e: any) => sum + (e?.comments || 0), 0);
+    return Object.values(engagementMap).reduce((sum, e) => sum + (e?.comments || 0), 0);
   }, [engagementMap]);
 
   const unreadCounts = useMemo(() => {
@@ -322,9 +346,6 @@ export default function UserProfile() {
     const vis = (i as unknown as WithVisibility).visibility;
     return vis === 'public';
   });
-  const followerPrivateIssues = !isOwner && isFollowing && ownerProfile?.showPrivateToFollowers
-    ? owned.filter(i => (i as unknown as WithVisibility).visibility === 'private')
-    : [];
   const privateCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'private').length;
   const draftCount = owned.filter(i => (i as unknown as WithVisibility).visibility === 'draft').length;
   
@@ -459,16 +480,6 @@ export default function UserProfile() {
     } catch (error) {
       toast.error('Failed to sign out');
     }
-  };
-
-  const handleResolve = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setResolveDialogOpen(true);
-  };
-
-  const handleAddProgress = (issue: Issue) => {
-    setSelectedIssue(issue);
-    setProgressDialogOpen(true);
   };
 
   const handleMarkNotificationsRead = () => {
@@ -1209,7 +1220,7 @@ export default function UserProfile() {
                                       variant="outline"
                                       className="mb-4 rounded-full"
                                       onClick={() => {
-                                        reportsAgainstMe.forEach((report: any) => {
+                                        reportsAgainstMe.forEach((report: ReportSummary) => {
                                           if (report.status === 'pending') {
                                             updateReportStatus.mutate({ reportId: report.id, status: 'reviewed' });
                                           }
@@ -1226,7 +1237,7 @@ export default function UserProfile() {
                               
                               {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
                                 <div className="space-y-3">
-                                  {reportsAgainstMe.map((report: any) => (
+                                  {reportsAgainstMe.map((report: ReportSummary) => (
                                     <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-4">
                                       <CardContent className="p-0 space-y-3">
                                         {/* Report Header */}
@@ -1308,7 +1319,7 @@ export default function UserProfile() {
                               
                               {reviewableReports && reviewableReports.length > 0 ? (
                                 <div className="space-y-3">
-                                  {reviewableReports.map((report: any) => (
+                                  {reviewableReports.map((report: ReportSummary) => (
                                     <ReportCard key={report.id} report={report} voteOnReport={voteOnReport} />
                                   ))}
                                 </div>
