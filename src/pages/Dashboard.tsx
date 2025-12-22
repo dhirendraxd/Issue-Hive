@@ -8,7 +8,6 @@ import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useUserActivity } from '@/hooks/use-user-activity';
 import { useActivityTracker } from '@/hooks/use-activity-tracker';
 import { useQueryClient } from '@tanstack/react-query';
-import { ISSUE_VISIBILITIES, IssueVisibility } from '@/types/issue';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
-import IssueDetailDialog from '@/components/IssueDetailDialog';
 import ProfilePictureEditor from '@/components/ProfilePictureEditor';
 import { 
   LogOut, 
@@ -45,8 +43,6 @@ import {
 } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
-import { formatRelativeTime } from '@/lib/utils';
-import { getUserAvatarUrl } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -55,7 +51,7 @@ import IssueCard from '@/components/IssueCard';
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: userProfile } = useUserProfile(user?.uid || '');
-  const { data: issues, isLoading: issuesLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: issues, isLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
@@ -89,7 +85,7 @@ export default function Dashboard() {
       await signOut();
       toast.success('Signed out successfully');
       navigate('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to sign out');
     }
   };
@@ -110,12 +106,6 @@ export default function Dashboard() {
   const draftCount = userIssues.filter(i => i.visibility === 'draft').length;
   const publishedIssues = userIssues.filter(i => i.visibility === 'public');
   const draftPrivateIssues = userIssues.filter(i => i.visibility === 'draft' || i.visibility === 'private');
-
-  const statusColors = {
-    received: 'bg-blue-500',
-    in_progress: 'bg-yellow-500',
-    resolved: 'bg-green-500',
-  };
 
   const handleOpenResolveDialog = (issue: Issue) => {
     setSelectedIssue(issue);
@@ -160,7 +150,6 @@ export default function Dashboard() {
     } catch (error) {
       const msg = (error as Error)?.message || 'Failed to add progress update';
       toast.error(msg);
-      console.error('Progress error:', error);
     }
   };
 
@@ -805,7 +794,6 @@ export default function Dashboard() {
                       const upvotes = activityTracker.local.upvotesGiven;
                       const downvotes = activityTracker.local.downvotesGiven;
                       const totalComments = activityTracker.local.commentsMade;
-                      const replies = activityTracker.local.repliesMade;
                       const commentsLiked = activityTracker.local.commentsLiked;
                       const commentLikesReceived = activityTracker.firebase?.commentLikesReceived || 0;
                       const total = upvotes + downvotes + totalComments + commentsLiked;

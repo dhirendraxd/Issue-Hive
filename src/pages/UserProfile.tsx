@@ -277,6 +277,9 @@ export default function UserProfile() {
   const { uid } = useParams();
   const [search] = useSearchParams();
   const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Call all hooks first (before any early returns)
   const { data: issues, isLoading, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
@@ -284,12 +287,18 @@ export default function UserProfile() {
   const markMessagesAsRead = useMarkMessagesAsRead();
   const updateReportStatus = useUpdateReportStatus();
   const queryClient = useQueryClient();
-  const navigate = useNavigate();
   
   // Get user profile data
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid || '');
   
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
+
+  // Early guard: redirect if no uid (after hooks)
+  if (!uid) {
+    navigate('/');
+    return null;
+  }
+
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -477,7 +486,7 @@ export default function UserProfile() {
       toast.success('Signed out successfully');
       setSignOutConfirmOpen(false);
       navigate('/');
-    } catch (error) {
+    } catch {
       toast.error('Failed to sign out');
     }
   };
@@ -511,7 +520,7 @@ export default function UserProfile() {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       queryClient.invalidateQueries({ queryKey: ['issueEngagement'] });
       toast.success(`Issue visibility updated to ${newVisibility}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update visibility');
     }
   };
@@ -522,7 +531,7 @@ export default function UserProfile() {
       queryClient.invalidateQueries({ queryKey: ['issues'] });
       const statusLabels = { received: 'Pending', in_progress: 'In Progress', resolved: 'Resolved' };
       toast.success(`Issue status updated to ${statusLabels[newStatus]}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update status');
     }
   };
@@ -542,12 +551,6 @@ export default function UserProfile() {
         </main>
       </div>
     );
-  }
-
-  // If no uid, redirect to home
-  if (!uid) {
-    navigate('/');
-    return null;
   }
 
   return (

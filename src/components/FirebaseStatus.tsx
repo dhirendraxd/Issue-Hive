@@ -4,7 +4,7 @@
  * Add this to your app to verify Firebase is working
  */
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { auth, db, realtimeDb, storage, analytics } from '@/integrations/firebase/config';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
