@@ -753,40 +753,162 @@ export default function UserProfile() {
               
               {/* Notifications Tab */}
               <TabsContent value="notifications" className="mt-6">
-                <div className="max-w-4xl">
+                <div className="max-w-4xl space-y-6">
                   <div>
                     <h2 className="text-xl font-semibold tracking-tight mb-2">Notifications</h2>
                     <p className="text-sm text-muted-foreground mb-6">Activity updates and alerts related to your issues</p>
                   </div>
                   
-                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
-                    <Bell className="h-16 w-16 mx-auto mb-4 opacity-40 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold text-stone-900 mb-2">No Notifications Yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      You'll receive notifications when:
-                    </p>
-                    <ul className="text-sm text-muted-foreground space-y-2 mb-6 max-w-sm mx-auto">
-                      <li className="flex items-center gap-2">
-                        <ThumbsUp className="h-4 w-4 text-orange-500" />
-                        Someone upvotes your issue
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4 text-blue-500" />
-                        Someone comments on your issue
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-purple-500" />
-                        Someone follows you
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-amber-500" />
-                        Your issue status is updated
-                      </li>
-                    </ul>
-                    <p className="text-xs text-muted-foreground">
-                      Check back here to see your activity notifications
-                    </p>
-                  </Card>
+                  <Tabs defaultValue="comments" className="w-full">
+                    <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
+                      <TabsTrigger value="comments" className="flex-1 data-[state=active]:bg-white rounded-md">
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Comments
+                      </TabsTrigger>
+                      <TabsTrigger value="followers" className="flex-1 data-[state=active]:bg-white rounded-md">
+                        <Users className="h-4 w-4 mr-2" />
+                        Followers
+                      </TabsTrigger>
+                      <TabsTrigger value="reports" className="flex-1 data-[state=active]:bg-white rounded-md">
+                        <Flag className="h-4 w-4 mr-2" />
+                        Reports
+                      </TabsTrigger>
+                    </TabsList>
+                    
+                    {/* Comments Notification */}
+                    <TabsContent value="comments" className="mt-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-4">Comments on your issues</p>
+                        {owned.length === 0 ? (
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">No issues yet. Create one to receive comments!</p>
+                          </Card>
+                        ) : (
+                          <div className="space-y-4">
+                            {owned.map((issue) => {
+                              const engagement = engagementMap[issue.id];
+                              const commentCount = engagement?.comments || 0;
+                              
+                              if (commentCount === 0) return null;
+                              
+                              return (
+                                <Card key={issue.id} className="rounded-2xl border border-blue-200/50 bg-blue-50/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-4 hover:shadow-blue-100/40 transition-all">
+                                  <CardContent className="p-0">
+                                    <div className="flex items-start justify-between gap-4">
+                                      <div className="flex-1">
+                                        <h3 className="font-semibold text-stone-900 mb-1">{issue.title}</h3>
+                                        <div className="flex items-center gap-3 text-sm">
+                                          <Badge variant="outline" className="bg-blue-100/50 text-blue-700 border-blue-200">
+                                            <MessageSquare className="h-3 w-3 mr-1" />
+                                            {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                                          </Badge>
+                                          <span className="text-muted-foreground">{formatRelativeTime(issue.createdAt)}</span>
+                                        </div>
+                                      </div>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        className="rounded-full"
+                                        onClick={() => {
+                                          setSelectedIssue(issue);
+                                          setDetailDialogOpen(true);
+                                        }}
+                                      >
+                                        View
+                                      </Button>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            }).filter(Boolean)}
+                            {owned.every(issue => (engagementMap[issue.id]?.comments || 0) === 0) && (
+                              <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                                <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">No comments yet. Share your issues to get feedback!</p>
+                              </Card>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Followers Notification */}
+                    <TabsContent value="followers" className="mt-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-4">People following you</p>
+                        {followersList.length > 0 ? (
+                          <div className="space-y-3">
+                            {followersList.map((follower) => (
+                              <Card key={follower.userId} className="rounded-2xl border border-purple-200/50 bg-purple-50/50 backdrop-blur-2xl shadow-lg shadow-purple-100/20 p-4 hover:shadow-purple-100/40 transition-all">
+                                <CardContent className="p-0">
+                                  <div className="flex items-center justify-between">
+                                    <Link to={`/profile/${follower.userId}`} className="flex items-center gap-3 flex-1">
+                                      <Avatar className="h-10 w-10 ring-2 ring-purple-200">
+                                        <AvatarImage src={follower.photoURL} />
+                                        <AvatarFallback className="bg-purple-100 text-purple-700 font-semibold">
+                                          {follower.displayName.charAt(0).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-sm text-stone-900 truncate">{follower.displayName}</p>
+                                        {follower.username && (
+                                          <p className="text-xs text-muted-foreground truncate">@{follower.username}</p>
+                                        )}
+                                      </div>
+                                    </Link>
+                                    <Badge variant="secondary" className="bg-purple-100/80 text-purple-700 border-purple-200">
+                                      Following
+                                    </Badge>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                            <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">No followers yet. Share your profile to gain followers!</p>
+                          </Card>
+                        )}
+                      </div>
+                    </TabsContent>
+                    
+                    {/* Reports Notification */}
+                    <TabsContent value="reports" className="mt-6">
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-4">Community reports on other users' content</p>
+                        <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6">
+                          <div className="flex items-start gap-4">
+                            <AlertCircle className="h-8 w-8 text-amber-600 flex-shrink-0 mt-1" />
+                            <div>
+                              <h3 className="font-semibold text-stone-900 mb-2">Community Review System</h3>
+                              <p className="text-sm text-muted-foreground mb-3">
+                                Help moderate the community by reviewing reports on other users' issues and profiles. The community votes on whether reported content violates guidelines.
+                              </p>
+                              <ul className="text-sm text-muted-foreground space-y-2">
+                                <li className="flex items-center gap-2">
+                                  <Flag className="h-4 w-4 text-amber-500" />
+                                  View reports filed against other users' content
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <Users className="h-4 w-4 text-amber-500" />
+                                  Community votes to verify report validity
+                                </li>
+                                <li className="flex items-center gap-2">
+                                  <Check className="h-4 w-4 text-amber-500" />
+                                  Moderators make final decisions
+                                </li>
+                              </ul>
+                              <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-amber-200/50">
+                                No reports to review at this time. Thank you for helping keep the community safe!
+                              </p>
+                            </div>
+                          </div>
+                        </Card>
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </div>
               </TabsContent>
               
