@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
-import { useReceivedMessages, useSentMessages } from '@/hooks/use-messaging';
+import { useReceivedMessages, useSentMessages, useMarkMessagesAsRead } from '@/hooks/use-messaging';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
@@ -26,7 +26,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useComments } from '@/hooks/use-comments';
-import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote } from '@/hooks/use-reports';
+import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote, useUpdateReportStatus } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -269,6 +269,8 @@ export default function UserProfile() {
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
   const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
+    const markMessagesAsRead = useMarkMessagesAsRead();
+    const updateReportStatus = useUpdateReportStatus();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -285,6 +287,7 @@ export default function UserProfile() {
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
   const [reportView, setReportView] = useState<'against-me' | 'review'>('against-me');
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
 
   // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -439,12 +442,10 @@ export default function UserProfile() {
   ) : null;
   
   const handleSignOut = async () => {
-    const confirmed = window.confirm('Are you sure you want to sign out?');
-    if (!confirmed) return;
-
     try {
       await signOut();
       toast.success('Signed out successfully');
+      setSignOutConfirmOpen(false);
       navigate('/');
     } catch (error) {
       toast.error('Failed to sign out');
@@ -669,7 +670,7 @@ export default function UserProfile() {
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
                       <Bell className="h-4 w-4 mr-2" />
-                      Notifications
+                      Notifications {(reportsAgainstMe.length > 0 || followersList.length > 0) && <span className="ml-2 px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">{reportsAgainstMe.length + followersList.length}</span>}
                     </TabsTrigger>
                     <TabsTrigger 
                       value="analytics" 
@@ -817,6 +818,20 @@ export default function UserProfile() {
                         <div>
                           <h2 className="text-xl font-semibold tracking-tight mb-2">Incoming Messages</h2>
                           <p className="text-sm text-muted-foreground mb-4">Messages sent to you by other users</p>
+                            {receivedMessages && receivedMessages.length > 0 && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="mb-4 rounded-full"
+                                onClick={() => {
+                                  markMessagesAsRead.mutate();
+                                  toast.success('All messages marked as read');
+                                }}
+                                disabled={markMessagesAsRead.isPending}
+                              >
+                                Mark all as read
+                              </Button>
+                            )}
                         </div>
 
                     {messagesLoading ? (
@@ -996,15 +1011,15 @@ export default function UserProfile() {
                     <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
                       <TabsTrigger value="comments" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        Comments
+                        Comments {ownedIssueIds.length > 0 && Object.values(engagementMap).some((e: any) => e.comments > 0) && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">{Object.values(engagementMap).reduce((sum: number, e: any) => sum + (e.comments || 0), 0)}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="followers" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Users className="h-4 w-4 mr-2" />
-                        Followers
+                        Followers {followersList.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">{followersList.length}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="reports" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Flag className="h-4 w-4 mr-2" />
-                        Reports
+                        Reports {reportsAgainstMe.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{reportsAgainstMe.length}</span>}
                       </TabsTrigger>
                     </TabsList>
                     
@@ -1105,6 +1120,24 @@ export default function UserProfile() {
                               <div>
                                 <h3 className="text-lg font-semibold mb-2">Reports Against Your Content</h3>
                                 <p className="text-sm text-muted-foreground mb-4">Review reports and take action</p>
+                                  {reportsAgainstMe && reportsAgainstMe.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="mb-4 rounded-full"
+                                      onClick={() => {
+                                        reportsAgainstMe.forEach((report: any) => {
+                                          if (report.status === 'pending') {
+                                            updateReportStatus.mutate({ reportId: report.id, status: 'reviewed' });
+                                          }
+                                        });
+                                        toast.success('Reports marked as reviewed');
+                                      }}
+                                      disabled={updateReportStatus.isPending}
+                                    >
+                                      Mark all as reviewed
+                                    </Button>
+                                  )}
                               </div>
                               
                               {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
@@ -1406,80 +1439,89 @@ export default function UserProfile() {
               {/* Settings Tab */}
               <TabsContent value="settings" className="mt-6">
                 <div className="max-w-2xl space-y-6">
-                  <div>
-                    <h2 className="text-xl font-semibold tracking-tight mb-2">Quick Actions</h2>
-                      <p className="text-sm text-muted-foreground mb-4">Manage your profile and issues</p>
-                      <div className="flex flex-wrap gap-3">
-                        <Link to="/raise-issue">
-                          <Button className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Create New Issue
-                          </Button>
-                        </Link>
-                        <Link to="/issues">
-                          <Button variant="outline" className="rounded-full">
-                            Browse All Issues
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="outline" 
-                          className="rounded-full"
-                          onClick={() => navigate(`/profile/${uid}/edit`)}
-                        >
-                          <Edit2 className="h-4 w-4 mr-2" />
-                          Edit Profile
-                        </Button>
+                  {/* Profile Overview */}
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
+                    <h3 className="font-semibold text-lg mb-4">Profile Overview</h3>
+                    <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Display Name:</span>
+                        <span className="font-medium">{user?.displayName || 'Not set'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Email:</span>
+                        <span className="font-medium">{user?.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Total Issues:</span>
+                        <span className="font-medium">{owned.length}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Followers:</span>
+                        <span className="font-medium">{followCounts.followers}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Following:</span>
+                        <span className="font-medium">{followCounts.following}</span>
                       </div>
                     </div>
-                    
-                    <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-6">
-                      <h3 className="font-semibold text-lg mb-2">Profile Overview</h3>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Display Name:</span>
-                          <span className="font-medium">{user?.displayName || 'Not set'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Email:</span>
-                          <span className="font-medium">{user?.email}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Total Issues:</span>
-                          <span className="font-medium">{owned.length}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Followers:</span>
-                          <span className="font-medium">{followCounts.followers}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Following:</span>
-                          <span className="font-medium">{followCounts.following}</span>
-                        </div>
-                      </div>
-                    </Card>
-                    
-                    <Separator />
-                    
-                    <Card className="rounded-2xl border border-red-300/60 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6">
-                      <h3 className="font-semibold text-lg mb-2 text-red-900">Account Actions</h3>
-                      <p className="text-sm text-red-700 mb-4">Manage your account settings</p>
-                      <Button 
-                        variant="destructive" 
-                        className="rounded-full"
-                        onClick={handleSignOut}
-                      >
-                        <LogOut className="h-4 w-4 mr-2" />
-                        Sign Out
-                      </Button>
-                    </Card>
-                  </div>
-                </TabsContent>
+                  </Card>
+                  
+                  <Separator />
+                  
+                  {/* Sign Out */}
+                  <Card className="rounded-2xl border border-red-300/60 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-6">
+                    <h3 className="font-semibold text-lg mb-2 text-red-900">Account</h3>
+                    <Button 
+                      variant="destructive" 
+                      className="rounded-full"
+                      onClick={() => setSignOutConfirmOpen(true)}
+                    >
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </Button>
+                  </Card>
+                </div>
+              </TabsContent>
             </Tabs>
           </div>
         </main>
         
         {/* Dialogs - Wrapped in PortalErrorBoundary to prevent removeChild errors */}
         <PortalErrorBoundary>
+          {/* Sign Out Confirmation Dialog */}
+          <Dialog open={signOutConfirmOpen} onOpenChange={setSignOutConfirmOpen}>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-red-600">
+                  <AlertCircle className="h-5 w-5" />
+                  Confirm Sign Out
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <p className="text-sm text-stone-700">
+                  Are you sure you want to sign out? You'll need to sign in again to access your account.
+                </p>
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={() => setSignOutConfirmOpen(false)}
+                    className="rounded-full"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={handleSignOut}
+                    className="rounded-full"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
           {selectedIssue && (
             <>
               <ResolveIssueDialog

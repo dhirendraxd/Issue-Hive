@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { db } from '@/integrations/firebase/config';
-import { collection, addDoc, serverTimestamp, query, where, orderBy, doc, getDoc, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, query, where, orderBy, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/use-auth';
 
 import type { Timestamp } from 'firebase/firestore';
@@ -239,5 +239,35 @@ export function useReceivedMessages() {
       }
     },
     refetchInterval: 5000
+  });
+}
+
+export function useMarkMessagesAsRead() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async () => {
+      if (!user?.uid || !db) return;
+
+      // Get all conversations for this user
+      const q = query(collection(db, 'conversations'), where('participants', 'array-contains', user.uid));
+      const conversationSnaps = await getDocs(q);
+
+      // Mark all messages as read in all conversations
+      for (const convDoc of conversationSnaps.docs) {
+        const messagesRef = collection(db, 'conversations', convDoc.id, 'messages');
+        const messagesQuery = query(messagesRef, where('recipientId', '==', user.uid), where('read', '==', false));
+        const messageSnaps = await getDocs(messagesQuery);
+
+        for (const msgDoc of messageSnaps.docs) {
+          const messageRef = doc(db, 'conversations', convDoc.id, 'messages', msgDoc.id);
+          await updateDoc(messageRef, { read: true });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['receivedMessages'] });
+    },
   });
 }
