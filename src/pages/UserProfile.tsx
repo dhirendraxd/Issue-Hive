@@ -36,18 +36,6 @@ import PortalErrorBoundary from '@/components/PortalErrorBoundary';
 
 // Helper component to show comments for issues
 function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { issues: Issue[], engagementMap: any, onIssueClick: (issue: Issue) => void }) {
-  const commentsData: { issue: Issue, comments: any[], timestamp: any }[] = [];
-  
-  // Collect all comments from all issues
-  issues.forEach(issue => {
-    const IssueCommentsComponent = ({ issueId }: { issueId: string }) => {
-      const { data: comments = [] } = useComments(issueId);
-      return null; // This is just to fetch data
-    };
-    
-    // We'll display using a simpler approach - show issue with comment count and link to view
-  });
-
   return (
     <div className="space-y-4">
       {issues.map((issue) => {
@@ -291,7 +279,6 @@ export default function UserProfile() {
   const [activeTab, setActiveTab] = useState('issues');
   const [messagesTab, setMessagesTab] = useState<'incoming' | 'outgoing'>('incoming');
   const [notificationTab, setNotificationTab] = useState<'comments' | 'followers' | 'reports'>('comments');
-  const [notificationsCleared, setNotificationsCleared] = useState(false);
   const [commentsCleared, setCommentsCleared] = useState(false);
   const [followersCleared, setFollowersCleared] = useState(false);
   const [reportsCleared, setReportsCleared] = useState(false);
@@ -318,13 +305,17 @@ export default function UserProfile() {
     return Object.values(engagementMap).reduce((sum: number, e: any) => sum + (e?.comments || 0), 0);
   }, [engagementMap]);
 
+  const unreadCounts = useMemo(() => {
+    return {
+      comments: commentsCleared ? 0 : totalComments,
+      followers: followersCleared ? 0 : followersList.length,
+      reports: reportsCleared ? 0 : reportsAgainstMe.length,
+    };
+  }, [commentsCleared, totalComments, followersCleared, followersList.length, reportsCleared, reportsAgainstMe.length]);
+
   const hasUnreadNotifications = useMemo(() => {
-    if (notificationsCleared) return false;
-    const hasReports = reportsAgainstMe.length > 0;
-    const hasFollowers = followersList.length > 0;
-    const hasComments = totalComments > 0;
-    return hasReports || hasFollowers || hasComments;
-  }, [notificationsCleared, reportsAgainstMe.length, followersList.length, totalComments]);
+    return unreadCounts.comments > 0 || unreadCounts.followers > 0 || unreadCounts.reports > 0;
+  }, [unreadCounts]);
   
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
@@ -481,7 +472,6 @@ export default function UserProfile() {
   };
 
   const handleMarkNotificationsRead = () => {
-    setNotificationsCleared(true);
     setCommentsCleared(true);
     setFollowersCleared(true);
     setReportsCleared(true);
@@ -490,17 +480,10 @@ export default function UserProfile() {
 
   const handleMarkCommentsRead = () => {
     setCommentsCleared(true);
-    // If other sections are already clear, clear overall badge too
-    if (followersCleared && reportsCleared) {
-      setNotificationsCleared(true);
-    }
   };
 
   const handleMarkFollowersRead = () => {
     setFollowersCleared(true);
-    if (commentsCleared && reportsCleared) {
-      setNotificationsCleared(true);
-    }
   };
 
   const handleViewDetails = (issue: Issue) => {
@@ -711,7 +694,11 @@ export default function UserProfile() {
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
                       <Bell className="h-4 w-4 mr-2" />
-                      Notifications {!notificationsCleared && (reportsAgainstMe.length > 0 || followersList.length > 0) && <span className="ml-2 px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">{reportsAgainstMe.length + followersList.length}</span>}
+                      Notifications {hasUnreadNotifications && (unreadCounts.comments + unreadCounts.followers + unreadCounts.reports > 0) && (
+                        <span className="ml-2 px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">
+                          {unreadCounts.comments + unreadCounts.followers + unreadCounts.reports}
+                        </span>
+                      )}
                     </TabsTrigger>
                     <TabsTrigger 
                       value="analytics" 
@@ -1067,15 +1054,15 @@ export default function UserProfile() {
                     <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
                       <TabsTrigger value="comments" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        Comments {!commentsCleared && totalComments > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">{totalComments}</span>}
+                        Comments {unreadCounts.comments > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">{unreadCounts.comments}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="followers" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Users className="h-4 w-4 mr-2" />
-                        Followers {!followersCleared && followersList.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">{followersList.length}</span>}
+                        Followers {unreadCounts.followers > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">{unreadCounts.followers}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="reports" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Flag className="h-4 w-4 mr-2" />
-                        Reports {!reportsCleared && reportsAgainstMe.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{reportsAgainstMe.length}</span>}
+                        Reports {unreadCounts.reports > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{unreadCounts.reports}</span>}
                       </TabsTrigger>
                     </TabsList>
                     
@@ -1210,9 +1197,6 @@ export default function UserProfile() {
                                       className="rounded-full"
                                       onClick={() => {
                                         setReportsCleared(true);
-                                        if (commentsCleared && followersCleared) {
-                                          setNotificationsCleared(true);
-                                        }
                                       }}
                                     >
                                       Mark as read
@@ -1231,7 +1215,6 @@ export default function UserProfile() {
                                           }
                                         });
                                         setReportsCleared(true);
-                                        setNotificationsCleared(true);
                                         toast.success('Reports marked as reviewed');
                                       }}
                                       disabled={updateReportStatus.isPending}
