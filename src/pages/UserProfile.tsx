@@ -20,17 +20,136 @@ import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
 import SendMessageDialog from '@/components/SendMessageDialog';
 import ReportUserDialog from '@/components/ReportUserDialog';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime, cn } from '@/lib/utils';
 import { sanitizeUrl } from '@/lib/security';
 import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
+import { useComments } from '@/hooks/use-comments';
+import { useReportsAgainstMe } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import PortalErrorBoundary from '@/components/PortalErrorBoundary';
+
+// Helper component to show comments for issues
+function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { issues: Issue[], engagementMap: any, onIssueClick: (issue: Issue) => void }) {
+  const commentsData: { issue: Issue, comments: any[], timestamp: any }[] = [];
+  
+  // Collect all comments from all issues
+  issues.forEach(issue => {
+    const IssueCommentsComponent = ({ issueId }: { issueId: string }) => {
+      const { data: comments = [] } = useComments(issueId);
+      return null; // This is just to fetch data
+    };
+    
+    // We'll display using a simpler approach - show issue with comment count and link to view
+  });
+
+  return (
+    <div className="space-y-4">
+      {issues.map((issue) => {
+        const engagement = engagementMap[issue.id];
+        const commentCount = engagement?.comments || 0;
+        
+        if (commentCount === 0) return null;
+        
+        return (
+          <IssueCommentCard key={issue.id} issue={issue} commentCount={commentCount} onViewIssue={() => onIssueClick(issue)} />
+        );
+      }).filter(Boolean)}
+      {issues.every(issue => (engagementMap[issue.id]?.comments || 0) === 0) && (
+        <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+          <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">No comments yet. Share your issues to get feedback!</p>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// Component to display a single issue's comments
+function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, commentCount: number, onViewIssue: () => void }) {
+  const { data: comments = [] } = useComments(issue.id);
+  
+  // Helper to convert Firestore timestamp to milliseconds
+  const getTimeInMs = (timestamp: any): number => {
+    if (!timestamp) return Date.now();
+    if (typeof timestamp === 'number') return timestamp;
+    if (timestamp instanceof Date) return timestamp.getTime();
+    if (timestamp?.toMillis && typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (timestamp?.seconds) return timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000;
+    return Date.now();
+  };
+  
+  return (
+    <div className="space-y-3">
+      {/* Issue Header */}
+      <Card className="rounded-2xl border border-blue-200/50 bg-blue-50/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-4 cursor-pointer hover:shadow-blue-100/40 transition-all" onClick={onViewIssue}>
+        <CardContent className="p-0">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <h3 className="font-semibold text-stone-900 mb-1">{issue.title}</h3>
+              <div className="flex items-center gap-3 text-sm">
+                <Badge variant="outline" className="bg-blue-100/50 text-blue-700 border-blue-200">
+                  <MessageSquare className="h-3 w-3 mr-1" />
+                  {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                </Badge>
+                <span className="text-muted-foreground">{formatRelativeTime(getTimeInMs(issue.createdAt))}</span>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              className="rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewIssue();
+              }}
+            >
+              View Issue
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Comments Preview */}
+      {comments.slice(0, 3).map((comment: any, idx) => (
+        <Card key={comment.id || idx} className="rounded-2xl border border-stone-200/50 bg-white/50 backdrop-blur-xl shadow-lg shadow-stone-100/20 p-4 ml-4 hover:shadow-stone-100/40 transition-all cursor-pointer" onClick={onViewIssue}>
+          <CardContent className="p-0">
+            <div className="flex gap-3">
+              <Avatar className="h-8 w-8 border border-stone-200">
+                <AvatarImage src={comment.userAvatar} />
+                <AvatarFallback className="bg-stone-100 text-xs font-semibold">
+                  {comment.userName?.[0]?.toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-sm font-semibold text-stone-900">{comment.userName || 'Anonymous'}</p>
+                  <span className="text-xs text-muted-foreground">{formatRelativeTime(getTimeInMs(comment.createdAt))}</span>
+                </div>
+                <p className="text-sm text-stone-700 line-clamp-2 break-words">{comment.text || comment.content}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+      
+      {comments.length > 3 && (
+        <Button 
+          variant="ghost" 
+          className="w-full rounded-full text-blue-600 hover:text-blue-700 hover:bg-blue-50/50"
+          onClick={onViewIssue}
+        >
+          View all {comments.length} comments
+        </Button>
+      )}
+    </div>
+  );
+}
 
 export default function UserProfile() {
   const { uid } = useParams();
@@ -71,6 +190,7 @@ export default function UserProfile() {
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} } = useIssueEngagement(ownedIssueIds);
+  const { data: reportsAgainstMe = [] } = useReportsAgainstMe();
   
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
@@ -785,50 +905,10 @@ export default function UserProfile() {
                             <p className="text-sm text-muted-foreground">No issues yet. Create one to receive comments!</p>
                           </Card>
                         ) : (
-                          <div className="space-y-4">
-                            {owned.map((issue) => {
-                              const engagement = engagementMap[issue.id];
-                              const commentCount = engagement?.comments || 0;
-                              
-                              if (commentCount === 0) return null;
-                              
-                              return (
-                                <Card key={issue.id} className="rounded-2xl border border-blue-200/50 bg-blue-50/50 backdrop-blur-2xl shadow-lg shadow-blue-100/20 p-4 hover:shadow-blue-100/40 transition-all">
-                                  <CardContent className="p-0">
-                                    <div className="flex items-start justify-between gap-4">
-                                      <div className="flex-1">
-                                        <h3 className="font-semibold text-stone-900 mb-1">{issue.title}</h3>
-                                        <div className="flex items-center gap-3 text-sm">
-                                          <Badge variant="outline" className="bg-blue-100/50 text-blue-700 border-blue-200">
-                                            <MessageSquare className="h-3 w-3 mr-1" />
-                                            {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
-                                          </Badge>
-                                          <span className="text-muted-foreground">{formatRelativeTime(issue.createdAt)}</span>
-                                        </div>
-                                      </div>
-                                      <Button 
-                                        size="sm" 
-                                        variant="outline"
-                                        className="rounded-full"
-                                        onClick={() => {
-                                          setSelectedIssue(issue);
-                                          setDetailDialogOpen(true);
-                                        }}
-                                      >
-                                        View
-                                      </Button>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              );
-                            }).filter(Boolean)}
-                            {owned.every(issue => (engagementMap[issue.id]?.comments || 0) === 0) && (
-                              <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
-                                <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
-                                <p className="text-sm text-muted-foreground">No comments yet. Share your issues to get feedback!</p>
-                              </Card>
-                            )}
-                          </div>
+                          <CommentNotificationsList issues={owned} engagementMap={engagementMap} onIssueClick={(issue) => {
+                            setSelectedIssue(issue);
+                            setDetailDialogOpen(true);
+                          }} />
                         )}
                       </div>
                     </TabsContent>
@@ -876,36 +956,112 @@ export default function UserProfile() {
                     
                     {/* Reports Notification */}
                     <TabsContent value="reports" className="mt-6">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-4">Community reports on other users' content</p>
-                        <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6">
-                          <div className="flex items-start gap-4">
-                            <AlertCircle className="h-8 w-8 text-amber-600 flex-shrink-0 mt-1" />
-                            <div>
-                              <h3 className="font-semibold text-stone-900 mb-2">Community Review System</h3>
-                              <p className="text-sm text-muted-foreground mb-3">
-                                Help moderate the community by reviewing reports on other users' issues and profiles. The community votes on whether reported content violates guidelines.
-                              </p>
-                              <ul className="text-sm text-muted-foreground space-y-2">
-                                <li className="flex items-center gap-2">
-                                  <Flag className="h-4 w-4 text-amber-500" />
-                                  View reports filed against other users' content
-                                </li>
-                                <li className="flex items-center gap-2">
-                                  <Users className="h-4 w-4 text-amber-500" />
-                                  Community votes to verify report validity
-                                </li>
-                                <li className="flex items-center gap-2">
-                                  <Check className="h-4 w-4 text-amber-500" />
-                                  Moderators make final decisions
-                                </li>
-                              </ul>
-                              <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-amber-200/50">
-                                No reports to review at this time. Thank you for helping keep the community safe!
-                              </p>
+                      <div className="space-y-4">
+                        {isOwner ? (
+                          <>
+                            <p className="text-sm text-muted-foreground mb-4">Reports filed against your content</p>
+                            {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
+                              <div className="space-y-3">
+                                {reportsAgainstMe.map((report: any) => (
+                                  <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-4">
+                                    <CardContent className="p-0 space-y-3">
+                                      {/* Report Header */}
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex-1">
+                                          <p className="text-sm font-semibold text-stone-900">
+                                            Reported by <span className="font-bold">{report.reporterName}</span>
+                                          </p>
+                                          <p className="text-xs text-muted-foreground">
+                                            {formatRelativeTime(
+                                              report.createdAt?.toMillis?.() ||
+                                              report.createdAt?.seconds * 1000 ||
+                                              Date.now()
+                                            )}
+                                          </p>
+                                        </div>
+                                        <Badge 
+                                          variant="outline" 
+                                          className="bg-red-100 text-red-700 border-red-300 whitespace-nowrap"
+                                        >
+                                          {report.reason}
+                                        </Badge>
+                                      </div>
+
+                                      {/* Report Context */}
+                                      {report.context?.issueTitle && (
+                                        <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
+                                          <p className="text-muted-foreground">Issue:</p>
+                                          <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
+                                        </div>
+                                      )}
+
+                                      {/* Report Details */}
+                                      <div>
+                                        <p className="text-sm text-muted-foreground mb-1">Details:</p>
+                                        <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
+                                          {report.details}
+                                        </p>
+                                      </div>
+
+                                      {/* Status Badge */}
+                                      <div className="flex items-center justify-between pt-2 border-t border-red-200/50">
+                                        <Badge
+                                          variant="secondary"
+                                          className={cn(
+                                            "capitalize",
+                                            report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
+                                            report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
+                                            report.status === 'resolved' && 'bg-green-100 text-green-700',
+                                            report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
+                                          )}
+                                        >
+                                          {report.status}
+                                        </Badge>
+                                        <p className="text-xs text-muted-foreground">
+                                          View the issue to review and take action
+                                        </p>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            ) : (
+                              <Card className="rounded-2xl border border-green-200/50 bg-green-50/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-12 text-center">
+                                <Check className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-600" />
+                                <p className="text-sm text-muted-foreground">No reports against your content. Great job!</p>
+                              </Card>
+                            )}
+                          </>
+                        ) : (
+                          <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6">
+                            <div className="flex items-start gap-4">
+                              <AlertCircle className="h-8 w-8 text-amber-600 flex-shrink-0 mt-1" />
+                              <div>
+                                <h3 className="font-semibold text-stone-900 mb-2">Community Review System</h3>
+                                <p className="text-sm text-muted-foreground mb-3">
+                                  Help moderate the community by reviewing reports on other users' issues and profiles. The community votes on whether reported content violates guidelines.
+                                </p>
+                                <ul className="text-sm text-muted-foreground space-y-2">
+                                  <li className="flex items-center gap-2">
+                                    <Flag className="h-4 w-4 text-amber-500" />
+                                    View reports filed against other users' content
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-amber-500" />
+                                    Community votes to verify report validity
+                                  </li>
+                                  <li className="flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-amber-500" />
+                                    Moderators make final decisions
+                                  </li>
+                                </ul>
+                                <p className="text-xs text-muted-foreground mt-4 pt-4 border-t border-amber-200/50">
+                                  Report functionality for non-owners coming soon. Help keep our community safe by reporting problematic content!
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </Card>
+                          </Card>
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>

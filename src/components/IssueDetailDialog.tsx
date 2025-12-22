@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown, Check } from "lucide-react";
+import { Calendar, Tag, AlertCircle, User, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown, Check, Trash2 } from "lucide-react";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -17,6 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useUserVote } from "@/hooks/use-user-vote";
 import { useUserProfile } from "@/hooks/use-user-profile";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
+import { useReportsForIssue, useDeleteReportedComment, useKeepReportedComment } from "@/hooks/use-reports";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
 import { cn, formatRelativeTime, formatDateWithRelative } from "@/lib/utils";
 import { getUserAvatarUrl } from "@/lib/avatar";
@@ -44,6 +45,10 @@ export default function IssueDetailDialog({
   const { data: userVote } = useUserVote(issue?.id);
   const { data: creatorProfile } = useUserProfile(issue?.createdBy);
   const { upvoteIssue, downvoteIssue } = useIssuesFirebase();
+  const { data: reports = [] } = useReportsForIssue(issue?.id || '');
+  const deleteReportedComment = useDeleteReportedComment();
+  const keepReportedComment = useKeepReportedComment();
+  const isIssueOwner = user?.uid === issue?.createdBy;
   const [commentsExpanded, setCommentsExpanded] = useState(true);
   const [visibility, setVisibility] = useState<'public' | 'private' | 'draft'>('public');
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
@@ -709,6 +714,82 @@ export default function IssueDetailDialog({
                 </div>
                 <Separator />
               </>
+            )}
+
+            {/* Reported Comments Section - Only show for issue owner */}
+            {isFirebaseConfigured && isIssueOwner && reports.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-red-50/50 to-rose-50/50 border border-red-200/50">
+                  <Flag className="h-5 w-5 text-red-600" />
+                  <span className="font-semibold text-stone-800">Reported Comments ({reports.length})</span>
+                </div>
+                
+                <div className="space-y-3">
+                  {reports.map((report) => (
+                    <div
+                      key={report.id}
+                      className="p-4 rounded-lg border border-red-200/50 bg-red-50/50 backdrop-blur-sm space-y-3"
+                    >
+                      {/* Report Info */}
+                      <div>
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-stone-900">
+                              Reported by <span className="font-semibold">{report.reporterName}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatRelativeTime(
+                                report.createdAt?.toMillis?.() ||
+                                report.createdAt?.seconds * 1000 ||
+                                Date.now()
+                              )}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="bg-red-100 text-red-700 border-red-300">
+                            {report.reason}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-stone-700 mb-2">
+                          <span className="font-semibold">Report details:</span> {report.details}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-2 pt-2 border-t border-red-200/50">
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="flex items-center gap-2"
+                          onClick={() => {
+                            if (report.context?.issueId && report.context?.commentId) {
+                              deleteReportedComment.mutate({
+                                issueId: report.context.issueId,
+                                commentId: report.context.commentId,
+                              });
+                              toast.success("Comment deleted successfully");
+                            }
+                          }}
+                          disabled={deleteReportedComment.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Comment
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            keepReportedComment.mutate(report.id);
+                            toast.success("Report dismissed. Comment kept.");
+                          }}
+                          disabled={keepReportedComment.isPending}
+                        >
+                          Keep Comment
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
 
             {/* Comments Section */}
