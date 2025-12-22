@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/config';
 import { useAuth } from './use-auth';
 
@@ -20,6 +20,9 @@ export interface Report {
   status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
   createdAt: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
   updatedAt: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
+  upvotes?: number;
+  downvotes?: number;
+  userVote?: 1 | -1 | 0; // 1 for upvote, -1 for downvote, 0 for no vote
 }
 
 /**
@@ -46,6 +49,40 @@ export function useReportsAgainstMe() {
         id: doc.id,
         ...doc.data()
       })) as Report[];
+    },
+    enabled: !!user?.uid,
+  });
+}
+
+/**
+ * Fetch all pending/reviewed reports that the user can review
+ * Excludes reports about the user themselves
+ */
+export function useReviewableReports() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['reviewable-reports', user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+
+      const reportsRef = collection(db, 'reports');
+      const q = query(
+        reportsRef,
+        where('status', 'in', ['pending', 'reviewed']),
+        orderBy('createdAt', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+      let reports = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Report[];
+
+      // Filter out reports about the current user
+      reports = reports.filter(r => r.reportedUserId !== user.uid);
+
+      return reports;
     },
     enabled: !!user?.uid,
   });
@@ -79,6 +116,108 @@ export function useReportsForIssue(issueId: string) {
 }
 
 /**
+ * Vote on a report's validity
+ * upvote = true means the user thinks the report is valid
+ * upvote = false means the user disagrees with the report
+ */
+export function useVoteOnReport() {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      reportId,
+      upvote,
+    }: {
+      reportId: string;
+      upvote: boolean;
+    }) => {
+      if (!user?.uid) throw new Error('Must be signed in to vote');
+
+      const votesRef = collection(db, 'reports', reportId, 'votes');
+      const existingVoteQuery = query(votesRef, where('userId', '==', user.uid));
+      const existingVotes = await getDocs(existingVoteQuery);
+
+      let oldVoteType: 'upvote' | 'downvote' | null = null;
+      
+      if (existingVotes.docs.length > 0) {
+        const existingVote = existingVotes.docs[0];
+        oldVoteType = existingVote.data().voteType;
+        // Delete old vote
+        await deleteDoc(existingVote.ref);
+      }
+
+      // Add new vote if it's different from old vote
+      if (oldVoteType !== (upvote ? 'upvote' : 'downvote')) {
+        await addDoc(votesRef, {
+          userId: user.uid,
+          userName: user.displayName || 'Anonymous',
+          voteType: upvote ? 'upvote' : 'downvote',
+          createdAt: serverTimestamp(),
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
+    },
+  });
+}
+
+/**
+ * Get user's vote on a specific report
+ */
+export function useReportVote(reportId: string) {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['report-vote', reportId, user?.uid],
+    queryFn: async () => {
+      if (!user?.uid || !reportId) return 0;
+
+      const votesRef = collection(db, 'reports', reportId, 'votes');
+      const q = query(votesRef, where('userId', '==', user.uid));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.docs.length === 0) return 0;
+      
+      const voteType = snapshot.docs[0].data().voteType;
+      return voteType === 'upvote' ? 1 : -1;
+    },
+    enabled: !!user?.uid && !!reportId,
+  });
+}
+
+/**
+ * Get vote counts for a specific report
+ */
+export function useReportVoteCounts(reportId: string) {
+  return useQuery({
+    queryKey: ['report-votes-count', reportId],
+    queryFn: async () => {
+      if (!reportId) return { upvotes: 0, downvotes: 0 };
+
+      const votesRef = collection(db, 'reports', reportId, 'votes');
+      const snapshot = await getDocs(votesRef);
+
+      let upvotes = 0;
+      let downvotes = 0;
+
+      snapshot.docs.forEach(doc => {
+        if (doc.data().voteType === 'upvote') {
+          upvotes++;
+        } else {
+          downvotes++;
+        }
+      });
+
+      return { upvotes, downvotes };
+    },
+    enabled: !!reportId,
+  });
+}
+
+/**
  * Update report status (reviewed, resolved, dismissed)
  */
 export function useUpdateReportStatus() {
@@ -95,12 +234,13 @@ export function useUpdateReportStatus() {
       const reportRef = doc(db, 'reports', reportId);
       await updateDoc(reportRef, {
         status,
-        updatedAt: new Date(),
+        updatedAt: serverTimestamp(),
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
       queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
+      queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
     },
   });
 }
@@ -142,7 +282,7 @@ export function useKeepReportedComment() {
       const reportRef = doc(db, 'reports', reportId);
       await updateDoc(reportRef, {
         status: 'dismissed',
-        updatedAt: new Date(),
+        updatedAt: serverTimestamp(),
       });
     },
     onSuccess: () => {

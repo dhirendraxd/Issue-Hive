@@ -26,7 +26,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useComments } from '@/hooks/use-comments';
-import { useReportsAgainstMe } from '@/hooks/use-reports';
+import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -151,6 +151,116 @@ function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, 
   );
 }
 
+// Component to display a report card with voting
+function ReportCard({ report, voteOnReport }: { report: any; voteOnReport: any }) {
+  const { data: voteCounts = { upvotes: 0, downvotes: 0 } } = useReportVoteCounts(report.id);
+  const { data: userVote = 0 } = useReportVote(report.id);
+  const { user } = useAuth();
+
+  const getTimeInMs = (timestamp: any): number => {
+    if (!timestamp) return Date.now();
+    if (typeof timestamp === 'number') return timestamp;
+    if (timestamp instanceof Date) return timestamp.getTime();
+    if (timestamp?.toMillis && typeof timestamp.toMillis === 'function') return timestamp.toMillis();
+    if (timestamp?.seconds) return timestamp.seconds * 1000 + (timestamp.nanoseconds || 0) / 1000000;
+    return Date.now();
+  };
+
+  const handleVote = (isUpvote: boolean) => {
+    if (!user) {
+      toast.error('Please sign in to vote');
+      return;
+    }
+    voteOnReport.mutate({ reportId: report.id, upvote: isUpvote });
+  };
+
+  return (
+    <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-xl shadow-lg shadow-amber-100/20 p-4">
+      <CardContent className="p-0 space-y-3">
+        {/* Report Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-stone-900">
+              <span className="font-bold text-red-600">{report.reportedUserName}</span> reported by <span className="font-semibold">{report.reporterName}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {formatRelativeTime(getTimeInMs(report.createdAt))}
+            </p>
+          </div>
+          <Badge 
+            variant="outline" 
+            className="bg-amber-100 text-amber-700 border-amber-300 whitespace-nowrap"
+          >
+            {report.reason}
+          </Badge>
+        </div>
+
+        {/* Report Context */}
+        {report.context?.issueTitle && (
+          <div className="bg-amber-100/50 border border-amber-200 rounded-lg p-2 text-sm">
+            <p className="text-muted-foreground">Issue:</p>
+            <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
+          </div>
+        )}
+
+        {/* Report Details */}
+        <div>
+          <p className="text-sm text-muted-foreground mb-1">Report Details:</p>
+          <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
+            {report.details}
+          </p>
+        </div>
+
+        {/* Status & Voting */}
+        <div className="flex items-center justify-between pt-2 border-t border-amber-200/50">
+          <Badge
+            variant="secondary"
+            className={cn(
+              "capitalize",
+              report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
+              report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
+              report.status === 'resolved' && 'bg-green-100 text-green-700',
+              report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
+            )}
+          >
+            {report.status}
+          </Badge>
+
+          {/* Community Vote Buttons */}
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant={userVote === 1 ? "default" : "outline"}
+              className={cn(
+                "h-8 px-2 gap-1",
+                userVote === 1 && "bg-green-600 hover:bg-green-700 border-green-600"
+              )}
+              onClick={() => handleVote(true)}
+              disabled={voteOnReport.isPending}
+            >
+              <ThumbsUp className="h-4 w-4" />
+              <span className="text-xs">{voteCounts.upvotes}</span>
+            </Button>
+            <Button
+              size="sm"
+              variant={userVote === -1 ? "default" : "outline"}
+              className={cn(
+                "h-8 px-2 gap-1",
+                userVote === -1 && "bg-red-600 hover:bg-red-700 border-red-600"
+              )}
+              onClick={() => handleVote(false)}
+              disabled={voteOnReport.isPending}
+            >
+              <ThumbsDown className="h-4 w-4" />
+              <span className="text-xs">{voteCounts.downvotes}</span>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function UserProfile() {
   const { uid } = useParams();
   const [search] = useSearchParams();
@@ -191,6 +301,8 @@ export default function UserProfile() {
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} } = useIssueEngagement(ownedIssueIds);
   const { data: reportsAgainstMe = [] } = useReportsAgainstMe();
+  const { data: reviewableReports = [] } = useReviewableReports();
+  const voteOnReport = useVoteOnReport();
   
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
@@ -956,81 +1068,109 @@ export default function UserProfile() {
                     
                     {/* Reports Notification */}
                     <TabsContent value="reports" className="mt-6">
-                      <div className="space-y-4">
+                      <div className="space-y-6">
                         {isOwner ? (
                           <>
-                            <p className="text-sm text-muted-foreground mb-4">Reports filed against your content</p>
-                            {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
-                              <div className="space-y-3">
-                                {reportsAgainstMe.map((report: any) => (
-                                  <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-4">
-                                    <CardContent className="p-0 space-y-3">
-                                      {/* Report Header */}
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex-1">
-                                          <p className="text-sm font-semibold text-stone-900">
-                                            Reported by <span className="font-bold">{report.reporterName}</span>
-                                          </p>
-                                          <p className="text-xs text-muted-foreground">
-                                            {formatRelativeTime(
-                                              report.createdAt?.toMillis?.() ||
-                                              report.createdAt?.seconds * 1000 ||
-                                              Date.now()
-                                            )}
-                                          </p>
-                                        </div>
-                                        <Badge 
-                                          variant="outline" 
-                                          className="bg-red-100 text-red-700 border-red-300 whitespace-nowrap"
-                                        >
-                                          {report.reason}
-                                        </Badge>
-                                      </div>
-
-                                      {/* Report Context */}
-                                      {report.context?.issueTitle && (
-                                        <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
-                                          <p className="text-muted-foreground">Issue:</p>
-                                          <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
-                                        </div>
-                                      )}
-
-                                      {/* Report Details */}
-                                      <div>
-                                        <p className="text-sm text-muted-foreground mb-1">Details:</p>
-                                        <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
-                                          {report.details}
-                                        </p>
-                                      </div>
-
-                                      {/* Status Badge */}
-                                      <div className="flex items-center justify-between pt-2 border-t border-red-200/50">
-                                        <Badge
-                                          variant="secondary"
-                                          className={cn(
-                                            "capitalize",
-                                            report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
-                                            report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
-                                            report.status === 'resolved' && 'bg-green-100 text-green-700',
-                                            report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
-                                          )}
-                                        >
-                                          {report.status}
-                                        </Badge>
-                                        <p className="text-xs text-muted-foreground">
-                                          View the issue to review and take action
-                                        </p>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
+                            {/* Section 1: Reports Against You */}
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="text-lg font-semibold mb-2">Reports Against Your Content</h3>
+                                <p className="text-sm text-muted-foreground mb-4">Review reports and take action</p>
                               </div>
-                            ) : (
-                              <Card className="rounded-2xl border border-green-200/50 bg-green-50/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-12 text-center">
-                                <Check className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-600" />
-                                <p className="text-sm text-muted-foreground">No reports against your content. Great job!</p>
-                              </Card>
-                            )}
+                              
+                              {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
+                                <div className="space-y-3">
+                                  {reportsAgainstMe.map((report: any) => (
+                                    <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-4">
+                                      <CardContent className="p-0 space-y-3">
+                                        {/* Report Header */}
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex-1">
+                                            <p className="text-sm font-semibold text-stone-900">
+                                              Reported by <span className="font-bold">{report.reporterName}</span>
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                              {formatRelativeTime(
+                                                report.createdAt?.toMillis?.() ||
+                                                report.createdAt?.seconds * 1000 ||
+                                                Date.now()
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Badge 
+                                            variant="outline" 
+                                            className="bg-red-100 text-red-700 border-red-300 whitespace-nowrap"
+                                          >
+                                            {report.reason}
+                                          </Badge>
+                                        </div>
+
+                                        {/* Report Context */}
+                                        {report.context?.issueTitle && (
+                                          <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
+                                            <p className="text-muted-foreground">Issue:</p>
+                                            <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
+                                          </div>
+                                        )}
+
+                                        {/* Report Details */}
+                                        <div>
+                                          <p className="text-sm text-muted-foreground mb-1">Details:</p>
+                                          <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
+                                            {report.details}
+                                          </p>
+                                        </div>
+
+                                        {/* Status Badge */}
+                                        <div className="flex items-center justify-between pt-2 border-t border-red-200/50">
+                                          <Badge
+                                            variant="secondary"
+                                            className={cn(
+                                              "capitalize",
+                                              report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
+                                              report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
+                                              report.status === 'resolved' && 'bg-green-100 text-green-700',
+                                              report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
+                                            )}
+                                          >
+                                            {report.status}
+                                          </Badge>
+                                          <p className="text-xs text-muted-foreground">
+                                            View the issue to review and take action
+                                          </p>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </div>
+                              ) : (
+                                <Card className="rounded-2xl border border-green-200/50 bg-green-50/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-12 text-center">
+                                  <Check className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-600" />
+                                  <p className="text-sm text-muted-foreground">No reports against your content. Great job!</p>
+                                </Card>
+                              )}
+                            </div>
+
+                            {/* Section 2: Reports You Can Review */}
+                            <div className="space-y-4 pt-6 border-t border-stone-200">
+                              <div>
+                                <h3 className="text-lg font-semibold mb-2">Reports You Can Review</h3>
+                                <p className="text-sm text-muted-foreground mb-4">Community moderation - vote on report validity</p>
+                              </div>
+                              
+                              {reviewableReports && reviewableReports.length > 0 ? (
+                                <div className="space-y-3">
+                                  {reviewableReports.map((report: any) => (
+                                    <ReportCard key={report.id} report={report} voteOnReport={voteOnReport} />
+                                  ))}
+                                </div>
+                              ) : (
+                                <Card className="rounded-2xl border border-stone-200/50 bg-white/50 backdrop-blur-2xl shadow-lg shadow-stone-100/20 p-12 text-center">
+                                  <Flag className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground">No reports to review. Check back later!</p>
+                                </Card>
+                              )}
+                            </div>
                           </>
                         ) : (
                           <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6">
