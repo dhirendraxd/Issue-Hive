@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, Bell } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -432,6 +432,13 @@ export default function UserProfile() {
                       Messages {receivedMessages && receivedMessages.length > 0 && <span className="ml-2 px-2 py-1 rounded-full bg-red-500 text-white text-xs font-bold">{receivedMessages.length}</span>}
                     </TabsTrigger>
                     <TabsTrigger 
+                      value="notifications" 
+                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
+                    >
+                      <Bell className="h-4 w-4 mr-2" />
+                      Notifications
+                    </TabsTrigger>
+                    <TabsTrigger 
                       value="analytics" 
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
@@ -743,6 +750,45 @@ export default function UserProfile() {
                     </Tabs>
                   </div>
                 </TabsContent>
+              
+              {/* Notifications Tab */}
+              <TabsContent value="notifications" className="mt-6">
+                <div className="max-w-4xl">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight mb-2">Notifications</h2>
+                    <p className="text-sm text-muted-foreground mb-6">Activity updates and alerts related to your issues</p>
+                  </div>
+                  
+                  <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
+                    <Bell className="h-16 w-16 mx-auto mb-4 opacity-40 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold text-stone-900 mb-2">No Notifications Yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      You'll receive notifications when:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-2 mb-6 max-w-sm mx-auto">
+                      <li className="flex items-center gap-2">
+                        <ThumbsUp className="h-4 w-4 text-orange-500" />
+                        Someone upvotes your issue
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-blue-500" />
+                        Someone comments on your issue
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-purple-500" />
+                        Someone follows you
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-amber-500" />
+                        Your issue status is updated
+                      </li>
+                    </ul>
+                    <p className="text-xs text-muted-foreground">
+                      Check back here to see your activity notifications
+                    </p>
+                  </Card>
+                </div>
+              </TabsContent>
               
               {/* Activity Tab */}
               <TabsContent value="analytics" className="mt-6">
