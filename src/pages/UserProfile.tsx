@@ -284,6 +284,7 @@ export default function UserProfile() {
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
+  const [reportView, setReportView] = useState<'against-me' | 'review'>('against-me');
 
   // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -1068,10 +1069,38 @@ export default function UserProfile() {
                     
                     {/* Reports Notification */}
                     <TabsContent value="reports" className="mt-6">
-                      <div className="space-y-6">
-                        {isOwner ? (
-                          <>
-                            {/* Section 1: Reports Against You */}
+                      {isOwner ? (
+                        <div className="space-y-4">
+                          {/* Toggle Buttons */}
+                          <div className="flex gap-2 mb-6">
+                            <Button
+                              onClick={() => setReportView('against-me')}
+                              className={cn(
+                                "flex-1 rounded-lg px-4 py-2 transition-all",
+                                reportView === 'against-me'
+                                  ? 'bg-red-600 text-white hover:bg-red-700'
+                                  : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
+                              )}
+                            >
+                              <Flag className="h-4 w-4 mr-2 inline" />
+                              Reports Against You ({reportsAgainstMe.length})
+                            </Button>
+                            <Button
+                              onClick={() => setReportView('review')}
+                              className={cn(
+                                "flex-1 rounded-lg px-4 py-2 transition-all",
+                                reportView === 'review'
+                                  ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                  : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
+                              )}
+                            >
+                              <Users className="h-4 w-4 mr-2 inline" />
+                              Review Reports ({reviewableReports.length})
+                            </Button>
+                          </div>
+
+                          {/* Section 1: Reports Against You */}
+                          {reportView === 'against-me' && (
                             <div className="space-y-4">
                               <div>
                                 <h3 className="text-lg font-semibold mb-2">Reports Against Your Content</h3>
@@ -1150,9 +1179,11 @@ export default function UserProfile() {
                                 </Card>
                               )}
                             </div>
+                          )}
 
-                            {/* Section 2: Reports You Can Review */}
-                            <div className="space-y-4 pt-6 border-t border-stone-200">
+                          {/* Section 2: Reports You Can Review */}
+                          {reportView === 'review' && (
+                            <div className="space-y-4">
                               <div>
                                 <h3 className="text-lg font-semibold mb-2">Reports You Can Review</h3>
                                 <p className="text-sm text-muted-foreground mb-4">Community moderation - vote on report validity</p>
@@ -1171,8 +1202,9 @@ export default function UserProfile() {
                                 </Card>
                               )}
                             </div>
-                          </>
-                        ) : (
+                          )}
+                        </div>
+                      ) : (
                           <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-2xl shadow-lg shadow-amber-100/20 p-6">
                             <div className="flex items-start gap-4">
                               <AlertCircle className="h-8 w-8 text-amber-600 flex-shrink-0 mt-1" />
@@ -1202,7 +1234,6 @@ export default function UserProfile() {
                             </div>
                           </Card>
                         )}
-                      </div>
                     </TabsContent>
                   </Tabs>
                 </div>
