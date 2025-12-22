@@ -269,8 +269,8 @@ export default function UserProfile() {
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const { data: receivedMessages, isLoading: messagesLoading, error: messagesError } = useReceivedMessages();
   const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
-    const markMessagesAsRead = useMarkMessagesAsRead();
-    const updateReportStatus = useUpdateReportStatus();
+  const markMessagesAsRead = useMarkMessagesAsRead();
+  const updateReportStatus = useUpdateReportStatus();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   
@@ -288,6 +288,13 @@ export default function UserProfile() {
   const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
   const [reportView, setReportView] = useState<'against-me' | 'review'>('against-me');
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('issues');
+  const [messagesTab, setMessagesTab] = useState<'incoming' | 'outgoing'>('incoming');
+  const [notificationTab, setNotificationTab] = useState<'comments' | 'followers' | 'reports'>('comments');
+  const [notificationsCleared, setNotificationsCleared] = useState(false);
+  const [commentsCleared, setCommentsCleared] = useState(false);
+  const [followersCleared, setFollowersCleared] = useState(false);
+  const [reportsCleared, setReportsCleared] = useState(false);
 
   // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -307,6 +314,17 @@ export default function UserProfile() {
   const { data: reportsAgainstMe = [] } = useReportsAgainstMe();
   const { data: reviewableReports = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
+  const totalComments = useMemo(() => {
+    return Object.values(engagementMap).reduce((sum: number, e: any) => sum + (e?.comments || 0), 0);
+  }, [engagementMap]);
+
+  const hasUnreadNotifications = useMemo(() => {
+    if (notificationsCleared) return false;
+    const hasReports = reportsAgainstMe.length > 0;
+    const hasFollowers = followersList.length > 0;
+    const hasComments = totalComments > 0;
+    return hasReports || hasFollowers || hasComments;
+  }, [notificationsCleared, reportsAgainstMe.length, followersList.length, totalComments]);
   
   type WithVisibility = { visibility?: 'public' | 'private' | 'draft' };
   const publicIssues = owned.filter(i => {
@@ -370,7 +388,7 @@ export default function UserProfile() {
       </div>
     );
   }
-  
+
   const hasSocialLinks = !!(
     ownerProfile?.social && (
       ownerProfile.social.website?.trim() ||
@@ -460,6 +478,29 @@ export default function UserProfile() {
   const handleAddProgress = (issue: Issue) => {
     setSelectedIssue(issue);
     setProgressDialogOpen(true);
+  };
+
+  const handleMarkNotificationsRead = () => {
+    setNotificationsCleared(true);
+    setCommentsCleared(true);
+    setFollowersCleared(true);
+    setReportsCleared(true);
+    toast.success('Notifications marked as read');
+  };
+
+  const handleMarkCommentsRead = () => {
+    setCommentsCleared(true);
+    // If other sections are already clear, clear overall badge too
+    if (followersCleared && reportsCleared) {
+      setNotificationsCleared(true);
+    }
+  };
+
+  const handleMarkFollowersRead = () => {
+    setFollowersCleared(true);
+    if (commentsCleared && reportsCleared) {
+      setNotificationsCleared(true);
+    }
   };
 
   const handleViewDetails = (issue: Issue) => {
@@ -648,7 +689,7 @@ export default function UserProfile() {
             </div>
             
             {/* Unified Tabs for Content */}
-            <Tabs defaultValue="issues" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="w-full justify-start rounded-none border-b bg-transparent h-auto p-0">
                 <TabsTrigger 
                   value="issues" 
@@ -670,7 +711,7 @@ export default function UserProfile() {
                       className="rounded-none border-b-2 border-transparent data-[state=active]:border-orange-500 data-[state=active]:bg-transparent px-6 py-4"
                     >
                       <Bell className="h-4 w-4 mr-2" />
-                      Notifications {(reportsAgainstMe.length > 0 || followersList.length > 0) && <span className="ml-2 px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">{reportsAgainstMe.length + followersList.length}</span>}
+                      Notifications {!notificationsCleared && (reportsAgainstMe.length > 0 || followersList.length > 0) && <span className="ml-2 px-2 py-1 rounded-full bg-blue-500 text-white text-xs font-bold">{reportsAgainstMe.length + followersList.length}</span>}
                     </TabsTrigger>
                     <TabsTrigger 
                       value="analytics" 
@@ -802,7 +843,7 @@ export default function UserProfile() {
               {/* Messages Tab */}
               <TabsContent value="messages" className="mt-6">
                   <div className="max-w-4xl space-y-6">
-                    <Tabs defaultValue="incoming" className="w-full">
+                    <Tabs value={messagesTab} onValueChange={(val) => setMessagesTab(val as 'incoming' | 'outgoing')} className="w-full">
                       <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
                         <TabsTrigger value="incoming" className="flex-1 data-[state=active]:bg-white rounded-md">
                           <Inbox className="h-4 w-4 mr-2" />
@@ -1003,30 +1044,59 @@ export default function UserProfile() {
               <TabsContent value="notifications" className="mt-6">
                 <div className="max-w-4xl space-y-6">
                   <div>
-                    <h2 className="text-xl font-semibold tracking-tight mb-2">Notifications</h2>
-                    <p className="text-sm text-muted-foreground mb-6">Activity updates and alerts related to your issues</p>
+                    <div className="flex items-center justify-between gap-3 flex-wrap mb-2">
+                      <div>
+                        <h2 className="text-xl font-semibold tracking-tight">Notifications</h2>
+                        <p className="text-sm text-muted-foreground">Activity updates and alerts related to your issues</p>
+                      </div>
+                      {hasUnreadNotifications && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={handleMarkNotificationsRead}
+                        >
+                          Mark all as read
+                        </Button>
+                      )}
+                    </div>
+                    <Separator className="mb-6" />
                   </div>
                   
-                  <Tabs defaultValue="comments" className="w-full">
+                  <Tabs value={notificationTab} onValueChange={(val) => setNotificationTab(val as 'comments' | 'followers' | 'reports')} className="w-full">
                     <TabsList className="w-full justify-start bg-stone-100 p-1 rounded-lg">
                       <TabsTrigger value="comments" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <MessageSquare className="h-4 w-4 mr-2" />
-                        Comments {ownedIssueIds.length > 0 && Object.values(engagementMap).some((e: any) => e.comments > 0) && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">{Object.values(engagementMap).reduce((sum: number, e: any) => sum + (e.comments || 0), 0)}</span>}
+                        Comments {!commentsCleared && totalComments > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-orange-500 text-white text-xs font-bold flex items-center justify-center">{totalComments}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="followers" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Users className="h-4 w-4 mr-2" />
-                        Followers {followersList.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">{followersList.length}</span>}
+                        Followers {!followersCleared && followersList.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">{followersList.length}</span>}
                       </TabsTrigger>
                       <TabsTrigger value="reports" className="flex-1 data-[state=active]:bg-white rounded-md">
                         <Flag className="h-4 w-4 mr-2" />
-                        Reports {reportsAgainstMe.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{reportsAgainstMe.length}</span>}
+                        Reports {!reportsCleared && reportsAgainstMe.length > 0 && <span className="ml-2 inline-block w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">{reportsAgainstMe.length}</span>}
                       </TabsTrigger>
                     </TabsList>
                     
                     {/* Comments Notification */}
                     <TabsContent value="comments" className="mt-6">
                       <div>
-                        <p className="text-sm text-muted-foreground mb-4">Comments on your issues</p>
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <p className="text-sm text-muted-foreground">Comments on your issues</p>
+                          {!commentsCleared && totalComments > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full"
+                              onClick={() => {
+                                handleMarkCommentsRead();
+                              }}
+                            >
+                              Mark as read
+                            </Button>
+                          )}
+                        </div>
                         {owned.length === 0 ? (
                           <Card className="rounded-2xl border border-white/60 bg-white/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-12 text-center">
                             <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
@@ -1044,7 +1114,19 @@ export default function UserProfile() {
                     {/* Followers Notification */}
                     <TabsContent value="followers" className="mt-6">
                       <div>
-                        <p className="text-sm text-muted-foreground mb-4">People following you</p>
+                        <div className="flex items-center justify-between gap-3 mb-4">
+                          <p className="text-sm text-muted-foreground">People following you</p>
+                          {!followersCleared && followersList.length > 0 && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full"
+                              onClick={handleMarkFollowersRead}
+                            >
+                              Mark as read
+                            </Button>
+                          )}
+                        </div>
                         {followersList.length > 0 ? (
                           <div className="space-y-3">
                             {followersList.map((follower) => (
@@ -1119,7 +1201,24 @@ export default function UserProfile() {
                             <div className="space-y-4">
                               <div>
                                 <h3 className="text-lg font-semibold mb-2">Reports Against Your Content</h3>
-                                <p className="text-sm text-muted-foreground mb-4">Review reports and take action</p>
+                                <div className="flex items-center justify-between gap-3 mb-4">
+                                  <p className="text-sm text-muted-foreground">Review reports and take action</p>
+                                  {!reportsCleared && reportsAgainstMe.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="rounded-full"
+                                      onClick={() => {
+                                        setReportsCleared(true);
+                                        if (commentsCleared && followersCleared) {
+                                          setNotificationsCleared(true);
+                                        }
+                                      }}
+                                    >
+                                      Mark as read
+                                    </Button>
+                                  )}
+                                </div>
                                   {reportsAgainstMe && reportsAgainstMe.length > 0 && (
                                     <Button
                                       size="sm"
@@ -1131,6 +1230,8 @@ export default function UserProfile() {
                                             updateReportStatus.mutate({ reportId: report.id, status: 'reviewed' });
                                           }
                                         });
+                                        setReportsCleared(true);
+                                        setNotificationsCleared(true);
                                         toast.success('Reports marked as reviewed');
                                       }}
                                       disabled={updateReportStatus.isPending}
