@@ -44,10 +44,16 @@ type ReportSummary = {
   reportedUserName?: string;
   reporterName?: string;
   reason?: string;
-  context?: { issueTitle?: string };
+  context?: { issueTitle?: string; issueId?: string };
   details?: string;
   createdAt?: TimestampLike;
-  status?: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
+  status?: 'pending' | 'reviewed' | 'resolved' | 'dismissed' | 'deleted';
+  commentId?: string;
+  commentText?: string;
+  commentAuthorName?: string;
+  upvotes?: number;
+  downvotes?: number;
+  reportCount?: number;
 };
 type VoteMutation = { mutate: (args: { reportId: string; upvote: boolean }) => void; isPending?: boolean };
 
@@ -193,7 +199,7 @@ function ReportCard({ report, voteOnReport }: { report: ReportSummary; voteOnRep
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <p className="text-sm font-semibold text-stone-900">
-              <span className="font-bold text-red-600">{report.reportedUserName}</span> reported by <span className="font-semibold">{report.reporterName}</span>
+              <span className="font-bold text-red-600">{report.reportedUserName}</span> reported
             </p>
             <p className="text-xs text-muted-foreground">
               {formatRelativeTime(getTimeInMs(report.createdAt))}
@@ -207,11 +213,16 @@ function ReportCard({ report, voteOnReport }: { report: ReportSummary; voteOnRep
           </Badge>
         </div>
 
-        {/* Report Context */}
-        {report.context?.issueTitle && (
+        {/* Report Context - Issue or General */}
+        {report.context?.issueTitle ? (
           <div className="bg-amber-100/50 border border-amber-200 rounded-lg p-2 text-sm">
-            <p className="text-muted-foreground">Issue:</p>
+            <p className="text-muted-foreground">Related to Issue:</p>
             <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
+          </div>
+        ) : (
+          <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
+            <p className="text-muted-foreground">Type:</p>
+            <p className="font-medium text-red-900">General User Behavior Report</p>
           </div>
         )}
 
@@ -222,6 +233,33 @@ function ReportCard({ report, voteOnReport }: { report: ReportSummary; voteOnRep
             {report.details}
           </p>
         </div>
+
+        {/* Reported Comment (if available) */}
+        {report.commentText && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
+            <p className="text-sm font-medium text-red-900">Reported Comment by {report.commentAuthorName}:</p>
+            <div className="bg-white border border-red-100 rounded p-2">
+              <p className="text-sm text-stone-700 italic">{report.commentText}</p>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="destructive"
+                className="h-8 text-xs"
+              >
+                <MessageSquare className="h-3 w-3 mr-1" />
+                Delete Comment
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 text-xs"
+              >
+                Keep Comment
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Status & Voting */}
         <div className="flex items-center justify-between pt-2 border-t border-amber-200/50">
@@ -308,13 +346,41 @@ export default function UserProfile() {
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
   const [reportView, setReportView] = useState<'against-me' | 'review'>('against-me');
+  const [reportsPerPage] = useState(3); // Show 3 reports at a time
+  const [commentsReportsPage, setCommentsReportsPage] = useState(1);
+  const [userReportsPage, setUserReportsPage] = useState(1);
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('issues');
   const [messagesTab, setMessagesTab] = useState<'incoming' | 'outgoing'>('incoming');
   const [notificationTab, setNotificationTab] = useState<'comments' | 'followers' | 'reports'>('comments');
-  const [commentsCleared, setCommentsCleared] = useState(false);
-  const [followersCleared, setFollowersCleared] = useState(false);
-  const [reportsCleared, setReportsCleared] = useState(false);
+  
+  // Initialize cleared states from localStorage
+  const [commentsCleared, setCommentsClearedState] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(`comments-cleared-${uid}`) === 'true';
+  });
+  const [followersCleared, setFollowersClearedState] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(`followers-cleared-${uid}`) === 'true';
+  });
+  const [reportsCleared, setReportsClearedState] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(`reports-cleared-${uid}`) === 'true';
+  });
+
+  // Wrapper functions to persist to localStorage
+  const setCommentsCleared = (value: boolean) => {
+    setCommentsClearedState(value);
+    localStorage.setItem(`comments-cleared-${uid}`, String(value));
+  };
+  const setFollowersCleared = (value: boolean) => {
+    setFollowersClearedState(value);
+    localStorage.setItem(`followers-cleared-${uid}`, String(value));
+  };
+  const setReportsCleared = (value: boolean) => {
+    setReportsClearedState(value);
+    localStorage.setItem(`reports-cleared-${uid}`, String(value));
+  };
 
   // Derived state and computed values
   const owned = (issues || []).filter(i => i.createdBy === uid);
@@ -331,9 +397,159 @@ export default function UserProfile() {
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} as EngagementMap } = useIssueEngagement(ownedIssueIds);
-  const { data: reportsAgainstMe = [] } = useReportsAgainstMe();
-  const { data: reviewableReports = [] } = useReviewableReports();
+  const { data: reportsAgainstMeRaw = [] } = useReportsAgainstMe();
+  const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
+  
+  // Add dummy reports for testing (comment out to use real data)
+  const dummyReports: ReportSummary[] = [
+    {
+      id: 'dummy-1',
+      reportedUserName: 'John Doe',
+      reporterName: 'Sarah Chen',
+      reason: 'Spam in comments',
+      context: { issueTitle: 'WiFi connectivity issues in hostel blocks', issueId: 'college-2' },
+      details: 'Posted promotional content unrelated to the issue',
+      commentId: 'comment-1',
+      commentText: 'Check out this amazing WiFi booster at www.spam-site.com - 50% off!',
+      commentAuthorName: 'John Doe',
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      status: 'deleted',
+      reportCount: 15,
+    },
+    {
+      id: 'dummy-2',
+      reportedUserName: 'Mike Wilson',
+      reporterName: 'Emma Johnson',
+      reason: 'Abusive private messages',
+      context: undefined,
+      details: 'Sent multiple threatening and abusive messages to reporter without any provocation',
+      commentId: undefined,
+      commentText: undefined,
+      commentAuthorName: 'Mike Wilson',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      reportCount: 3,
+    },
+    {
+      id: 'dummy-3',
+      reportedUserName: 'Alex Kumar',
+      reporterName: 'James Brown',
+      reason: 'Harassment and bullying behavior',
+      context: undefined,
+      details: 'Persistently harassing and bullying other users in direct messages and interactions. Creating hostile environment.',
+      commentId: undefined,
+      commentText: undefined,
+      commentAuthorName: 'Alex Kumar',
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      reportCount: 5,
+    },
+  ];
+  
+  const reportsAgainstMe = reportsAgainstMeRaw.length > 0 ? reportsAgainstMeRaw : dummyReports;
+
+  // Auto-delete comments with >10 reports
+  useMemo(() => {
+    reportsAgainstMe.forEach((report) => {
+      if (report.reportCount && report.reportCount > 10 && report.status === 'pending' && report.commentId) {
+        report.status = 'deleted';
+        toast.error(`Comment by "${report.commentAuthorName}" was deleted (${report.reportCount} reports)`, {
+          description: 'Comment exceeded the report threshold and was automatically removed',
+        });
+      }
+    });
+  }, []);
+
+  // Add dummy reviewable reports (college-related issues reports to review)
+  const dummyReviewableReports: ReportSummary[] = [
+    {
+      id: 'review-1',
+      reportedUserName: 'Alex Kumar',
+      reporterName: 'Sarah Chen',
+      reason: 'Spam in WiFi issue discussion',
+      context: { issueTitle: 'WiFi connectivity issues in hostel blocks', issueId: 'college-2' },
+      details: 'Posted unrelated promotional content in the issue comments',
+      commentId: 'review-comment-1',
+      commentText: 'Buy cheap WiFi routers now! Limited time offer - www.spam.com',
+      commentAuthorName: 'Alex Kumar',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      upvotes: 18,
+      downvotes: 3,
+    },
+    {
+      id: 'review-2',
+      reportedUserName: 'Rahul Patel',
+      reporterName: 'Emma Wilson',
+      reason: 'Abusive messages and harassment',
+      context: undefined,
+      details: 'Sent threatening and abusive messages to multiple users. Pattern of bullying behavior reported.',
+      commentId: undefined,
+      commentText: undefined,
+      commentAuthorName: undefined,
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      upvotes: 28,
+      downvotes: 2,
+    },
+    {
+      id: 'review-3',
+      reportedUserName: 'Priya Singh',
+      reporterName: 'James Brown',
+      reason: 'Spreading false information',
+      context: undefined,
+      details: 'Provided false information about food safety that alarmed students',
+      commentId: undefined,
+      commentText: undefined,
+      commentAuthorName: undefined,
+      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      status: 'pending',
+      upvotes: 12,
+      downvotes: 8,
+    },
+    {
+      id: 'review-4',
+      reportedUserName: 'Vikram Sharma',
+      reporterName: 'Lisa Anderson',
+      reason: 'Sexual harassment via messages',
+      context: undefined,
+      details: 'Multiple users reported inappropriate and sexually suggestive messages from this user',
+      commentId: undefined,
+      commentText: undefined,
+      commentAuthorName: undefined,
+      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+      status: 'dismissed',
+      upvotes: 5,
+      downvotes: 27,
+    },
+  ];
+
+  // Auto-dismiss reports with >25 downvotes and show notification (only to the reported user)
+  useMemo(() => {
+    dummyReviewableReports.forEach((report) => {
+      if (report.downvotes && report.downvotes > 25 && report.status === 'pending') {
+        report.status = 'dismissed';
+        // Only show toast to the reported user
+        if (user?.displayName === report.reportedUserName) {
+          toast.info(`Your report was dismissed by community`, {
+            description: 'Community voted to dismiss the report against you',
+          });
+        }
+      }
+      if (report.upvotes && report.upvotes > 25 && report.status === 'pending') {
+        // Only show toast to the reported user
+        if (user?.displayName === report.reportedUserName) {
+          toast.warning(`You have a serious report with 25+ community votes`, {
+            description: 'Action may be taken by moderators. Review the details in your notifications.',
+          });
+        }
+      }
+    });
+  }, [user?.displayName]);
+
+  const reviewableReports = reviewableReportsRaw.length > 0 ? reviewableReportsRaw : dummyReviewableReports;
+  
   const totalComments = useMemo(() => {
     return Object.values(engagementMap).reduce((sum, e) => sum + (e?.comments || 0), 0);
   }, [engagementMap]);
@@ -1181,7 +1397,7 @@ export default function UserProfile() {
                               )}
                             >
                               <Flag className="h-4 w-4 mr-2 inline" />
-                              Reports Against You ({reportsAgainstMe.length})
+                              Comments Report ({reportsAgainstMe.length})
                             </Button>
                             <Button
                               onClick={() => setReportView('review')}
@@ -1193,17 +1409,17 @@ export default function UserProfile() {
                               )}
                             >
                               <Users className="h-4 w-4 mr-2 inline" />
-                              Review Reports ({reviewableReports.length})
+                              User Reports ({reviewableReports.length})
                             </Button>
                           </div>
 
-                          {/* Section 1: Reports Against You */}
+                          {/* Section 1: Comments Report - Reported Comments on Your Issues */}
                           {reportView === 'against-me' && (
                             <div className="space-y-4">
                               <div>
-                                <h3 className="text-lg font-semibold mb-2">Reports Against Your Content</h3>
+                                <h3 className="text-lg font-semibold mb-2">Comments Report - Reported Comments on Your Issues</h3>
                                 <div className="flex items-center justify-between gap-3 mb-4">
-                                  <p className="text-sm text-muted-foreground">Review reports and take action</p>
+                                  <p className="text-sm text-muted-foreground">Review reported comments from your issues and decide to keep or delete them</p>
                                   {!reportsCleared && reportsAgainstMe.length > 0 && (
                                     <Button
                                       size="sm"
@@ -1239,97 +1455,356 @@ export default function UserProfile() {
                               </div>
                               
                               {reportsAgainstMe && reportsAgainstMe.length > 0 ? (
-                                <div className="space-y-3">
-                                  {reportsAgainstMe.map((report: ReportSummary) => (
-                                    <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-4">
-                                      <CardContent className="p-0 space-y-3">
-                                        {/* Report Header */}
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex-1">
-                                            <p className="text-sm font-semibold text-stone-900">
-                                              Reported by <span className="font-bold">{report.reporterName}</span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                              {formatRelativeTime(
-                                                report.createdAt?.toMillis?.() ||
-                                                report.createdAt?.seconds * 1000 ||
-                                                Date.now()
-                                              )}
-                                            </p>
-                                          </div>
-                                          <Badge 
-                                            variant="outline" 
-                                            className="bg-red-100 text-red-700 border-red-300 whitespace-nowrap"
-                                          >
-                                            {report.reason}
-                                          </Badge>
+                                <div className="space-y-4">
+                                  {reportsAgainstMe
+                                    .slice((commentsReportsPage - 1) * reportsPerPage, commentsReportsPage * reportsPerPage)
+                                    .map((report: ReportSummary) => (
+                                    <Card key={report.id} className={cn(
+                                      "rounded-2xl border backdrop-blur-2xl shadow-lg p-5 transition-all hover:shadow-xl",
+                                      report.status === 'deleted' 
+                                        ? 'border-red-500 bg-red-100/30 shadow-red-200/30' 
+                                        : 'border-red-200/50 bg-red-50/50 shadow-red-100/20'
+                                    )}>
+                                      {report.status === 'deleted' && (
+                                        <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-red-600 text-white rounded-lg">
+                                          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                                          <span className="text-sm font-semibold">This comment has been deleted ({report.reportCount} reports)</span>
+                                        </div>
+                                      )}
+                                      
+                                      {report.reportCount && report.reportCount > 10 && report.status !== 'deleted' && (
+                                        <div className="mb-4 flex items-start gap-2 px-4 py-3 bg-orange-100 border border-orange-300 rounded-lg">
+                                          <AlertCircle className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                                          <span className="text-sm text-orange-800"><strong>Marked for deletion:</strong> This comment has {report.reportCount} reports and will be automatically deleted.</span>
+                                        </div>
+                                      )}
+                                      
+                                      <CardContent className="p-0 space-y-4">
+                                        {/* Comment Author Info */}
+                                        <div className="space-y-1 bg-red-100/40 border border-red-200 rounded-lg p-3">
+                                          <p className="text-xs font-semibold text-red-700 uppercase">Comment by</p>
+                                          <p className="text-base font-bold text-stone-900">{report.commentAuthorName}</p>
                                         </div>
 
-                                        {/* Report Context */}
-                                        {report.context?.issueTitle && (
-                                          <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
-                                            <p className="text-muted-foreground">Issue:</p>
-                                            <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
+                                        {/* Reported Comment */}
+                                        {report.commentText && (
+                                          <div className={cn(
+                                            "border rounded-lg p-4 space-y-2 bg-gradient-to-br",
+                                            report.status === 'deleted' 
+                                              ? 'bg-gray-100 border-gray-300 opacity-60' 
+                                              : 'bg-red-50 border-red-200'
+                                          )}>
+                                            <p className="text-xs font-semibold text-stone-600 uppercase">The reported comment</p>
+                                            <div className={cn(
+                                              "border-l-4 pl-3 py-2 italic text-sm",
+                                              report.status === 'deleted' 
+                                                ? 'border-gray-400 text-gray-500 line-through' 
+                                                : 'border-red-500 text-stone-700'
+                                            )}>
+                                              "{report.commentText}"
+                                            </div>
                                           </div>
                                         )}
 
-                                        {/* Report Details */}
-                                        <div>
-                                          <p className="text-sm text-muted-foreground mb-1">Details:</p>
-                                          <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
-                                            {report.details}
-                                          </p>
+                                        {/* Report Count Progress */}
+                                        {report.reportCount && (
+                                          <div className="space-y-3 bg-white border border-red-200 rounded-lg p-4">
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-sm font-bold text-stone-900">Report Progress</p>
+                                              <p className="text-base font-bold text-red-700">{report.reportCount}/10</p>
+                                            </div>
+                                            <div className="space-y-2">
+                                              <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+                                                <div 
+                                                  className={cn(
+                                                    "h-full rounded-full transition-all duration-300",
+                                                    report.reportCount > 10 
+                                                      ? 'bg-red-600 w-full' 
+                                                      : 'bg-yellow-500'
+                                                  )}
+                                                  style={{ width: `${Math.min((report.reportCount / 10) * 100, 100)}%` }}
+                                                />
+                                              </div>
+                                              <p className="text-xs font-medium text-stone-600">
+                                                {report.reportCount > 10 
+                                                  ? '🚨 Comment exceeds threshold - will be removed' 
+                                                  : `${10 - report.reportCount} more reports needed`}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Issue Context */}
+                                        {report.context?.issueTitle && (
+                                          <div className="bg-red-100/50 border border-red-200 rounded-lg p-3 space-y-1">
+                                            <p className="text-xs font-semibold text-red-700 uppercase">On your issue</p>
+                                            <p className="text-sm font-medium text-stone-900 line-clamp-2">{report.context.issueTitle}</p>
+                                          </div>
+                                        )}
+
+                                        {/* Reason & Details Section */}
+                                        <div className="space-y-3 pt-2">
+                                          <div className="space-y-2">
+                                            <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
+                                            <Badge 
+                                              variant="outline" 
+                                              className="bg-red-100 text-red-700 border-red-300 text-xs font-semibold"
+                                            >
+                                              {report.reason}
+                                            </Badge>
+                                          </div>
+
+                                          {/* Report Details */}
+                                          {report.details && (
+                                            <div className="space-y-2">
+                                              <p className="text-xs font-semibold text-stone-600 uppercase">Why it was reported</p>
+                                              <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
+                                                {report.details}
+                                              </p>
+                                            </div>
+                                          )}
                                         </div>
 
-                                        {/* Status Badge */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-red-200/50">
-                                          <Badge
-                                            variant="secondary"
-                                            className={cn(
-                                              "capitalize",
-                                              report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
-                                              report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
-                                              report.status === 'resolved' && 'bg-green-100 text-green-700',
-                                              report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
-                                            )}
-                                          >
-                                            {report.status}
-                                          </Badge>
-                                          <p className="text-xs text-muted-foreground">
-                                            View the issue to review and take action
-                                          </p>
-                                        </div>
+                                        {/* Status & Action Buttons */}
+                                        {report.status !== 'deleted' && (
+                                          <div className="flex items-center justify-between pt-4 border-t border-red-200/50 gap-4">
+                                            <Badge
+                                              variant="secondary"
+                                              className={cn(
+                                                "capitalize text-xs font-semibold",
+                                                report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
+                                                report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
+                                                report.status === 'resolved' && 'bg-green-100 text-green-700',
+                                                report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
+                                              )}
+                                            >
+                                              {report.status}
+                                            </Badge>
+                                            <div className="flex gap-2">
+                                              <Button
+                                                size="sm"
+                                                variant="destructive"
+                                                className="h-9 text-xs font-semibold"
+                                                onClick={() => {
+                                                  toast.success('Comment removed from your issue');
+                                                }}
+                                              >
+                                                <MessageSquare className="h-4 w-4 mr-1.5" />
+                                                Remove
+                                              </Button>
+                                              <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="h-9 text-xs font-semibold"
+                                                onClick={() => {
+                                                  toast.success('Comment kept. Report dismissed');
+                                                }}
+                                              >
+                                                Keep Comment
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        )}
                                       </CardContent>
                                     </Card>
                                   ))}
+                                  
+                                  {/* Pagination Controls */}
+                                  {reportsAgainstMe.length > reportsPerPage && (
+                                    <div className="flex items-center justify-center gap-2 pt-4 border-t border-stone-200">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCommentsReportsPage(prev => Math.max(1, prev - 1))}
+                                        disabled={commentsReportsPage === 1}
+                                        className="rounded-lg"
+                                      >
+                                        ← Previous
+                                      </Button>
+                                      <div className="flex items-center gap-2">
+                                        {Array.from({ length: Math.ceil(reportsAgainstMe.length / reportsPerPage) }).map((_, i) => (
+                                          <button
+                                            key={i + 1}
+                                            onClick={() => setCommentsReportsPage(i + 1)}
+                                            className={cn(
+                                              "w-8 h-8 rounded-lg text-xs font-semibold transition-all",
+                                              commentsReportsPage === i + 1
+                                                ? 'bg-red-600 text-white'
+                                                : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
+                                            )}
+                                          >
+                                            {i + 1}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCommentsReportsPage(prev => Math.min(Math.ceil(reportsAgainstMe.length / reportsPerPage), prev + 1))}
+                                        disabled={commentsReportsPage === Math.ceil(reportsAgainstMe.length / reportsPerPage)}
+                                        className="rounded-lg"
+                                      >
+                                        Next →
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <Card className="rounded-2xl border border-green-200/50 bg-green-50/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-12 text-center">
                                   <Check className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-600" />
-                                  <p className="text-sm text-muted-foreground">No reports against your content. Great job!</p>
+                                  <p className="text-sm text-muted-foreground">No reported comments on your issues. Your community is respectful!</p>
                                 </Card>
                               )}
                             </div>
                           )}
 
-                          {/* Section 2: Reports You Can Review */}
+                          {/* Section 2: User Reports - Community Voting */}
                           {reportView === 'review' && (
                             <div className="space-y-4">
                               <div>
-                                <h3 className="text-lg font-semibold mb-2">Reports You Can Review</h3>
-                                <p className="text-sm text-muted-foreground mb-4">Community moderation - vote on report validity</p>
+                                <h3 className="text-lg font-semibold mb-2">User Reports - Community Moderation</h3>
+                                <p className="text-sm text-muted-foreground mb-4">👥 Users reported by the community. Vote 👍 to agree report is valid or 👎 to dismiss.</p>
                               </div>
                               
                               {reviewableReports && reviewableReports.length > 0 ? (
-                                <div className="space-y-3">
-                                  {reviewableReports.map((report: ReportSummary) => (
-                                    <ReportCard key={report.id} report={report} voteOnReport={voteOnReport} />
+                                <div className="space-y-4">
+                                  {reviewableReports
+                                    .slice((userReportsPage - 1) * reportsPerPage, userReportsPage * reportsPerPage)
+                                    .map((report: ReportSummary) => (
+                                    <Card key={report.id} className="rounded-2xl border border-orange-200/50 bg-orange-50/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-5 transition-all hover:shadow-xl">
+                                      <CardContent className="p-0 space-y-4">
+                                        {/* User Reported Info */}
+                                        <div className="space-y-1 bg-orange-100/40 border border-orange-200 rounded-lg p-3">
+                                          <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
+                                          <p className="text-base font-bold text-stone-900">{report.reportedUserName}</p>
+                                        </div>
+
+                                        {/* Reason & Details Section */}
+                                        <div className="space-y-3">
+                                          <div className="space-y-2">
+                                            <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
+                                            <Badge 
+                                              variant="outline" 
+                                              className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
+                                            >
+                                              {report.reason}
+                                            </Badge>
+                                          </div>
+
+                                          {/* Report Details */}
+                                          {report.details && (
+                                            <div className="space-y-2">
+                                              <p className="text-xs font-semibold text-stone-600 uppercase">Details</p>
+                                              <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
+                                                {report.details}
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Report Timestamp */}
+                                        <p className="text-xs font-medium text-stone-600">
+                                          📅 Reported {formatRelativeTime(
+                                            report.createdAt?.toMillis?.() ||
+                                            report.createdAt?.seconds * 1000 ||
+                                            Date.now()
+                                          )}
+                                        </p>
+
+                                        {/* Community Voting Section */}
+                                        <div className="border-t border-orange-200/50 pt-4 mt-4 space-y-3">
+                                          <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Community Voting</p>
+                                          
+                                          {/* Vote Buttons */}
+                                          <div className="flex gap-3">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="flex-1 h-10 gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-semibold"
+                                            >
+                                              <ThumbsUp className="h-4 w-4" />
+                                              <span>Valid</span>
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              className="flex-1 h-10 gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-semibold"
+                                            >
+                                              <ThumbsDown className="h-4 w-4" />
+                                              <span>Dismiss</span>
+                                            </Button>
+                                          </div>
+
+                                          {/* Vote Counts */}
+                                          <div className="flex items-center gap-2 bg-white/60 rounded-lg p-3 border border-stone-200">
+                                            <div className="flex items-center gap-2 flex-1">
+                                              <ThumbsUp className="h-4 w-4 text-green-600" />
+                                              <span className="text-sm font-bold text-green-700">{report.upvotes || 0}</span>
+                                              <span className="text-xs text-stone-500">agree</span>
+                                            </div>
+                                            <div className="w-px h-5 bg-stone-300"></div>
+                                            <div className="flex items-center gap-2 flex-1 justify-end">
+                                              <span className="text-xs text-stone-500">disagree</span>
+                                              <span className="text-sm font-bold text-red-700">{report.downvotes || 0}</span>
+                                              <ThumbsDown className="h-4 w-4 text-red-600" />
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Auto-dismiss indicator if downvotes > 25 */}
+                                        {report.status === 'dismissed' && (
+                                          <div className="bg-green-100 border border-green-300 rounded-lg p-3 text-center">
+                                            <p className="text-sm font-semibold text-green-700">✓ Community voted to dismiss this report</p>
+                                          </div>
+                                        )}
+                                      </CardContent>
+                                    </Card>
                                   ))}
+                                  
+                                  {/* Pagination Controls */}
+                                  {reviewableReports.length > reportsPerPage && (
+                                    <div className="flex items-center justify-center gap-2 pt-4 border-t border-stone-200">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setUserReportsPage(prev => Math.max(1, prev - 1))}
+                                        disabled={userReportsPage === 1}
+                                        className="rounded-lg"
+                                      >
+                                        ← Previous
+                                      </Button>
+                                      <div className="flex items-center gap-2">
+                                        {Array.from({ length: Math.ceil(reviewableReports.length / reportsPerPage) }).map((_, i) => (
+                                          <button
+                                            key={i + 1}
+                                            onClick={() => setUserReportsPage(i + 1)}
+                                            className={cn(
+                                              "w-8 h-8 rounded-lg text-xs font-semibold transition-all",
+                                              userReportsPage === i + 1
+                                                ? 'bg-amber-600 text-white'
+                                                : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
+                                            )}
+                                          >
+                                            {i + 1}
+                                          </button>
+                                        ))}
+                                      </div>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setUserReportsPage(prev => Math.min(Math.ceil(reviewableReports.length / reportsPerPage), prev + 1))}
+                                        disabled={userReportsPage === Math.ceil(reviewableReports.length / reportsPerPage)}
+                                        className="rounded-lg"
+                                      >
+                                        Next →
+                                      </Button>
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
                                 <Card className="rounded-2xl border border-stone-200/50 bg-white/50 backdrop-blur-2xl shadow-lg shadow-stone-100/20 p-12 text-center">
-                                  <Flag className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
-                                  <p className="text-sm text-muted-foreground">No reports to review. Check back later!</p>
+                                  <Users className="h-12 w-12 mx-auto mb-3 opacity-30 text-muted-foreground" />
+                                  <p className="text-sm text-muted-foreground">No user reports pending review. Community is in good standing!</p>
                                 </Card>
                               )}
                             </div>

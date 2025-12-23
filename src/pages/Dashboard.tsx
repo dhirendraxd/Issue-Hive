@@ -51,12 +51,79 @@ import IssueCard from '@/components/IssueCard';
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
   const { data: userProfile } = useUserProfile(user?.uid || '');
-  const { data: issues, isLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
+  const { data: issuesRaw, isLoading, stats, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const avatarUrl = useAvatarUrl(user?.photoURL, user?.uid || '');
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
   const activityTracker = useActivityTracker();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  
+  // Add dummy college-related issues for testing
+  const dummyIssues: Issue[] = [
+    {
+      id: 'college-1',
+      title: 'Library closes too early on weekends',
+      description: 'The library closes at 6 PM on Saturdays and Sundays, but many students need access for group study sessions. Can we extend the hours to at least 10 PM on weekends?',
+      category: 'Facilities',
+      priority: 'medium',
+      status: 'open',
+      createdBy: user?.uid || 'user1',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      votes: 24,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'college-2',
+      title: 'WiFi connectivity issues in hostel blocks',
+      description: 'The WiFi signal is extremely weak in hostel block C and D. Students are unable to attend online classes. This needs urgent attention.',
+      category: 'Infrastructure',
+      priority: 'high',
+      status: 'in-progress',
+      createdBy: user?.uid || 'user2',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      votes: 45,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'college-3',
+      title: 'Mess food quality and pricing',
+      description: 'The quality of food in the mess has deteriorated significantly. Prices have also increased by 15% but portions are smaller. Many students are unhappy with the current situation.',
+      category: 'Student Services',
+      priority: 'medium',
+      status: 'open',
+      createdBy: user?.uid || 'user3',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      votes: 67,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'college-4',
+      title: 'Bus timings need to be updated',
+      description: 'The current bus schedule does not align with class timings. Morning buses arrive 15 minutes late, causing students to miss classes.',
+      category: 'Transportation',
+      priority: 'high',
+      status: 'open',
+      createdBy: user?.uid || 'user4',
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      votes: 38,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'college-5',
+      title: 'Lab equipment needs upgrade',
+      description: 'The computer lab equipment is outdated and frequently breaks down. We need modern systems for running simulations and development work.',
+      category: 'Academic',
+      priority: 'high',
+      status: 'resolved',
+      createdBy: user?.uid || 'user5',
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      votes: 52,
+      visibility: 'public' as const,
+    },
+  ];
+  
+  const issues = issuesRaw && issuesRaw.length > 0 ? issuesRaw : dummyIssues;
+  
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);

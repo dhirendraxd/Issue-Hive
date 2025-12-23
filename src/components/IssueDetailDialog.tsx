@@ -732,11 +732,9 @@ export default function IssueDetailDialog({
                     >
                       {/* Report Info */}
                       <div>
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="mb-2">
                           <div>
-                            <p className="text-sm font-medium text-stone-900">
-                              Reported by <span className="font-semibold">{report.reporterName}</span>
-                            </p>
+                            <p className="text-xs text-muted-foreground mb-1">Report submitted</p>
                             <p className="text-xs text-muted-foreground">
                               {formatRelativeTime(
                                 report.createdAt?.toMillis?.() ||
@@ -821,8 +819,9 @@ export default function IssueDetailDialog({
                 {commentsExpanded && (
                   <div className="animate-in slide-in-from-top-2 duration-200">
                     <IssueComments 
-                      issueId={issue.id} 
-                                            issueOwnerId={issue.createdBy}
+                      issueId={issue.id}
+                      issueTitle={issue.title}
+                      issueOwnerId={issue.createdBy}
                       allowPin={enablePin}
                       disabled={disableComments}
                       disabledReason={

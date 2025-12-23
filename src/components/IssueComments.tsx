@@ -10,17 +10,19 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
 import { logActivity } from '@/lib/activity-tracker';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import ReportCommentDialog from './ReportCommentDialog';
 
 interface IssueCommentsProps {
   issueId: string;
-    issueOwnerId?: string; // The creator of the issue
+  issueTitle?: string; // Title of the issue for report context
+  issueOwnerId?: string; // The creator of the issue
   allowPin?: boolean; // Whether pin UI should be shown (context gated)
   disabled?: boolean; // disable add for owner
   className?: string;
   disabledReason?: string; // reason why commenting is disabled
 }
 
-export default function IssueComments({ issueId, issueOwnerId, allowPin = false, disabled, className, disabledReason }: IssueCommentsProps) {
+export default function IssueComments({ issueId, issueTitle = "Unknown Issue", issueOwnerId, allowPin = false, disabled, className, disabledReason }: IssueCommentsProps) {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { data: comments, isLoading, error: commentsError, addComment, pinComment, userCommentCount, canAddTopLevel } = useComments(issueId);
@@ -28,6 +30,12 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportingCommentData, setReportingCommentData] = useState<{
+    id: string;
+    text: string;
+    authorName: string;
+  } | null>(null);
   const isIssueOwner = user?.uid === issueOwnerId;
 
   const canAdd = !!user && !disabled;
@@ -288,7 +296,14 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
-                          onClick={() => setReportedCommentId(c.id)}
+                          onClick={() => {
+                            setReportingCommentData({
+                              id: c.id,
+                              text: c.content || c.text || '',
+                              authorName: c.userName || 'Anonymous',
+                            });
+                            setReportDialogOpen(true);
+                          }}
                           className="text-red-600 focus:text-red-600 cursor-pointer"
                         >
                           <Flag className="h-3 w-3 mr-2" />
@@ -389,6 +404,21 @@ export default function IssueComments({ issueId, issueOwnerId, allowPin = false,
               )}
         </p>
       )}
+
+      {/* Report Comment Dialog */}
+      {reportingCommentData && (
+        <ReportCommentDialog
+          open={reportDialogOpen}
+          onOpenChange={setReportDialogOpen}
+          commentId={reportingCommentData.id}
+          commentText={reportingCommentData.text}
+          commentAuthorName={reportingCommentData.authorName}
+          issueId={issueId}
+          issueTitle={issueTitle}
+          issueOwnerId={issueOwnerId || ''}
+        />
+      )}
     </div>
   );
 }
+

@@ -28,7 +28,85 @@ function IssueCollegeProvider({ issue, children }: { issue: Issue; children: (co
 
 export default function Issues() {
   const { user } = useAuth();
-  const { data, upvote, downvoteIssue } = useIssuesFirebase();
+  const { data: dataRaw, upvote, downvoteIssue } = useIssuesFirebase();
+
+  // Dummy college-related issues for testing
+  const dummyIssues: Issue[] = [
+    {
+      id: 'issue-1',
+      title: 'Improve campus WiFi coverage',
+      description: 'The WiFi signal is weak in many areas of the campus, especially in the outdoor spaces and some classrooms.',
+      category: 'Infrastructure' as IssueCategory,
+      priority: 'high',
+      status: 'open' as IssueStatus,
+      createdBy: 'user1',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
+      votes: 89,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'issue-2',
+      title: 'Extend library working hours',
+      description: 'Students need access to the library beyond 6 PM for study groups and preparation for exams.',
+      category: 'Facilities' as IssueCategory,
+      priority: 'medium',
+      status: 'in-progress' as IssueStatus,
+      createdBy: 'user2',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+      votes: 156,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'issue-3',
+      title: 'Better parking facilities needed',
+      description: 'Not enough parking spaces for students and staff. This causes traffic congestion during peak hours.',
+      category: 'Facilities' as IssueCategory,
+      priority: 'medium',
+      status: 'open' as IssueStatus,
+      createdBy: 'user3',
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+      votes: 73,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'issue-4',
+      title: 'Add more food options in canteen',
+      description: 'The canteen has limited vegetarian and vegan options. Need to expand the menu to cater to diverse dietary preferences.',
+      category: 'Student Services' as IssueCategory,
+      priority: 'low',
+      status: 'open' as IssueStatus,
+      createdBy: 'user4',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+      votes: 42,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'issue-5',
+      title: 'Upgrade laboratory equipment',
+      description: 'Current lab equipment is outdated and needs replacement. We need modern tools for hands-on learning.',
+      category: 'Academic' as IssueCategory,
+      priority: 'high',
+      status: 'resolved' as IssueStatus,
+      createdBy: 'user5',
+      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      votes: 121,
+      visibility: 'public' as const,
+    },
+    {
+      id: 'issue-6',
+      title: 'Improve mental health support services',
+      description: 'Students need better access to counseling services and mental health support during exam season.',
+      category: 'Student Services' as IssueCategory,
+      priority: 'high',
+      status: 'open' as IssueStatus,
+      createdBy: 'user6',
+      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+      votes: 98,
+      visibility: 'public' as const,
+    },
+  ];
+
+  const data = dataRaw && dataRaw.length > 0 ? dataRaw : dummyIssues;
 
   // Modal state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);

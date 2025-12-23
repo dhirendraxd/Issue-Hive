@@ -3,22 +3,20 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Flag, MessageCircle } from "lucide-react";
+import { AlertTriangle, Flag } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 
-interface ReportUserDialogProps {
+interface ReportCommentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  reportedUserId: string;
-  reportedUserName: string;
-  context?: {
-    issueId?: string;
-    issueTitle?: string;
-    commentId?: string;
-    commentText?: string;
-  };
+  commentId: string;
+  commentText: string;
+  commentAuthorName: string;
+  issueId: string;
+  issueTitle: string;
+  issueOwnerId: string;
 }
 
 const REPORT_REASONS = [
@@ -26,29 +24,29 @@ const REPORT_REASONS = [
   { value: "harassment", label: "Harassment or bullying" },
   { value: "hate_speech", label: "Hate speech or discrimination" },
   { value: "inappropriate", label: "Inappropriate content" },
-  { value: "impersonation", label: "Impersonation" },
-  { value: "fake_issues", label: "Creating fake or malicious issues" },
-  { value: "abusive_messages", label: "Abusive private messages" },
-  { value: "misinformation", label: "Spreading misinformation" },
+  { value: "misinformation", label: "Misinformation or false claims" },
+  { value: "off_topic", label: "Off-topic or not constructive" },
   { value: "other", label: "Other (please specify)" },
 ];
 
-export default function ReportUserDialog({
+export default function ReportCommentDialog({
   open,
   onOpenChange,
-  reportedUserId,
-  reportedUserName,
-  context,
-}: ReportUserDialogProps) {
+  commentId,
+  commentText,
+  commentAuthorName,
+  issueId,
+  issueTitle,
+  issueOwnerId,
+}: ReportCommentDialogProps) {
   const { user } = useAuth();
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
-  const [evidence, setEvidence] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!user) {
-      toast.error("You must be signed in to report a user");
+      toast.error("You must be signed in to report a comment");
       return;
     }
 
@@ -67,32 +65,32 @@ export default function ReportUserDialog({
       const { collection, addDoc, serverTimestamp } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      await addDoc(collection(db, "reports"), {
-        reportedUserId,
-        reportedUserName,
+      await addDoc(collection(db, "comment_reports"), {
+        commentId,
+        commentText,
+        commentAuthorName,
+        issueId,
+        issueTitle,
+        issueOwnerId,
         reporterId: user.uid,
         reporterName: user.displayName || "Anonymous",
         reporterEmail: user.email,
         reason,
         details: details.trim(),
-        evidence: evidence.trim() || null,
-        context: context || null,
-        status: "pending", // pending, reviewed, resolved, dismissed
-        upvotes: 0,
-        downvotes: 0,
+        status: "pending", // pending, reviewed, resolved, deleted
+        reportCount: 1,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
 
-      toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+      toast.success("Comment reported successfully. Thank you for helping maintain community standards.");
       
       // Reset form
       setReason("");
       setDetails("");
-      setEvidence("");
       onOpenChange(false);
     } catch (error) {
-      console.error("Error submitting report:", error);
+      console.error("Error submitting comment report:", error);
       toast.error("Failed to submit report. Please try again.");
     } finally {
       setSubmitting(false);
@@ -102,7 +100,6 @@ export default function ReportUserDialog({
   const handleCancel = () => {
     setReason("");
     setDetails("");
-    setEvidence("");
     onOpenChange(false);
   };
 
@@ -110,20 +107,19 @@ export default function ReportUserDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader className="space-y-2">
-          <DialogTitle className="text-2xl font-bold">Report {reportedUserName}</DialogTitle>
+          <DialogTitle className="text-2xl font-bold">Report Comment</DialogTitle>
           <DialogDescription className="text-base">
-            Tell us why you're reporting this user. Be specific and honest.
+            Let us know why this comment is problematic.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-4">
-          {/* Issue Context - Only show if available */}
-          {context?.issueTitle && (
-            <div className="bg-slate-100 rounded-lg p-3">
-              <p className="text-xs text-slate-600 font-semibold mb-1">RELATED TO</p>
-              <p className="text-sm text-slate-900 font-medium">{context.issueTitle}</p>
-            </div>
-          )}
+          {/* Comment Preview */}
+          <div className="bg-slate-100 rounded-lg p-4 border border-slate-200">
+            <p className="text-xs text-slate-600 font-semibold mb-2">COMMENT</p>
+            <p className="text-sm text-slate-900 italic leading-relaxed">"{commentText}"</p>
+            <p className="text-xs text-slate-600 mt-2">By <span className="font-semibold">{commentAuthorName}</span> on {issueTitle}</p>
+          </div>
 
           {/* Reason Selection */}
           <div className="space-y-2">
@@ -144,18 +140,18 @@ export default function ReportUserDialog({
 
           {/* Details */}
           <div className="space-y-2">
-            <Label htmlFor="details" className="text-sm font-semibold">Details *</Label>
+            <Label htmlFor="details" className="text-sm font-semibold">Explain why *</Label>
             <Textarea
               id="details"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
-              placeholder="Explain what happened. Include specific examples or dates if possible."
-              className="min-h-[100px] resize-none text-sm"
-              maxLength={800}
+              placeholder="Briefly explain what's wrong with this comment."
+              className="min-h-[90px] resize-none text-sm"
+              maxLength={400}
             />
             <div className="flex justify-between items-center">
-              <p className="text-xs text-slate-500">Be specific to help moderators</p>
-              <p className="text-xs text-slate-500">{details.length}/800</p>
+              <p className="text-xs text-slate-500">Be specific and honest</p>
+              <p className="text-xs text-slate-500">{details.length}/400</p>
             </div>
           </div>
 
@@ -164,21 +160,10 @@ export default function ReportUserDialog({
             <p className="text-sm font-semibold text-blue-900">How Community Moderation Works</p>
             <div className="space-y-2 text-sm text-blue-800">
               <div className="flex items-start gap-2">
-                <span className="font-bold text-green-600 flex-shrink-0">✓</span>
-                <p><span className="font-semibold">25+ Upvotes</span> → User action taken</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="font-bold text-orange-600 flex-shrink-0">✗</span>
-                <p><span className="font-semibold">25+ Downvotes</span> → Report dismissed</p>
+                <span className="font-bold text-red-600 flex-shrink-0">⚠</span>
+                <p><span className="font-semibold">10+ Reports</span> → Comment automatically removed</p>
               </div>
             </div>
-          </div>
-
-          {/* Warning */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-            <p className="text-xs text-amber-900 leading-relaxed">
-              <span className="font-semibold">Important:</span> False reports may result in action against your account. Be truthful.
-            </p>
           </div>
         </div>
 
