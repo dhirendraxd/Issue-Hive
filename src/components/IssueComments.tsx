@@ -251,7 +251,13 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
                       {c.likes || 0}
                     </Button>
                   )}
-                  {(!user || user.uid === c.userId) && c.likes > 0 && (
+                  {user && user.uid === c.userId && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1 cursor-not-allowed opacity-50" title="You cannot vote on your own comment">
+                      <ThumbsUp className="h-3 w-3" />
+                      {c.likes || 0}
+                    </span>
+                  )}
+                  {!user && c.likes > 0 && (
                     <span className="text-[10px] text-muted-foreground flex items-center gap-1">
                       <ThumbsUp className="h-3 w-3" />
                       {c.likes}
