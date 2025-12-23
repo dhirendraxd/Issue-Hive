@@ -22,6 +22,8 @@ export interface Report {
   updatedAt: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
   upvotes?: number;
   downvotes?: number;
+  reportCount?: number;
+  reasonCount?: number;
   userVote?: 1 | -1 | 0; // 1 for upvote, -1 for downvote, 0 for no vote
 }
 
@@ -123,6 +125,55 @@ export function useCommentReportsAgainstMe() {
       })) as Report[];
     },
     enabled: !!user?.uid,
+  });
+}
+
+/**
+ * Fetch comment reports filed on the user's issues
+ * Used by issue owners to see reports on comments in their issues
+ */
+export function useCommentReportsOnMyIssues(issueIds: string[]) {
+  return useQuery({
+    queryKey: ['comment-reports-on-my-issues', issueIds],
+    queryFn: async () => {
+      if (!issueIds || issueIds.length === 0) return [];
+
+      const reportsRef = collection(db, 'comment_reports');
+      const q = query(
+        reportsRef,
+        where('issueId', 'in', issueIds),
+        orderBy('createdAt', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+      return await Promise.all(snapshot.docs.map(async (doc) => {
+        const reportData = doc.data() as Report;
+        
+        // Fetch vote counts from subcollection
+        const votesRef = collection(db, 'comment_reports', doc.id, 'votes');
+        const votesSnapshot = await getDocs(votesRef);
+        
+        let upvotes = 0;
+        let downvotes = 0;
+        
+        votesSnapshot.docs.forEach(voteDoc => {
+          const voteType = voteDoc.data().voteType;
+          if (voteType === 'upvote') {
+            upvotes++;
+          } else if (voteType === 'downvote') {
+            downvotes++;
+          }
+        });
+        
+        return {
+          id: doc.id,
+          ...reportData,
+          upvotes,
+          downvotes
+        };
+      })) as Report[];
+    },
+    enabled: issueIds && issueIds.length > 0,
   });
 }
 

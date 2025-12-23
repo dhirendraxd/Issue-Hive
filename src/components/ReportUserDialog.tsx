@@ -81,11 +81,25 @@ export default function ReportUserDialog({
       const existingReports = await getDocs(existingReportQuery);
       
       if (existingReports.docs.length > 0) {
-        // Add to existing report instead of creating new one
         const existingReport = existingReports.docs[0];
         const reportId = existingReport.id;
+        const existingData = existingReport.data();
         
-        // Add reporter details to a subcollection
+        // Check if this user already reported for this reason
+        const userReportQuery = query(
+          collection(db, "reports", reportId, "details"),
+          where("reporterId", "==", user.uid)
+        );
+        const userReports = await getDocs(userReportQuery);
+        
+        if (userReports.docs.length > 0) {
+          // User already reported for this reason
+          toast.error("You already reported this user for this reason. Your vote counts as community validation.");
+          setSubmitting(false);
+          return;
+        }
+        
+        // Add reporter details to a subcollection (new user reporting)
         await addDoc(collection(db, "reports", reportId, "details"), {
           reporterId: user.uid,
           reporterName: user.displayName || "Anonymous",
@@ -96,9 +110,10 @@ export default function ReportUserDialog({
           createdAt: serverTimestamp(),
         });
         
-        // Increment report count
+        // Increment reason count (how many times this reason was reported)
         await updateDoc(existingReport.ref, {
           reportCount: increment(1),
+          reasonCount: increment(1),
           updatedAt: serverTimestamp(),
         });
         
@@ -117,6 +132,7 @@ export default function ReportUserDialog({
           context: context || null,
           status: "pending",
           reportCount: 1,
+          reasonCount: 1,
           upvotes: 0,
           downvotes: 0,
           createdAt: serverTimestamp(),
@@ -134,6 +150,7 @@ export default function ReportUserDialog({
           details: details.trim(),
           status: "pending",
           reportCount: 1,
+          reasonCount: 1,
           upvotes: 0,
           downvotes: 0,
           createdAt: new Date(),

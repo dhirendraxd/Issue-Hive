@@ -192,9 +192,11 @@ service cloud.firestore {
       
       // Authenticated users can create reports
       allow create: if isSignedIn()
-        && request.resource.data.keys().hasAll(['reportedUserId','reportedUserName','reporterId','reporterName','reason','details','status','createdAt'])
+        && request.resource.data.keys().hasAll(['reportedUserId','reportedUserName','reporterId','reporterName','reason','details','status','createdAt','reportCount','reasonCount'])
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.status == 'pending'
+        && request.resource.data.reportCount == 1
+        && request.resource.data.reasonCount == 1
         && request.resource.data.reason.size() > 0
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
@@ -245,9 +247,11 @@ service cloud.firestore {
       
       // Authenticated users can create comment reports
       allow create: if isSignedIn()
-        && request.resource.data.keys().hasAll(['commentId','commentText','commentAuthorName','commentAuthorId','issueId','issueTitle','reporterId','reporterName','reason','details','status','createdAt'])
+        && request.resource.data.keys().hasAll(['commentId','commentText','commentAuthorName','commentAuthorId','issueId','issueTitle','reporterId','reporterName','reason','details','status','createdAt','reportCount','reasonCount'])
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.status == 'pending'
+        && request.resource.data.reportCount == 1
+        && request.resource.data.reasonCount == 1
         && request.resource.data.reason.size() > 0
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
