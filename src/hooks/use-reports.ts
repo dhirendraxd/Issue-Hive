@@ -226,8 +226,7 @@ export function useReviewableReports() {
         // Filter by status
         reports = reports.filter(r => r.status === 'pending' || r.status === 'reviewed');
         
-        // Filter out reports about the current user
-        reports = reports.filter(r => r.reportedUserId !== user.uid);
+        // Include all reports (including ones about the current user so they can clarify)
 
         return reports;
       } catch (error) {

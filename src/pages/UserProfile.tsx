@@ -351,7 +351,7 @@ export default function UserProfile() {
   const [followersDialogOpen, setFollowersDialogOpen] = useState(false);
   const [followingDialogOpen, setFollowingDialogOpen] = useState(false);
   const [reportUserDialogOpen, setReportUserDialogOpen] = useState(false);
-  const [reportView, setReportView] = useState<'against-me' | 'against-user' | 'review'>('against-me');
+  const [reportView, setReportView] = useState<'against-me' | 'review'>('against-me');
   const [reportsPerPage] = useState(3); // Show 3 reports at a time
   const [commentsReportsPage, setCommentsReportsPage] = useState(1);
   const [userReportsPage, setUserReportsPage] = useState(1);
@@ -404,12 +404,10 @@ export default function UserProfile() {
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} as EngagementMap } = useIssueEngagement(ownedIssueIds);
-  const { data: userReportsAgainstMe = [] } = useReportsAgainstMe(); // User behavior reports
-  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues(ownedIssueIds); // Comment reports on my issues
+  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues(ownedIssueIds);
   const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
   
-  // Maintain backward compatibility - use comment reports for "against-me" tab
   const reportsAgainstMe = commentReportsOnMyIssues;
 
   // Auto-delete comments with >10 reports
@@ -520,9 +518,9 @@ export default function UserProfile() {
     return {
       comments: commentsCleared ? 0 : totalComments,
       followers: followersCleared ? 0 : followersList.length,
-      reports: reportsCleared ? 0 : (reportsAgainstMe.length + userReportsAgainstMe.length),
+      reports: reportsCleared ? 0 : reportsAgainstMe.length,
     };
-  }, [commentsCleared, totalComments, followersCleared, followersList.length, reportsCleared, reportsAgainstMe.length, userReportsAgainstMe.length]);
+  }, [commentsCleared, totalComments, followersCleared, followersList.length, reportsCleared, reportsAgainstMe.length]);
 
   const hasUnreadNotifications = useMemo(() => {
     return unreadCounts.comments > 0 || unreadCounts.followers > 0 || unreadCounts.reports > 0;
@@ -1348,11 +1346,11 @@ export default function UserProfile() {
                       {isOwner ? (
                         <div className="space-y-4">
                           {/* Toggle Buttons */}
-                          <div className="flex gap-2 mb-6 flex-wrap">
+                          <div className="flex gap-2 mb-6">
                             <Button
                               onClick={() => setReportView('against-me')}
                               className={cn(
-                                "flex-1 min-w-max rounded-lg px-4 py-2 transition-all",
+                                "flex-1 rounded-lg px-4 py-2 transition-all",
                                 reportView === 'against-me'
                                   ? 'bg-red-600 text-white hover:bg-red-700'
                                   : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
@@ -1362,28 +1360,16 @@ export default function UserProfile() {
                               Comments Report ({reportsAgainstMe.length})
                             </Button>
                             <Button
-                              onClick={() => setReportView('against-user')}
-                              className={cn(
-                                "flex-1 min-w-max rounded-lg px-4 py-2 transition-all",
-                                reportView === 'against-user'
-                                  ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                  : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
-                              )}
-                            >
-                              <AlertTriangle className="h-4 w-4 mr-2 inline" />
-                              Behavior Reports ({userReportsAgainstMe.length})
-                            </Button>
-                            <Button
                               onClick={() => setReportView('review')}
                               className={cn(
-                                "flex-1 min-w-max rounded-lg px-4 py-2 transition-all",
+                                "flex-1 rounded-lg px-4 py-2 transition-all",
                                 reportView === 'review'
                                   ? 'bg-amber-600 text-white hover:bg-amber-700'
                                   : 'bg-stone-200 text-stone-900 hover:bg-stone-300'
                               )}
                             >
                               <Users className="h-4 w-4 mr-2 inline" />
-                              Community Reports ({reviewableReports.length})
+                              User Reports ({reviewableReports.length})
                             </Button>
                           </div>
 
@@ -1632,110 +1618,11 @@ export default function UserProfile() {
                             </div>
                           )}
 
-                          {/* Section 2: Behavior Reports - Reports Against You */}
-                          {reportView === 'against-user' && (
-                            <div className="space-y-4">
-                              <div>
-                                <h3 className="text-lg font-semibold mb-2">Reports Against You - Provide Clarification</h3>
-                                <p className="text-sm text-muted-foreground mb-4">⚠️ Users have reported concerns about your behavior. Review and provide clarification if needed.</p>
-                              </div>
-                              
-                              {userReportsAgainstMe && userReportsAgainstMe.length > 0 ? (
-                                <div className="space-y-4">
-                                  {userReportsAgainstMe
-                                    .slice((userReportsPage - 1) * reportsPerPage, userReportsPage * reportsPerPage)
-                                    .map((report: ReportSummary) => (
-                                      <Card key={report.id} className="rounded-2xl border border-red-200/50 bg-red-50/50 backdrop-blur-2xl shadow-lg shadow-red-100/20 p-5 transition-all hover:shadow-xl">
-                                        <CardContent className="p-0 space-y-4">
-                                          {/* You're Being Reported */}
-                                          <div className="space-y-1 bg-red-100/40 border border-red-200 rounded-lg p-3">
-                                            <div className="flex items-center justify-between">
-                                              <p className="text-xs font-semibold text-red-700 uppercase">Report Against You</p>
-                                              <div className="flex items-center gap-2">
-                                                {report.reasonCount && report.reasonCount > 1 && (
-                                                  <Badge className="bg-red-600 text-white text-xs font-bold">
-                                                    {report.reasonCount}x {report.reason}
-                                                  </Badge>
-                                                )}
-                                                {report.reportCount && report.reportCount > 1 && (
-                                                  <Badge className="bg-orange-600 text-white text-xs font-bold">
-                                                    {report.reportCount} people
-                                                  </Badge>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-
-                                          {/* Reason & Details */}
-                                          <div className="space-y-3">
-                                            <div className="space-y-2">
-                                              <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
-                                              <Badge 
-                                                variant="outline" 
-                                                className="bg-red-100 text-red-700 border-red-300 text-xs font-semibold"
-                                              >
-                                                {report.reason}
-                                              </Badge>
-                                            </div>
-
-                                            {/* Report Details */}
-                                            {report.details && (
-                                              <div className="space-y-2">
-                                                <p className="text-xs font-semibold text-stone-600 uppercase">Report Details</p>
-                                                <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
-                                                  {report.details}
-                                                </p>
-                                              </div>
-                                            )}
-                                          </div>
-
-                                          {/* Context Info */}
-                                          {report.context?.issueTitle && (
-                                            <div className="bg-amber-100/50 border border-amber-200 rounded-lg p-2 text-sm">
-                                              <p className="text-muted-foreground">Related to Issue:</p>
-                                              <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
-                                            </div>
-                                          )}
-
-                                          {/* Report Timestamp */}
-                                          <p className="text-xs font-medium text-stone-600">
-                                            📅 Reported {formatRelativeTime(
-                                              report.createdAt?.toMillis?.() ||
-                                              report.createdAt?.seconds * 1000 ||
-                                              Date.now()
-                                            )}
-                                          </p>
-
-                                          {/* Clarification Section */}
-                                          <div className="border-t border-red-200/50 pt-4 mt-4 space-y-3">
-                                            <p className="text-xs font-semibold text-red-800 uppercase tracking-wide">Your Response</p>
-                                            <textarea
-                                              placeholder="Provide clarification or your response to this report. You can explain your actions or provide context."
-                                              className="w-full p-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
-                                              rows={3}
-                                            />
-                                            <Button className="w-full bg-red-600 hover:bg-red-700 text-white rounded-lg">
-                                              Submit Clarification
-                                            </Button>
-                                          </div>
-                                        </CardContent>
-                                      </Card>
-                                    ))}
-                                </div>
-                              ) : (
-                                <Card className="rounded-2xl border border-green-200/50 bg-green-50/50 backdrop-blur-2xl shadow-lg shadow-green-100/20 p-12 text-center">
-                                  <Check className="h-12 w-12 mx-auto mb-3 opacity-30 text-green-600" />
-                                  <p className="text-sm text-muted-foreground">No behavioral reports against you. Great job maintaining a positive community presence!</p>
-                                </Card>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Section 3: User Reports - Community Voting */}
+                          {/* Section 2: User Reports - Community Voting */}
                           {reportView === 'review' && (
                             <div className="space-y-4">
                               <div>
-                                <h3 className="text-lg font-semibold mb-2">Community Reports - Moderation</h3>
+                                <h3 className="text-lg font-semibold mb-2">User Reports - Community Moderation</h3>
                                 <p className="text-sm text-muted-foreground mb-4">👥 Users reported by the community. Vote 👍 to agree report is valid or 👎 to dismiss.</p>
                               </div>
                               
@@ -1808,12 +1695,26 @@ export default function UserProfile() {
                                           <div className="border-t border-orange-200/50 pt-4 mt-4 space-y-3">
                                             <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Community Voting</p>
                                             
-                                            {/* Reported User Cannot Vote */}
+                                            {/* Reported User Cannot Vote - But Can Clarify */}
                                             {isReportedUser ? (
-                                              <div className="bg-red-100 border border-red-300 rounded-lg p-3">
-                                                <p className="text-sm text-red-700">
-                                                  ⚠️ <span className="font-semibold">You are reported in this case</span> - You cannot vote on this report, but you can see how others view it.
-                                                </p>
+                                              <div className="space-y-3">
+                                                <div className="bg-red-100 border border-red-300 rounded-lg p-3">
+                                                  <p className="text-sm text-red-700">
+                                                    ⚠️ <span className="font-semibold">You are reported in this case</span> - You cannot vote, but you can provide clarification below.
+                                                  </p>
+                                                </div>
+                                                {/* Clarification Section */}
+                                                <div className="space-y-2">
+                                                  <p className="text-xs font-semibold text-stone-600 uppercase">Your Clarification</p>
+                                                  <textarea
+                                                    placeholder="Provide clarification or your response to this report. Explain your actions or provide context."
+                                                    className="w-full p-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                                                    rows={3}
+                                                  />
+                                                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg">
+                                                    Submit Clarification
+                                                  </Button>
+                                                </div>
                                               </div>
                                             ) : (
                                               <>
