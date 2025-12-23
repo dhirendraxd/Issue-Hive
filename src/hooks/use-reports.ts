@@ -94,23 +94,32 @@ export function useReviewableReports() {
     queryFn: async () => {
       if (!user?.uid) return [];
 
-      const reportsRef = collection(db, 'reports');
-      const q = query(
-        reportsRef,
-        where('status', 'in', ['pending', 'reviewed']),
-        orderBy('createdAt', 'desc')
-      );
+      try {
+        const reportsRef = collection(db, 'reports');
+        // Query all reports ordered by creation date
+        const q = query(
+          reportsRef,
+          orderBy('createdAt', 'desc')
+        );
 
-      const snapshot = await getDocs(q);
-      let reports = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })) as Report[];
+        const snapshot = await getDocs(q);
+        
+        let reports = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) as Report[];
 
-      // Filter out reports about the current user
-      reports = reports.filter(r => r.reportedUserId !== user.uid);
+        // Filter by status in JavaScript
+        reports = reports.filter(r => r.status === 'pending' || r.status === 'reviewed');
+        
+        // Filter out reports about the current user
+        reports = reports.filter(r => r.reportedUserId !== user.uid);
 
-      return reports;
+        return reports;
+      } catch (error) {
+        console.error('[useReviewableReports] Query error:', error);
+        throw error;
+      }
     },
     enabled: !!user?.uid,
   });

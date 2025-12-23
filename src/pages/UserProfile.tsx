@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, Bell } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, Bell, CheckCircle } from 'lucide-react';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -42,6 +42,8 @@ type IssueComment = { id?: string; userAvatar?: string; userName?: string; creat
 type ReportSummary = {
   id: string;
   reportedUserName?: string;
+  reportedUserId?: string;
+  reporterId?: string;
   reporterName?: string;
   reason?: string;
   context?: { issueTitle?: string; issueId?: string };
@@ -51,6 +53,7 @@ type ReportSummary = {
   commentId?: string;
   commentText?: string;
   commentAuthorName?: string;
+  commentAuthorId?: string;
   upvotes?: number;
   downvotes?: number;
   reportCount?: number;
@@ -1537,74 +1540,99 @@ export default function UserProfile() {
                                 <div className="space-y-4">
                                   {reviewableReports
                                     .slice((userReportsPage - 1) * reportsPerPage, userReportsPage * reportsPerPage)
-                                    .map((report: ReportSummary) => (
-                                    <Card key={report.id} className="rounded-2xl border border-orange-200/50 bg-orange-50/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-5 transition-all hover:shadow-xl">
-                                      <CardContent className="p-0 space-y-4">
-                                        {/* User Reported Info */}
-                                        <div className="space-y-1 bg-orange-100/40 border border-orange-200 rounded-lg p-3">
-                                          <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
-                                          <p className="text-base font-bold text-stone-900">{report.reportedUserName}</p>
-                                        </div>
-
-                                        {/* Reason & Details Section */}
-                                        <div className="space-y-3">
-                                          <div className="space-y-2">
-                                            <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
-                                            <Badge 
-                                              variant="outline" 
-                                              className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
-                                            >
-                                              {report.reason}
-                                            </Badge>
+                                    .map((report: ReportSummary) => {
+                                      const isReportedUser = user?.uid === report.reportedUserId;
+                                      const isReporter = user?.uid === report.reporterId;
+                                      
+                                      return (
+                                      <Card key={report.id} className="rounded-2xl border border-orange-200/50 bg-orange-50/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-5 transition-all hover:shadow-xl">
+                                        <CardContent className="p-0 space-y-4">
+                                          {/* User Reported Info */}
+                                          <div className="space-y-1 bg-orange-100/40 border border-orange-200 rounded-lg p-3">
+                                            <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
+                                            <div className="flex items-center gap-2">
+                                              <p className="text-base font-bold text-stone-900">{report.reportedUserName}</p>
+                                            </div>
                                           </div>
 
-                                          {/* Report Details */}
-                                          {report.details && (
-                                            <div className="space-y-2">
-                                              <p className="text-xs font-semibold text-stone-600 uppercase">Details</p>
-                                              <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
-                                                {report.details}
-                                              </p>
+                                          {/* Reporter Info Badge */}
+                                          {isReporter && (
+                                            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 flex items-center gap-2">
+                                              <CheckCircle className="h-4 w-4 text-blue-600" />
+                                              <span className="text-sm font-semibold text-blue-700">✓ You reported this user</span>
                                             </div>
                                           )}
-                                        </div>
 
-                                        {/* Report Timestamp */}
-                                        <p className="text-xs font-medium text-stone-600">
-                                          📅 Reported {formatRelativeTime(
-                                            report.createdAt?.toMillis?.() ||
-                                            report.createdAt?.seconds * 1000 ||
-                                            Date.now()
-                                          )}
-                                        </p>
+                                          {/* Reason & Details Section */}
+                                          <div className="space-y-3">
+                                            <div className="space-y-2">
+                                              <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
+                                              <Badge 
+                                                variant="outline" 
+                                                className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
+                                              >
+                                                {report.reason}
+                                              </Badge>
+                                            </div>
 
-                                        {/* Community Voting Section */}
-                                        <div className="border-t border-orange-200/50 pt-4 mt-4 space-y-3">
-                                          <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Community Voting</p>
-                                          
-                                          {/* Vote Buttons */}
-                                          <div className="flex gap-3">
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="flex-1 h-10 gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-semibold"
-                                              onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: true })}
-                                              disabled={voteOnReport.isPending}
-                                            >
-                                              <ThumbsUp className="h-4 w-4" />
-                                              <span>Valid</span>
-                                            </Button>
-                                            <Button
-                                              size="sm"
-                                              variant="outline"
-                                              className="flex-1 h-10 gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-semibold"
-                                              onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: false })}
-                                              disabled={voteOnReport.isPending}
-                                            >
-                                              <ThumbsDown className="h-4 w-4" />
-                                              <span>Dismiss</span>
-                                            </Button>
+                                            {/* Report Details */}
+                                            {report.details && (
+                                              <div className="space-y-2">
+                                                <p className="text-xs font-semibold text-stone-600 uppercase">Details</p>
+                                                <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
+                                                  {report.details}
+                                                </p>
+                                              </div>
+                                            )}
                                           </div>
+
+                                          {/* Report Timestamp */}
+                                          <p className="text-xs font-medium text-stone-600">
+                                            📅 Reported {formatRelativeTime(
+                                              report.createdAt?.toMillis?.() ||
+                                              report.createdAt?.seconds * 1000 ||
+                                              Date.now()
+                                            )}
+                                          </p>
+
+                                          {/* Community Voting Section */}
+                                          <div className="border-t border-orange-200/50 pt-4 mt-4 space-y-3">
+                                            <p className="text-xs font-semibold text-orange-800 uppercase tracking-wide">Community Voting</p>
+                                            
+                                            {/* Reported User Cannot Vote */}
+                                            {isReportedUser ? (
+                                              <div className="bg-red-100 border border-red-300 rounded-lg p-3">
+                                                <p className="text-sm text-red-700">
+                                                  ⚠️ <span className="font-semibold">You are reported in this case</span> - You cannot vote on this report, but you can see how others view it.
+                                                </p>
+                                              </div>
+                                            ) : (
+                                              <>
+                                                {/* Vote Buttons */}
+                                                <div className="flex gap-3">
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="flex-1 h-10 gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-semibold"
+                                                    onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: true })}
+                                                    disabled={voteOnReport.isPending}
+                                                  >
+                                                    <ThumbsUp className="h-4 w-4" />
+                                                    <span>Valid</span>
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="flex-1 h-10 gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-semibold"
+                                                    onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: false })}
+                                                    disabled={voteOnReport.isPending}
+                                                  >
+                                                    <ThumbsDown className="h-4 w-4" />
+                                                    <span>Dismiss</span>
+                                                  </Button>
+                                                </div>
+                                              </>
+                                        )}
 
                                           {/* Vote Counts */}
                                           <div className="flex items-center gap-2 bg-white/60 rounded-lg p-3 border border-stone-200">
@@ -1630,7 +1658,8 @@ export default function UserProfile() {
                                         )}
                                       </CardContent>
                                     </Card>
-                                  ))}
+                                  );
+                                    })}
                                   
                                   {/* Pagination Controls */}
                                   {reviewableReports.length > reportsPerPage && (
