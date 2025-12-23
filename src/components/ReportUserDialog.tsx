@@ -66,10 +66,10 @@ export default function ReportUserDialog({
 
     setSubmitting(true);
     try {
-      const { collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+      const { collection, addDoc, serverTimestamp, Timestamp } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      await addDoc(collection(db, "reports"), {
+      const newReportRef = await addDoc(collection(db, "reports"), {
         reportedUserId,
         reportedUserName,
         reporterId: user.uid,
@@ -86,11 +86,27 @@ export default function ReportUserDialog({
         updatedAt: serverTimestamp(),
       });
 
+      // Optimistic update: immediately add to reviewable-reports cache for instant UI feedback
+      const newReport = {
+        id: newReportRef.id,
+        reportedUserId,
+        reportedUserName,
+        reporterId: user.uid,
+        reporterName: user.displayName || "Anonymous",
+        reason,
+        details: details.trim(),
+        status: "pending",
+        upvotes: 0,
+        downvotes: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      queryClient.setQueryData(['reviewable-reports'], (oldData: any[] | undefined) => {
+        return oldData ? [newReport, ...oldData] : [newReport];
+      });
+
       toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
-      
-      // Invalidate queries to refresh reports
-      await queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
-      await queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
       
       // Reset form
       setReason("");

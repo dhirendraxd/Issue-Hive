@@ -1588,6 +1588,8 @@ export default function UserProfile() {
                                               size="sm"
                                               variant="outline"
                                               className="flex-1 h-10 gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-semibold"
+                                              onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: true })}
+                                              disabled={voteOnReport.isPending}
                                             >
                                               <ThumbsUp className="h-4 w-4" />
                                               <span>Valid</span>
@@ -1596,6 +1598,8 @@ export default function UserProfile() {
                                               size="sm"
                                               variant="outline"
                                               className="flex-1 h-10 gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-semibold"
+                                              onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: false })}
+                                              disabled={voteOnReport.isPending}
                                             >
                                               <ThumbsDown className="h-4 w-4" />
                                               <span>Dismiss</span>

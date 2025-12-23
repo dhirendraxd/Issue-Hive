@@ -69,7 +69,7 @@ export default function ReportCommentDialog({
       const { collection, addDoc, serverTimestamp } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      await addDoc(collection(db, "comment_reports"), {
+      const newReportRef = await addDoc(collection(db, "comment_reports"), {
         commentId,
         commentText,
         commentAuthorName,
@@ -88,12 +88,30 @@ export default function ReportCommentDialog({
         updatedAt: serverTimestamp(),
       });
 
+      // Optimistic update: immediately add to reviewable-reports cache for instant UI feedback
+      const newReport = {
+        id: newReportRef.id,
+        commentId,
+        commentText,
+        commentAuthorName,
+        commentAuthorId: commentAuthorId || '',
+        issueId,
+        issueTitle,
+        reporterId: user.uid,
+        reporterName: user.displayName || "Anonymous",
+        reason,
+        details: details.trim(),
+        status: "pending",
+        reportCount: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      queryClient.setQueryData(['reviewable-reports'], (oldData: any[] | undefined) => {
+        return oldData ? [newReport, ...oldData] : [newReport];
+      });
+
       toast.success("Comment reported successfully. Thank you for helping maintain community standards.");
-      
-      // Invalidate queries to refresh reports
-      await queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
-      await queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
-      await queryClient.invalidateQueries({ queryKey: ['comment-reports-against-me'] });
       
       // Reset form
       setReason("");
