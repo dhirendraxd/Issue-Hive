@@ -136,15 +136,18 @@ export function useCommentReportsAgainstMe() {
  * Used by issue owners to see reports on comments in their issues
  */
 export function useCommentReportsOnMyIssues(issueIds: string[]) {
+  const { user } = useAuth();
+  
   return useQuery({
-    queryKey: ['comment-reports-on-my-issues', issueIds],
+    queryKey: ['comment-reports-on-my-issues', user?.uid],
     queryFn: async () => {
-      if (!issueIds || issueIds.length === 0) return [];
+      if (!user?.uid) return [];
 
       const reportsRef = collection(db, 'comment_reports');
+      // Use issueOwnerId instead of issueId to avoid 'in' query limit of 10
       const q = query(
         reportsRef,
-        where('issueId', 'in', issueIds),
+        where('issueOwnerId', '==', user.uid),
         orderBy('createdAt', 'desc')
       );
 
@@ -176,7 +179,7 @@ export function useCommentReportsOnMyIssues(issueIds: string[]) {
         };
       })) as Report[];
     },
-    enabled: issueIds && issueIds.length > 0,
+    enabled: !!user?.uid,
   });
 }
 

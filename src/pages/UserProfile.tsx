@@ -407,7 +407,7 @@ export default function UserProfile() {
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} as EngagementMap } = useIssueEngagement(ownedIssueIds);
-  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues(ownedIssueIds);
+  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues([]);
   const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
   const submitClarification = useSubmitClarification();
