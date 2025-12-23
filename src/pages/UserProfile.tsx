@@ -1,5 +1,5 @@
 import { useParams, Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
@@ -8,6 +8,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
 import { signOut } from '@/integrations/firebase';
+import { db } from '@/integrations/firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import Navbar from '@/components/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -352,6 +354,7 @@ export default function UserProfile() {
   const [reportsPerPage] = useState(3); // Show 3 reports at a time
   const [commentsReportsPage, setCommentsReportsPage] = useState(1);
   const [userReportsPage, setUserReportsPage] = useState(1);
+  const [userReportVotes, setUserReportVotes] = useState<Record<string, 1 | -1 | 0>>({}); // Track user votes
   const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('issues');
   const [messagesTab, setMessagesTab] = useState<'incoming' | 'outgoing'>('incoming');
@@ -419,6 +422,92 @@ export default function UserProfile() {
   }, []);
 
   const reviewableReports = reviewableReportsRaw;
+
+  // Real-time polling for vote count updates every 3 seconds
+  useEffect(() => {
+    const pollInterval = setInterval(() => {
+      queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [queryClient]);
+
+  // Fetch user's votes for all reports
+  useEffect(() => {
+    const fetchUserVotes = async () => {
+      if (!user?.uid || !reviewableReports.length) return;
+
+      const votes: Record<string, 1 | -1 | 0> = {};
+      
+      for (const report of reviewableReports) {
+        try {
+          const voteQuery = query(
+            collection(db, 'reports', report.id, 'votes'),
+            where('userId', '==', user.uid)
+          );
+          const voteSnapshot = await getDocs(voteQuery);
+          
+          if (voteSnapshot.docs.length > 0) {
+            const voteData = voteSnapshot.docs[0].data();
+            if (!voteData.voteType || !voteData.userId) {
+              console.warn(`Invalid vote data for report ${report.id}:`, voteData);
+              votes[report.id] = 0;
+              continue;
+            }
+            
+            votes[report.id] = voteData.voteType === 'upvote' ? 1 : -1;
+          } else {
+            votes[report.id] = 0;
+          }
+        } catch (error) {
+          console.error(`Error fetching vote for report ${report.id}:`, error);
+          votes[report.id] = 0;
+        }
+      }
+      
+      setUserReportVotes(votes);
+      // Also cache in react-query
+      queryClient.setQueryData(['user-report-votes'], votes);
+    };
+
+    fetchUserVotes();
+  }, [user?.uid, reviewableReports.length, reviewableReports, queryClient]);
+
+  // Update user votes when voting succeeds
+  useEffect(() => {
+    if (voteOnReport.isSuccess && voteOnReport.data) {
+      const { reportId, upvote, changed } = voteOnReport.data;
+      
+      // Update local state
+      setUserReportVotes(prev => {
+        const updated = { ...prev };
+        if (changed) {
+          updated[reportId] = upvote ? 1 : -1;
+        } else {
+          // Same vote clicked - toggle off
+          updated[reportId] = 0;
+        }
+        return updated;
+      });
+    }
+  }, [voteOnReport.isSuccess, voteOnReport.data]);
+
+  // Show toast for vote success
+  useEffect(() => {
+    if (voteOnReport.isSuccess) {
+      toast.success('✓ Your vote was counted!', {
+        description: 'Thanks for helping moderate the community',
+        duration: 2000,
+      });
+    }
+  }, [voteOnReport.isSuccess]);
+
+  // Show toast for vote errors
+  useEffect(() => {
+    if (voteOnReport.isError) {
+      toast.error('Failed to vote. Please try again.');
+    }
+  }, [voteOnReport.isError]);
   
   const totalComments = useMemo(() => {
     return Object.values(engagementMap).reduce((sum, e) => sum + (e?.comments || 0), 0);
@@ -1549,7 +1638,14 @@ export default function UserProfile() {
                                         <CardContent className="p-0 space-y-4">
                                           {/* User Reported Info */}
                                           <div className="space-y-1 bg-orange-100/40 border border-orange-200 rounded-lg p-3">
-                                            <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
+                                              {report.reportCount && report.reportCount > 1 && (
+                                                <Badge className="bg-red-600 text-white text-xs font-bold">
+                                                  {report.reportCount} reports
+                                                </Badge>
+                                              )}
+                                            </div>
                                             <div className="flex items-center gap-2">
                                               <p className="text-base font-bold text-stone-900">{report.reportedUserName}</p>
                                             </div>
@@ -1604,23 +1700,35 @@ export default function UserProfile() {
                                                 <div className="flex gap-3">
                                                   <Button
                                                     size="sm"
-                                                    variant="outline"
-                                                    className="flex-1 h-10 gap-2 hover:bg-green-50 hover:border-green-300 hover:text-green-700 font-semibold"
+                                                    variant={userReportVotes[report.id] === 1 ? "default" : "outline"}
+                                                    className={cn(
+                                                      "flex-1 h-10 gap-2 font-semibold transition-all",
+                                                      userReportVotes[report.id] === 1
+                                                        ? "bg-green-600 hover:bg-green-700 text-white border-green-600"
+                                                        : "hover:bg-green-50 hover:border-green-300 hover:text-green-700"
+                                                    )}
                                                     onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: true })}
                                                     disabled={voteOnReport.isPending}
                                                   >
                                                     <ThumbsUp className="h-4 w-4" />
                                                     <span>Valid</span>
+                                                    {userReportVotes[report.id] === 1 && <Check className="h-4 w-4 ml-auto" />}
                                                   </Button>
                                                   <Button
                                                     size="sm"
-                                                    variant="outline"
-                                                    className="flex-1 h-10 gap-2 hover:bg-red-50 hover:border-red-300 hover:text-red-700 font-semibold"
+                                                    variant={userReportVotes[report.id] === -1 ? "default" : "outline"}
+                                                    className={cn(
+                                                      "flex-1 h-10 gap-2 font-semibold transition-all",
+                                                      userReportVotes[report.id] === -1
+                                                        ? "bg-red-600 hover:bg-red-700 text-white border-red-600"
+                                                        : "hover:bg-red-50 hover:border-red-300 hover:text-red-700"
+                                                    )}
                                                     onClick={() => voteOnReport.mutate({ reportId: report.id, upvote: false })}
                                                     disabled={voteOnReport.isPending}
                                                   >
                                                     <ThumbsDown className="h-4 w-4" />
                                                     <span>Dismiss</span>
+                                                    {userReportVotes[report.id] === -1 && <Check className="h-4 w-4 ml-auto" />}
                                                   </Button>
                                                 </div>
                                               </>

@@ -66,47 +66,90 @@ export default function ReportUserDialog({
 
     setSubmitting(true);
     try {
-      const { collection, addDoc, serverTimestamp, Timestamp } = await import("firebase/firestore");
+      const { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, increment } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      const newReportRef = await addDoc(collection(db, "reports"), {
-        reportedUserId,
-        reportedUserName,
-        reporterId: user.uid,
-        reporterName: user.displayName || "Anonymous",
-        reporterEmail: user.email,
-        reason,
-        details: details.trim(),
-        evidence: evidence.trim() || null,
-        context: context || null,
-        status: "pending", // pending, reviewed, resolved, dismissed
-        upvotes: 0,
-        downvotes: 0,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+      // Check if there's already an open report for this user with the same reason
+      const reportsRef = collection(db, "reports");
+      const existingReportQuery = query(
+        reportsRef,
+        where("reportedUserId", "==", reportedUserId),
+        where("reason", "==", reason),
+        where("status", "in", ["pending", "reviewed"]) // Only check open reports
+      );
+      
+      const existingReports = await getDocs(existingReportQuery);
+      
+      if (existingReports.docs.length > 0) {
+        // Add to existing report instead of creating new one
+        const existingReport = existingReports.docs[0];
+        const reportId = existingReport.id;
+        
+        // Add reporter details to a subcollection
+        await addDoc(collection(db, "reports", reportId, "details"), {
+          reporterId: user.uid,
+          reporterName: user.displayName || "Anonymous",
+          reporterEmail: user.email,
+          details: details.trim(),
+          evidence: evidence.trim() || null,
+          context: context || null,
+          createdAt: serverTimestamp(),
+        });
+        
+        // Increment report count
+        await updateDoc(existingReport.ref, {
+          reportCount: increment(1),
+          updatedAt: serverTimestamp(),
+        });
+        
+        toast.success("Details added to existing report. Thank you for the additional information.");
+      } else {
+        // Create new report if none exists
+        const newReportRef = await addDoc(reportsRef, {
+          reportedUserId,
+          reportedUserName,
+          reporterId: user.uid,
+          reporterName: user.displayName || "Anonymous",
+          reporterEmail: user.email,
+          reason,
+          details: details.trim(),
+          evidence: evidence.trim() || null,
+          context: context || null,
+          status: "pending",
+          reportCount: 1,
+          upvotes: 0,
+          downvotes: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
 
-      // Optimistic update: immediately add to reviewable-reports cache for instant UI feedback
-      const newReport = {
-        id: newReportRef.id,
-        reportedUserId,
-        reportedUserName,
-        reporterId: user.uid,
-        reporterName: user.displayName || "Anonymous",
-        reason,
-        details: details.trim(),
-        status: "pending",
-        upvotes: 0,
-        downvotes: 0,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
+        // Optimistic update: immediately add to reviewable-reports cache for instant UI feedback
+        const newReport = {
+          id: newReportRef.id,
+          reportedUserId,
+          reportedUserName,
+          reporterId: user.uid,
+          reporterName: user.displayName || "Anonymous",
+          reason,
+          details: details.trim(),
+          status: "pending",
+          reportCount: 1,
+          upvotes: 0,
+          downvotes: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
 
-      queryClient.setQueryData(['reviewable-reports'], (oldData: any[] | undefined) => {
-        return oldData ? [newReport, ...oldData] : [newReport];
-      });
+        queryClient.setQueryData(['reviewable-reports'], (oldData: any[] | undefined) => {
+          return oldData ? [newReport, ...oldData] : [newReport];
+        });
 
-      toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+        toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+      }
+      
+      // Refresh the reports to get updated data
+      queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
       
       // Reset form
       setReason("");

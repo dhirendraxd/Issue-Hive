@@ -45,9 +45,31 @@ export function useReportsAgainstMe() {
       );
 
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      return await Promise.all(snapshot.docs.map(async (doc) => {
+        const reportData = doc.data() as Report;
+        
+        // Fetch vote counts from subcollection
+        const votesRef = collection(db, 'reports', doc.id, 'votes');
+        const votesSnapshot = await getDocs(votesRef);
+        
+        let upvotes = 0;
+        let downvotes = 0;
+        
+        votesSnapshot.docs.forEach(voteDoc => {
+          const voteType = voteDoc.data().voteType;
+          if (voteType === 'upvote') {
+            upvotes++;
+          } else if (voteType === 'downvote') {
+            downvotes++;
+          }
+        });
+        
+        return {
+          id: doc.id,
+          ...reportData,
+          upvotes,
+          downvotes
+        };
       })) as Report[];
     },
     enabled: !!user?.uid,
@@ -73,9 +95,31 @@ export function useCommentReportsAgainstMe() {
       );
 
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
+      return await Promise.all(snapshot.docs.map(async (doc) => {
+        const reportData = doc.data() as Report;
+        
+        // Fetch vote counts from subcollection
+        const votesRef = collection(db, 'comment_reports', doc.id, 'votes');
+        const votesSnapshot = await getDocs(votesRef);
+        
+        let upvotes = 0;
+        let downvotes = 0;
+        
+        votesSnapshot.docs.forEach(voteDoc => {
+          const voteType = voteDoc.data().voteType;
+          if (voteType === 'upvote') {
+            upvotes++;
+          } else if (voteType === 'downvote') {
+            downvotes++;
+          }
+        });
+        
+        return {
+          id: doc.id,
+          ...reportData,
+          upvotes,
+          downvotes
+        };
       })) as Report[];
     },
     enabled: !!user?.uid,
@@ -93,46 +137,50 @@ export function useReviewableReports() {
     queryKey: ['reviewable-reports', user?.uid],
     queryFn: async () => {
       if (!user?.uid) {
-        console.log('[useReviewableReports] No user UID');
         return [];
       }
 
       try {
-        console.log('[useReviewableReports] Starting query for user:', user.uid);
-        
         const reportsRef = collection(db, 'reports');
-        
-        // First, try to fetch ALL reports without filters
         const q = query(reportsRef);
-        
         const snapshot = await getDocs(q);
-        console.log('✅ [useReviewableReports] Query succeeded! Found', snapshot.docs.length, 'total reports');
         
-        let reports = snapshot.docs.map(doc => {
-          const data = doc.data();
-          console.log('📄 Report:', doc.id, '| Status:', data.status, '| Reported User:', data.reportedUserName);
+        let reports = await Promise.all(snapshot.docs.map(async (doc) => {
+          const reportData = doc.data() as Report;
+          
+          // Fetch vote counts from subcollection
+          const votesRef = collection(db, 'reports', doc.id, 'votes');
+          const votesSnapshot = await getDocs(votesRef);
+          
+          let upvotes = 0;
+          let downvotes = 0;
+          
+          votesSnapshot.docs.forEach(voteDoc => {
+            const voteType = voteDoc.data().voteType;
+            if (voteType === 'upvote') {
+              upvotes++;
+            } else if (voteType === 'downvote') {
+              downvotes++;
+            }
+          });
+          
           return {
             id: doc.id,
-            ...data
+            ...reportData,
+            upvotes,
+            downvotes
           };
-        }) as Report[];
+        })) as Report[];
 
-        console.log('📊 Raw reports:', reports);
-        
         // Filter by status
-        const beforeStatusFilter = reports.length;
         reports = reports.filter(r => r.status === 'pending' || r.status === 'reviewed');
-        console.log(`✅ Status filter: ${beforeStatusFilter} → ${reports.length} (kept pending/reviewed)`);
         
         // Filter out reports about the current user
-        const beforeUserFilter = reports.length;
         reports = reports.filter(r => r.reportedUserId !== user.uid);
-        console.log(`✅ User filter: ${beforeUserFilter} → ${reports.length} (removed reports about you)`);
 
-        console.log('🎯 Final reports to display:', reports);
         return reports;
       } catch (error) {
-        console.error('❌ [useReviewableReports] Query error:', error);
+        console.error('[useReviewableReports] Error fetching reports:', error);
         throw error;
       }
     },
@@ -186,31 +234,118 @@ export function useVoteOnReport() {
     }) => {
       if (!user?.uid) throw new Error('Must be signed in to vote');
 
-      const votesRef = collection(db, 'reports', reportId, 'votes');
-      const existingVoteQuery = query(votesRef, where('userId', '==', user.uid));
-      const existingVotes = await getDocs(existingVoteQuery);
+      try {
+        const votesRef = collection(db, 'reports', reportId, 'votes');
+        const existingVoteQuery = query(votesRef, where('userId', '==', user.uid));
+        const existingVotes = await getDocs(existingVoteQuery);
 
-      let oldVoteType: 'upvote' | 'downvote' | null = null;
-      
-      if (existingVotes.docs.length > 0) {
-        const existingVote = existingVotes.docs[0];
-        oldVoteType = existingVote.data().voteType;
-        // Delete old vote
-        await deleteDoc(existingVote.ref);
+        let oldVoteType: 'upvote' | 'downvote' | null = null;
+        
+        if (existingVotes.docs.length > 0) {
+          const existingVote = existingVotes.docs[0];
+          oldVoteType = existingVote.data().voteType;
+          // Delete old vote
+          await deleteDoc(existingVote.ref);
+        }
+
+        const newVoteType = upvote ? 'upvote' : 'downvote';
+        
+        // Add new vote if it's different from old vote
+        if (oldVoteType !== newVoteType) {
+          await addDoc(votesRef, {
+            userId: user.uid,
+            voteType: newVoteType,
+            createdAt: serverTimestamp(),
+          });
+          
+          return { reportId, upvote, oldVoteType, newVoteType, changed: true };
+        }
+        
+        return { reportId, upvote, oldVoteType, newVoteType, changed: false };
+      } catch (error) {
+        console.error('[useVoteOnReport] Error:', error);
+        throw error;
       }
-
-      // Add new vote if it's different from old vote
-      if (oldVoteType !== (upvote ? 'upvote' : 'downvote')) {
-        await addDoc(votesRef, {
-          userId: user.uid,
-          userName: user.displayName || 'Anonymous',
-          voteType: upvote ? 'upvote' : 'downvote',
-          createdAt: serverTimestamp(),
-        });
+    },
+    onMutate: async ({ reportId, upvote }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['reviewable-reports'] });
+      
+      // Get previous data
+      const previousReports = queryClient.getQueryData<Report[]>(['reviewable-reports', user?.uid]);
+      const previousVotes = queryClient.getQueryData<Record<string, 1 | -1 | 0>>(['user-report-votes']) || {};
+      
+      // Get current user vote to calculate delta correctly
+      const currentVote = previousVotes[reportId] || 0;
+      
+      // Optimistically update the cache
+      queryClient.setQueryData<Report[]>(
+        ['reviewable-reports', user?.uid],
+        (old) => {
+          if (!old) return old;
+          return old.map(report => {
+            if (report.id === reportId) {
+              // Calculate new counts based on vote switching
+              let upvotes = report.upvotes || 0;
+              let downvotes = report.downvotes || 0;
+              
+              // Remove old vote if it exists
+              if (currentVote === 1) {
+                upvotes = Math.max(0, upvotes - 1);
+              } else if (currentVote === -1) {
+                downvotes = Math.max(0, downvotes - 1);
+              }
+              
+              // Add new vote if different from old
+              if (currentVote !== (upvote ? 1 : -1)) {
+                if (upvote) {
+                  upvotes += 1;
+                } else {
+                  downvotes += 1;
+                }
+              }
+              
+              return { ...report, upvotes, downvotes };
+            }
+            return report;
+          });
+        }
+      );
+      
+      // Update user votes optimistically
+      queryClient.setQueryData<Record<string, 1 | -1 | 0>>(
+        ['user-report-votes'],
+        (old) => {
+          const updated = { ...old };
+          if (currentVote === (upvote ? 1 : -1)) {
+            // Same vote clicked - toggle off
+            updated[reportId] = 0;
+          } else {
+            // Different vote or first vote
+            updated[reportId] = upvote ? 1 : -1;
+          }
+          return updated;
+        }
+      );
+      
+      return { previousReports, previousVotes };
+    },
+    onError: (err, variables, context) => {
+      console.error('[useVoteOnReport] Mutation failed:', err);
+      // Rollback on error
+      if (context?.previousReports) {
+        queryClient.setQueryData(['reviewable-reports', user?.uid], context.previousReports);
+      }
+      if (context?.previousVotes) {
+        queryClient.setQueryData(['user-report-votes'], context.previousVotes);
       }
     },
     onSuccess: () => {
+      // Invalidate to fetch fresh data from Firestore
       queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['report-votes-count'] });
+      queryClient.invalidateQueries({ queryKey: ['report-vote'] });
+      queryClient.invalidateQueries({ queryKey: ['user-report-votes'] });
       queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
     },
   });

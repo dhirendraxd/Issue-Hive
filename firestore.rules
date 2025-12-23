@@ -203,6 +203,38 @@ service cloud.firestore {
       
       // Only admins can delete reports
       allow delete: if false;
+      
+      // Details subcollection for additional reporter information
+      match /details/{detailId} {
+        // Authenticated users can read details
+        allow read: if isSignedIn();
+        
+        // Authenticated users can add details to reports
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasAll(['reporterId','reporterName','details','createdAt'])
+          && request.resource.data.reporterId == request.auth.uid
+          && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
+        
+        // No updates or deletes to details
+        allow update: if false;
+        allow delete: if false;
+      }
+      
+      // Votes subcollection for community voting
+      match /votes/{voteId} {
+        // Authenticated users can read votes
+        allow read: if isSignedIn();
+        
+        // Authenticated users can create votes
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasAll(['userId','voteType','createdAt'])
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.voteType in ['upvote', 'downvote']
+          && request.resource.data.createdAt == request.time;
+        
+        // Users can only delete their own votes (no updates - vote is immutable)
+        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
     }
 
     // Comment reports collection (for reporting comments)
@@ -224,6 +256,38 @@ service cloud.firestore {
       
       // Only admins can delete comment reports
       allow delete: if false;
+      
+      // Details subcollection for additional reporter information
+      match /details/{detailId} {
+        // Authenticated users can read details
+        allow read: if isSignedIn();
+        
+        // Authenticated users can add details to reports
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasAll(['reporterId','reporterName','details','createdAt'])
+          && request.resource.data.reporterId == request.auth.uid
+          && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
+        
+        // No updates or deletes to details
+        allow update: if false;
+        allow delete: if false;
+      }
+      
+      // Votes subcollection for community voting
+      match /votes/{voteId} {
+        // Authenticated users can read votes
+        allow read: if isSignedIn();
+        
+        // Authenticated users can create votes
+        allow create: if isSignedIn()
+          && request.resource.data.keys().hasAll(['userId','voteType','createdAt'])
+          && request.resource.data.userId == request.auth.uid
+          && request.resource.data.voteType in ['upvote', 'downvote']
+          && request.resource.data.createdAt == request.time;
+        
+        // Users can only delete their own votes (no updates - vote is immutable)
+        allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      }
     }
   }
 }
