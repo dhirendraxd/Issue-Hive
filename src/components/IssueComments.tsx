@@ -381,11 +381,22 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
 
       {/* Top-level comment form */}
       {canAddTopLevelComment && !replyTo && (
-        <form onSubmit={(e) => handleSubmit(e, null)} className="space-y-2">
+        <form onSubmit={(e) => {
+          if (value.trim() && confirm('Comments cannot be edited or deleted once posted. Are you sure?')) {
+            handleSubmit(e, null);
+          } else {
+            e.preventDefault();
+          }
+        }} className="space-y-2">
+          <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-2">
+            <p className="text-[10px] text-amber-800">
+              <span className="font-semibold">⚠️ Note:</span> Comments cannot be edited or deleted once posted.
+            </p>
+          </div>
           <Textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder="Add a comment..."
+            placeholder="Add a comment... (Cannot be edited once posted)"
             className="min-h-[60px] text-xs"
           />
           <div className="flex justify-end">
@@ -395,7 +406,7 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
               disabled={addComment.isPending || !value.trim()}
               className="rounded-full"
             >
-              {addComment.isPending ? 'Posting...' : 'Post Comment'}
+              {addComment.isPending ? 'Posting...' : 'Post Comment (Permanent)'}
             </Button>
           </div>
         </form>

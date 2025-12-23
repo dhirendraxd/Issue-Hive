@@ -91,8 +91,11 @@ export default function AddProgressDialog({
           </DialogTitle>
           <DialogDescription>
             Share an update on the progress of "{issueTitle}"
-          </DialogDescription>
-        </DialogHeader>
+          </DialogDescription>          <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mt-2">
+            <p className="text-xs text-amber-800">
+              <span className="font-semibold">⚠️ Note:</span> Progress updates cannot be edited or deleted once posted.
+            </p>
+          </div>        </DialogHeader>
 
         <div className="space-y-4 py-4">
           {/* Progress Message */}
@@ -102,7 +105,7 @@ export default function AddProgressDialog({
             </Label>
             <Textarea
               id="progress-message"
-              placeholder="Describe what progress has been made on this issue..."
+              placeholder="Describe what progress has been made on this issue... (Cannot be edited once posted)"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={5}
@@ -182,7 +185,11 @@ export default function AddProgressDialog({
           </Button>
           <Button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => {
+              if (message.trim() && confirm('Progress updates cannot be edited or deleted once posted. Are you sure?')) {
+                handleSubmit();
+              }
+            }}
             disabled={isAdding || !message.trim()}
             className="bg-orange-500 hover:bg-orange-600 text-white"
           >
@@ -194,7 +201,7 @@ export default function AddProgressDialog({
             ) : (
               <>
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Add Progress
+                Add Progress (Permanent)
               </>
             )}
           </Button>

@@ -92,7 +92,7 @@ export default function SendMessageDialog({
           </Label>
           <Textarea
             id="message"
-            placeholder="Type your message here... (max 5000 characters)"
+            placeholder="Type your message here... (Cannot be edited once sent - max 5000 characters)"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             disabled={isLoading}
@@ -111,6 +111,14 @@ export default function SendMessageDialog({
           </AlertDescription>
         </Alert>
 
+        {/* Warning Alert */}
+        <Alert className="border-amber-300 bg-amber-50">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-xs text-amber-800">
+            <span className="font-semibold">⚠️ Note:</span> Messages cannot be edited or deleted once sent.
+          </AlertDescription>
+        </Alert>
+
         <DialogFooter className="flex gap-2">
           <Button
             variant="outline"
@@ -121,7 +129,11 @@ export default function SendMessageDialog({
             Cancel
           </Button>
           <Button
-            onClick={handleSendMessage}
+            onClick={() => {
+              if (message.trim() && confirm('Messages cannot be edited or deleted once sent. Are you sure?')) {
+                handleSendMessage();
+              }
+            }}
             disabled={isLoading || !message.trim()}
             className="rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-lg hover:shadow-orange-500/30"
           >
@@ -133,7 +145,7 @@ export default function SendMessageDialog({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send Message
+                Send Message (Permanent)
               </>
             )}
           </Button>
