@@ -10,12 +10,10 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { seedFirestoreIssues } from '@/integrations/firebase/seed';
 import { toast } from 'sonner';
 
 export function FirebaseStatus() {
   const { user, loading } = useAuth();
-  const [isSeeding, setIsSeeding] = useState(false);
 
   const services = [
     { name: 'Authentication', instance: auth, status: !!auth },
@@ -24,18 +22,6 @@ export function FirebaseStatus() {
     { name: 'Storage', instance: storage, status: !!storage },
     { name: 'Analytics', instance: analytics, status: !!analytics },
   ];
-
-  const handleSeedData = async () => {
-    setIsSeeding(true);
-    try {
-      await seedFirestoreIssues();
-      toast.success('Demo data seeded successfully!');
-    } catch (error) {
-      toast.error('Failed to seed data: ' + (error as Error).message);
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   return (
     <Card className="w-full max-w-2xl">
@@ -95,13 +81,6 @@ export function FirebaseStatus() {
 
         {/* Actions */}
         <div className="flex gap-2 pt-4">
-          <Button 
-            onClick={handleSeedData} 
-            disabled={isSeeding || !db}
-            size="sm"
-          >
-            {isSeeding ? 'Seeding...' : 'Seed Demo Data'}
-          </Button>
           <Button 
             variant="outline" 
             size="sm"

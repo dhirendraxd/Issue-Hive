@@ -401,53 +401,7 @@ export default function UserProfile() {
   const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
   
-  // Add dummy reports for testing (comment out to use real data)
-  const dummyReports: ReportSummary[] = [
-    {
-      id: 'dummy-1',
-      reportedUserName: 'John Doe',
-      reporterName: 'Sarah Chen',
-      reason: 'Spam in comments',
-      context: { issueTitle: 'WiFi connectivity issues in hostel blocks', issueId: 'college-2' },
-      details: 'Posted promotional content unrelated to the issue',
-      commentId: 'comment-1',
-      commentText: 'Check out this amazing WiFi booster at www.spam-site.com - 50% off!',
-      commentAuthorName: 'John Doe',
-      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-      status: 'deleted',
-      reportCount: 15,
-    },
-    {
-      id: 'dummy-2',
-      reportedUserName: 'Mike Wilson',
-      reporterName: 'Emma Johnson',
-      reason: 'Abusive private messages',
-      context: undefined,
-      details: 'Sent multiple threatening and abusive messages to reporter without any provocation',
-      commentId: undefined,
-      commentText: undefined,
-      commentAuthorName: 'Mike Wilson',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      status: 'pending',
-      reportCount: 3,
-    },
-    {
-      id: 'dummy-3',
-      reportedUserName: 'Alex Kumar',
-      reporterName: 'James Brown',
-      reason: 'Harassment and bullying behavior',
-      context: undefined,
-      details: 'Persistently harassing and bullying other users in direct messages and interactions. Creating hostile environment.',
-      commentId: undefined,
-      commentText: undefined,
-      commentAuthorName: 'Alex Kumar',
-      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-      status: 'pending',
-      reportCount: 5,
-    },
-  ];
-  
-  const reportsAgainstMe = reportsAgainstMeRaw.length > 0 ? reportsAgainstMeRaw : dummyReports;
+  const reportsAgainstMe = reportsAgainstMeRaw;
 
   // Auto-delete comments with >10 reports
   useMemo(() => {
@@ -461,94 +415,7 @@ export default function UserProfile() {
     });
   }, []);
 
-  // Add dummy reviewable reports (college-related issues reports to review)
-  const dummyReviewableReports: ReportSummary[] = [
-    {
-      id: 'review-1',
-      reportedUserName: 'Alex Kumar',
-      reporterName: 'Sarah Chen',
-      reason: 'Spam in WiFi issue discussion',
-      context: { issueTitle: 'WiFi connectivity issues in hostel blocks', issueId: 'college-2' },
-      details: 'Posted unrelated promotional content in the issue comments',
-      commentId: 'review-comment-1',
-      commentText: 'Buy cheap WiFi routers now! Limited time offer - www.spam.com',
-      commentAuthorName: 'Alex Kumar',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      status: 'pending',
-      upvotes: 18,
-      downvotes: 3,
-    },
-    {
-      id: 'review-2',
-      reportedUserName: 'Rahul Patel',
-      reporterName: 'Emma Wilson',
-      reason: 'Abusive messages and harassment',
-      context: undefined,
-      details: 'Sent threatening and abusive messages to multiple users. Pattern of bullying behavior reported.',
-      commentId: undefined,
-      commentText: undefined,
-      commentAuthorName: undefined,
-      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-      status: 'pending',
-      upvotes: 28,
-      downvotes: 2,
-    },
-    {
-      id: 'review-3',
-      reportedUserName: 'Priya Singh',
-      reporterName: 'James Brown',
-      reason: 'Spreading false information',
-      context: undefined,
-      details: 'Provided false information about food safety that alarmed students',
-      commentId: undefined,
-      commentText: undefined,
-      commentAuthorName: undefined,
-      createdAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
-      status: 'pending',
-      upvotes: 12,
-      downvotes: 8,
-    },
-    {
-      id: 'review-4',
-      reportedUserName: 'Vikram Sharma',
-      reporterName: 'Lisa Anderson',
-      reason: 'Sexual harassment via messages',
-      context: undefined,
-      details: 'Multiple users reported inappropriate and sexually suggestive messages from this user',
-      commentId: undefined,
-      commentText: undefined,
-      commentAuthorName: undefined,
-      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-      status: 'dismissed',
-      upvotes: 5,
-      downvotes: 27,
-    },
-  ];
-
-  // Auto-dismiss reports with >25 downvotes and show notification (only to the reported user)
-  useMemo(() => {
-    dummyReviewableReports.forEach((report) => {
-      if (report.downvotes && report.downvotes > 25 && report.status === 'pending') {
-        report.status = 'dismissed';
-        // Only show toast to the reported user
-        if (user?.displayName === report.reportedUserName) {
-          toast.info(`Your report was dismissed by community`, {
-            description: 'Community voted to dismiss the report against you',
-          });
-        }
-      }
-      if (report.upvotes && report.upvotes > 25 && report.status === 'pending') {
-        // Only show toast to the reported user
-        if (user?.displayName === report.reportedUserName) {
-          toast.warning(`You have a serious report with 25+ community votes`, {
-            description: 'Action may be taken by moderators. Review the details in your notifications.',
-          });
-        }
-      }
-    });
-  }, [user?.displayName]);
-
-  const reviewableReports = reviewableReportsRaw.length > 0 ? reviewableReportsRaw : dummyReviewableReports;
+  const reviewableReports = reviewableReportsRaw;
   
   const totalComments = useMemo(() => {
     return Object.values(engagementMap).reduce((sum, e) => sum + (e?.comments || 0), 0);
