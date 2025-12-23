@@ -24,6 +24,9 @@ export interface Report {
   downvotes?: number;
   reportCount?: number;
   reasonCount?: number;
+  clarification?: string;
+  clarificationBy?: string;
+  clarificationAt?: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
   userVote?: 1 | -1 | 0; // 1 for upvote, -1 for downvote, 0 for no vote
 }
 
@@ -523,6 +526,39 @@ export function useKeepReportedComment() {
       });
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
+      queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
+    },
+  });
+}
+
+/**
+ * Submit clarification for a report (for reported users)
+ */
+export function useSubmitClarification() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({
+      reportId,
+      clarification,
+    }: {
+      reportId: string;
+      clarification: string;
+    }) => {
+      if (!user?.uid) throw new Error('User not authenticated');
+      
+      const reportRef = doc(db, 'reports', reportId);
+      await updateDoc(reportRef, {
+        clarification: clarification.trim(),
+        clarificationBy: user.uid,
+        clarificationAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
       queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
       queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
     },

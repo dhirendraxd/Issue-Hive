@@ -28,7 +28,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useComments } from '@/hooks/use-comments';
-import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote, useUpdateReportStatus, useCommentReportsOnMyIssues } from '@/hooks/use-reports';
+import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote, useUpdateReportStatus, useCommentReportsOnMyIssues, useSubmitClarification } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -60,6 +60,9 @@ type ReportSummary = {
   downvotes?: number;
   reportCount?: number;
   reasonCount?: number;
+  clarification?: string;
+  clarificationBy?: string;
+  clarificationAt?: TimestampLike;
 };
 type VoteMutation = { mutate: (args: { reportId: string; upvote: boolean }) => void; isPending?: boolean };
 
@@ -407,6 +410,8 @@ export default function UserProfile() {
   const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues(ownedIssueIds);
   const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
+  const submitClarification = useSubmitClarification();
+  const [clarifications, setClarifications] = useState<Record<string, string>>({});
   
   const reportsAgainstMe = commentReportsOnMyIssues;
 
@@ -1703,18 +1708,64 @@ export default function UserProfile() {
                                                     ⚠️ <span className="font-semibold">You are reported in this case</span> - You cannot vote, but you can provide clarification below.
                                                   </p>
                                                 </div>
-                                                {/* Clarification Section */}
-                                                <div className="space-y-2">
-                                                  <p className="text-xs font-semibold text-stone-600 uppercase">Your Clarification</p>
-                                                  <textarea
-                                                    placeholder="Provide clarification or your response to this report. Explain your actions or provide context."
-                                                    className="w-full p-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
-                                                    rows={3}
-                                                  />
-                                                  <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg">
-                                                    Submit Clarification
-                                                  </Button>
-                                                </div>
+                                                
+                                                {/* Show existing clarification */}
+                                                {report.clarification && (
+                                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                      <p className="text-xs font-semibold text-blue-700 uppercase">Your Clarification</p>
+                                                      <p className="text-xs text-blue-600">
+                                                        {formatRelativeTime(
+                                                          report.clarificationAt?.toMillis?.() ||
+                                                          report.clarificationAt?.seconds * 1000 ||
+                                                          Date.now()
+                                                        )}
+                                                      </p>
+                                                    </div>
+                                                    <p className="text-sm text-stone-700 leading-relaxed">{report.clarification}</p>
+                                                  </div>
+                                                )}
+                                                
+                                                {/* Clarification Form */}
+                                                {!report.clarification && (
+                                                  <div className="space-y-2">
+                                                    <p className="text-xs font-semibold text-stone-600 uppercase">Provide Your Clarification</p>
+                                                    <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-2">
+                                                      <p className="text-xs text-amber-800">
+                                                        <span className="font-semibold">⚠️ Important:</span> Once submitted, your clarification cannot be edited or deleted. Make sure your response is complete and accurate.
+                                                      </p>
+                                                    </div>
+                                                    <textarea
+                                                      value={clarifications[report.id] || ''}
+                                                      onChange={(e) => setClarifications(prev => ({ ...prev, [report.id]: e.target.value }))}
+                                                      placeholder="Provide clarification or your response to this report. Explain your actions or provide context. This cannot be edited once submitted."
+                                                      className="w-full p-3 border border-stone-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+                                                      rows={3}
+                                                    />
+                                                    <Button 
+                                                      className="w-full bg-orange-600 hover:bg-orange-700 text-white rounded-lg"
+                                                      disabled={!clarifications[report.id]?.trim() || submitClarification.isPending}
+                                                      onClick={() => {
+                                                        if (confirm('Are you sure? Your clarification cannot be edited or deleted once submitted.')) {
+                                                          submitClarification.mutate(
+                                                            { reportId: report.id, clarification: clarifications[report.id] },
+                                                            {
+                                                              onSuccess: () => {
+                                                                toast.success('Clarification submitted successfully');
+                                                                setClarifications(prev => ({ ...prev, [report.id]: '' }));
+                                                              },
+                                                              onError: () => {
+                                                                toast.error('Failed to submit clarification');
+                                                              }
+                                                            }
+                                                          );
+                                                        }
+                                                      }}
+                                                    >
+                                                      {submitClarification.isPending ? 'Submitting...' : 'Submit Clarification (Cannot be edited later)'}
+                                                    </Button>
+                                                  </div>
+                                                )}
                                               </div>
                                             ) : (
                                               <>
@@ -1771,6 +1822,23 @@ export default function UserProfile() {
                                             </div>
                                           </div>
                                         </div>
+
+                                        {/* Reported User's Clarification (visible to all) */}
+                                        {report.clarification && !isReportedUser && (
+                                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-2">
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-xs font-semibold text-blue-700 uppercase">Reported User's Clarification</p>
+                                              <p className="text-xs text-blue-600">
+                                                {formatRelativeTime(
+                                                  report.clarificationAt?.toMillis?.() ||
+                                                  report.clarificationAt?.seconds * 1000 ||
+                                                  Date.now()
+                                                )}
+                                              </p>
+                                            </div>
+                                            <p className="text-sm text-stone-700 leading-relaxed">{report.clarification}</p>
+                                          </div>
+                                        )}
 
                                         {/* Auto-dismiss indicator if downvotes > 25 */}
                                         {report.status === 'dismissed' && (

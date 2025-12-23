@@ -200,8 +200,19 @@ service cloud.firestore {
         && request.resource.data.reason.size() > 0
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
-      // Only admins can update reports (status, resolution)
-      allow update: if false;
+      // Allow reported user to add clarification (one-time only, cannot edit)
+      // Allow increment operations for reportCount and reasonCount
+      allow update: if isSignedIn() && (
+        // Reported user can add clarification (only if not already set)
+        (resource.data.reportedUserId == request.auth.uid
+          && !('clarification' in resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clarification', 'clarificationBy', 'clarificationAt', 'updatedAt'])
+          && request.resource.data.clarificationBy == request.auth.uid
+          && request.resource.data.clarification.size() > 0
+          && request.resource.data.clarification.size() <= 5000)
+        // Allow increment for reportCount and reasonCount
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'reasonCount', 'updatedAt'])
+      );
       
       // Only admins can delete reports
       allow delete: if false;
