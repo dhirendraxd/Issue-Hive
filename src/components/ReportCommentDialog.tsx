@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { AlertTriangle, Flag } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface ReportCommentDialogProps {
@@ -42,6 +43,7 @@ export default function ReportCommentDialog({
   issueOwnerId,
 }: ReportCommentDialogProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -87,6 +89,11 @@ export default function ReportCommentDialog({
       });
 
       toast.success("Comment reported successfully. Thank you for helping maintain community standards.");
+      
+      // Invalidate queries to refresh reports
+      await queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+      await queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
+      await queryClient.invalidateQueries({ queryKey: ['comment-reports-against-me'] });
       
       // Reset form
       setReason("");

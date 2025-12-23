@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { AlertTriangle, Flag, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface ReportUserDialogProps {
@@ -41,6 +42,7 @@ export default function ReportUserDialog({
   context,
 }: ReportUserDialogProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [evidence, setEvidence] = useState("");
@@ -85,6 +87,10 @@ export default function ReportUserDialog({
       });
 
       toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+      
+      // Invalidate queries to refresh reports
+      await queryClient.invalidateQueries({ queryKey: ['reviewable-reports'] });
+      await queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
       
       // Reset form
       setReason("");
