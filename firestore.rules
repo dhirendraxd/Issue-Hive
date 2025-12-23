@@ -186,9 +186,10 @@ service cloud.firestore {
 
     // User reports collection (for reporting users)
     match /reports/{reportId} {
-      // Only mods/admins can read all reports (or reporters their own)
+      // Reporters can read their own reports, reported users can read reports against them
       allow read: if isSignedIn() 
-        && (resource.data.reporterId == request.auth.uid);
+        && (resource.data.reporterId == request.auth.uid
+            || resource.data.reportedUserId == request.auth.uid);
       
       // Authenticated users can create reports
       allow create: if isSignedIn()
@@ -207,13 +208,13 @@ service cloud.firestore {
 
     // Comment reports collection (for reporting comments)
     match /comment_reports/{reportId} {
-      // Only reporters can read their own reports
+      // Reporters can read their own reports, comment authors can read reports against their comments
       allow read: if isSignedIn() 
-        && resource.data.reporterId == request.auth.uid;
+        && (resource.data.reporterId == request.auth.uid);
       
       // Authenticated users can create comment reports
       allow create: if isSignedIn()
-        && request.resource.data.keys().hasAll(['commentId','commentText','commentAuthorName','issueId','issueTitle','reporterId','reporterName','reason','details','status','createdAt'])
+        && request.resource.data.keys().hasAll(['commentId','commentText','commentAuthorName','commentAuthorId','issueId','issueTitle','reporterId','reporterName','reason','details','status','createdAt'])
         && request.resource.data.reporterId == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.reason.size() > 0

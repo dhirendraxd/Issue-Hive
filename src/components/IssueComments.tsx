@@ -35,6 +35,7 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
     id: string;
     text: string;
     authorName: string;
+    authorId: string;
   } | null>(null);
   const isIssueOwner = user?.uid === issueOwnerId;
 
@@ -307,6 +308,7 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
                               id: c.id,
                               text: c.content || c.text || '',
                               authorName: c.userName || 'Anonymous',
+                              authorId: c.userId,
                             });
                             setReportDialogOpen(true);
                           }}
@@ -419,6 +421,7 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
           commentId={reportingCommentData.id}
           commentText={reportingCommentData.text}
           commentAuthorName={reportingCommentData.authorName}
+          commentAuthorId={reportingCommentData.authorId}
           issueId={issueId}
           issueTitle={issueTitle}
           issueOwnerId={issueOwnerId || ''}

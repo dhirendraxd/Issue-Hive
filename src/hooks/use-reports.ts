@@ -55,6 +55,34 @@ export function useReportsAgainstMe() {
 }
 
 /**
+ * Fetch comment reports filed against a specific user's comments
+ */
+export function useCommentReportsAgainstMe() {
+  const { user } = useAuth();
+
+  return useQuery({
+    queryKey: ['comment-reports-against-me', user?.uid],
+    queryFn: async () => {
+      if (!user?.uid) return [];
+
+      const reportsRef = collection(db, 'comment_reports');
+      const q = query(
+        reportsRef,
+        where('commentAuthorId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Report[];
+    },
+    enabled: !!user?.uid,
+  });
+}
+
+/**
  * Fetch all pending/reviewed reports that the user can review
  * Excludes reports about the user themselves
  */

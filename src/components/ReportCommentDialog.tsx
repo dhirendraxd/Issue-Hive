@@ -14,6 +14,7 @@ interface ReportCommentDialogProps {
   commentId: string;
   commentText: string;
   commentAuthorName: string;
+  commentAuthorId?: string;
   issueId: string;
   issueTitle: string;
   issueOwnerId: string;
@@ -35,6 +36,7 @@ export default function ReportCommentDialog({
   commentId,
   commentText,
   commentAuthorName,
+  commentAuthorId,
   issueId,
   issueTitle,
   issueOwnerId,
@@ -69,6 +71,7 @@ export default function ReportCommentDialog({
         commentId,
         commentText,
         commentAuthorName,
+        commentAuthorId: commentAuthorId || '',
         issueId,
         issueTitle,
         issueOwnerId,
