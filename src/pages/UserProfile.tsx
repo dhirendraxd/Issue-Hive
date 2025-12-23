@@ -1555,14 +1555,6 @@ export default function UserProfile() {
                                             </div>
                                           </div>
 
-                                          {/* Reporter Info Badge */}
-                                          {isReporter && (
-                                            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 flex items-center gap-2">
-                                              <CheckCircle className="h-4 w-4 text-blue-600" />
-                                              <span className="text-sm font-semibold text-blue-700">✓ You reported this user</span>
-                                            </div>
-                                          )}
-
                                           {/* Reason & Details Section */}
                                           <div className="space-y-3">
                                             <div className="space-y-2">

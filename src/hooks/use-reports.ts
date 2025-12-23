@@ -92,32 +92,47 @@ export function useReviewableReports() {
   return useQuery({
     queryKey: ['reviewable-reports', user?.uid],
     queryFn: async () => {
-      if (!user?.uid) return [];
+      if (!user?.uid) {
+        console.log('[useReviewableReports] No user UID');
+        return [];
+      }
 
       try {
-        const reportsRef = collection(db, 'reports');
-        // Query all reports ordered by creation date
-        const q = query(
-          reportsRef,
-          orderBy('createdAt', 'desc')
-        );
-
-        const snapshot = await getDocs(q);
+        console.log('[useReviewableReports] Starting query for user:', user.uid);
         
-        let reports = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as Report[];
+        const reportsRef = collection(db, 'reports');
+        
+        // First, try to fetch ALL reports without filters
+        const q = query(reportsRef);
+        
+        const snapshot = await getDocs(q);
+        console.log('✅ [useReviewableReports] Query succeeded! Found', snapshot.docs.length, 'total reports');
+        
+        let reports = snapshot.docs.map(doc => {
+          const data = doc.data();
+          console.log('📄 Report:', doc.id, '| Status:', data.status, '| Reported User:', data.reportedUserName);
+          return {
+            id: doc.id,
+            ...data
+          };
+        }) as Report[];
 
-        // Filter by status in JavaScript
+        console.log('📊 Raw reports:', reports);
+        
+        // Filter by status
+        const beforeStatusFilter = reports.length;
         reports = reports.filter(r => r.status === 'pending' || r.status === 'reviewed');
+        console.log(`✅ Status filter: ${beforeStatusFilter} → ${reports.length} (kept pending/reviewed)`);
         
         // Filter out reports about the current user
+        const beforeUserFilter = reports.length;
         reports = reports.filter(r => r.reportedUserId !== user.uid);
+        console.log(`✅ User filter: ${beforeUserFilter} → ${reports.length} (removed reports about you)`);
 
+        console.log('🎯 Final reports to display:', reports);
         return reports;
       } catch (error) {
-        console.error('[useReviewableReports] Query error:', error);
+        console.error('❌ [useReviewableReports] Query error:', error);
         throw error;
       }
     },

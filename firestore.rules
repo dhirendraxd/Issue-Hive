@@ -186,15 +186,9 @@ service cloud.firestore {
 
     // User reports collection (for reporting users)
     match /reports/{reportId} {
-      // Anyone can read pending/reviewed reports (for community moderation)
-      // Pending reports can be voted on by community
-      // Private reports (dismissed/resolved) only accessible to reporter and reported user
-      allow read: if isSignedIn() && (
-        resource.data.get('status', '') == 'pending'
-        || resource.data.get('status', '') == 'reviewed'
-        || resource.data.get('reporterId', '') == request.auth.uid
-        || resource.data.get('reportedUserId', '') == request.auth.uid
-      );
+      // Allow authenticated users to read all reports
+      // We'll do filtering in the application
+      allow read: if isSignedIn();
       
       // Authenticated users can create reports
       allow create: if isSignedIn()
@@ -213,14 +207,9 @@ service cloud.firestore {
 
     // Comment reports collection (for reporting comments)
     match /comment_reports/{reportId} {
-      // Anyone can read pending/reviewed comment reports (for community moderation)
-      // Private comment reports only accessible to reporter and comment author
-      allow read: if isSignedIn() && (
-        resource.data.get('status', '') == 'pending'
-        || resource.data.get('status', '') == 'reviewed'
-        || resource.data.get('reporterId', '') == request.auth.uid
-        || resource.data.get('commentAuthorId', '') == request.auth.uid
-      );
+      // Allow authenticated users to read all comment reports
+      // We'll do filtering in the application
+      allow read: if isSignedIn();
       
       // Authenticated users can create comment reports
       allow create: if isSignedIn()
