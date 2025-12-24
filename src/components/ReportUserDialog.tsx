@@ -174,6 +174,18 @@ export default function ReportUserDialog({
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+        
+        // Add initial reporter details to subcollection
+        await addDoc(collection(db, "reports", newReportRef.id, "details"), {
+          reporterId: user.uid,
+          reporterName: user.displayName || "Anonymous",
+          reporterEmail: user.email,
+          reason: reason,
+          details: details.trim(),
+          evidence: evidence.trim() || null,
+          context: context || null,
+          createdAt: serverTimestamp(),
+        });
 
         // Optimistic update: immediately add to reviewable-reports cache for instant UI feedback
         const newReport = {

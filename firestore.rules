@@ -202,7 +202,7 @@ service cloud.firestore {
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
       // Allow reported user to add clarification (one-time only, cannot edit)
-      // Allow increment operations for reportCount and reasonCount
+      // Allow increment operations for reportCount and reasonCount (can be independent)
       allow update: if isSignedIn() && (
         // Reported user can add clarification (only if not already set)
         (resource.data.reportedUserId == request.auth.uid
@@ -211,7 +211,9 @@ service cloud.firestore {
           && request.resource.data.clarificationBy == request.auth.uid
           && request.resource.data.clarification.size() > 0
           && request.resource.data.clarification.size() <= 5000)
-        // Allow increment for reportCount and reasonCount
+        // Allow increment for reportCount only (different reason)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'updatedAt'])
+        // Allow increment for both reportCount and reasonCount (same reason)
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'reasonCount', 'updatedAt'])
       );
       
@@ -268,15 +270,23 @@ service cloud.firestore {
         && request.resource.data.reason.size() > 0
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
-      // Issue owners can update comment reports (dismiss them)
-      // Check either issueOwnerId field OR verify by looking up the issue
-      allow update: if isSignedIn() 
-        && (
-          ('issueOwnerId' in resource.data && resource.data.issueOwnerId == request.auth.uid)
-          || ('issueId' in resource.data && getIssue(resource.data.issueId).createdBy == request.auth.uid)
+      // Issue owners can update comment reports (dismiss/resolve them)
+      // Also allow increment operations for reportCount and reasonCount
+      allow update: if isSignedIn() && (
+        // Issue owner can dismiss or resolve
+        (
+          (
+            ('issueOwnerId' in resource.data && resource.data.issueOwnerId == request.auth.uid)
+            || ('issueId' in resource.data && getIssue(resource.data.issueId).createdBy == request.auth.uid)
+          )
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          && request.resource.data.status in ['dismissed', 'resolved']
         )
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
-        && request.resource.data.status in ['dismissed', 'resolved'];
+        // Allow increment for reportCount only (different reason)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'updatedAt'])
+        // Allow increment for both reportCount and reasonCount (same reason)
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reportCount', 'reasonCount', 'updatedAt'])
+      );
       
       // Only admins can delete comment reports
       allow delete: if false;
