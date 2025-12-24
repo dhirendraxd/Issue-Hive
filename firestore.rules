@@ -223,10 +223,11 @@ service cloud.firestore {
         // Authenticated users can read details
         allow read: if isSignedIn();
         
-        // Authenticated users can add details to reports
+        // Authenticated users can add details to reports (includes reason for multi-reason support)
         allow create: if isSignedIn()
-          && request.resource.data.keys().hasAll(['reporterId','reporterName','details','createdAt'])
+          && request.resource.data.keys().hasAll(['reporterId','reporterName','reason','details','createdAt'])
           && request.resource.data.reporterId == request.auth.uid
+          && request.resource.data.reason.size() > 0
           && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
         
         // No updates or deletes to details

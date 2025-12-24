@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Flag, MessageCircle } from "lucide-react";
-import { useState } from "react";
+import { AlertTriangle, Flag, MessageCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 interface ReportUserDialogProps {
   open: boolean;
@@ -69,55 +71,44 @@ export default function ReportUserDialog({
       const { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, increment } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      // Check if there's already an open report for this user with the same reason
+      // First, check if there's already ANY open report for this user (single report per user)
       const reportsRef = collection(db, "reports");
-      const existingReportQuery = query(
+      const existingUserQuery = query(
         reportsRef,
         where("reportedUserId", "==", reportedUserId),
-        where("reason", "==", reason),
         where("status", "in", ["pending", "reviewed"]) // Only check open reports
       );
       
-      const existingReports = await getDocs(existingReportQuery);
+      const existingUserReports = await getDocs(existingUserQuery);
       
-      if (existingReports.docs.length > 0) {
-        const existingReport = existingReports.docs[0];
+      if (existingUserReports.docs.length > 0) {
+        // A report already exists for this user
+        const existingReport = existingUserReports.docs[0];
         const reportId = existingReport.id;
-        const existingData = existingReport.data();
+        const reportData = existingReport.data();
         
-        // Check if this user already reported for this reason
-        const userReportQuery = query(
-          collection(db, "reports", reportId, "details"),
-          where("reporterId", "==", user.uid)
-        );
-        const userReports = await getDocs(userReportQuery);
-        
-        if (userReports.docs.length > 0) {
-          // User already reported for this reason
-          toast.error("You already reported this user for this reason. Your vote counts as community validation.");
-          setSubmitting(false);
-          return;
-        }
-        
-        // Add reporter details to a subcollection (new user reporting)
+        // Add new reporter details to subcollection
         await addDoc(collection(db, "reports", reportId, "details"), {
           reporterId: user.uid,
           reporterName: user.displayName || "Anonymous",
           reporterEmail: user.email,
+          reason: reason,
           details: details.trim(),
           evidence: evidence.trim() || null,
           context: context || null,
           createdAt: serverTimestamp(),
         });
         
-        // Increment reason count (how many times this reason was reported)
+        // Increment reportCount (new user reporting)
+        // If same reason, increment reasonCount too
+        const isSameReason = reportData.reason === reason;
         await updateDoc(existingReport.ref, {
           reportCount: increment(1),
-          reasonCount: increment(1),
+          ...(isSameReason ? { reasonCount: increment(1) } : {}),
           updatedAt: serverTimestamp(),
         });
         
-        toast.success("Details added to existing report. Thank you for the additional information.");
+        toast.success(`Added your report to existing complaint. ${reportData.reportCount + 1} users have reported this person.`);
       } else {
         // Create new report if none exists
         const newReportRef = await addDoc(reportsRef, {

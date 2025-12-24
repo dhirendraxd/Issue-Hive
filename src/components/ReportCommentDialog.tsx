@@ -85,20 +85,6 @@ export default function ReportCommentDialog({
         const reportId = existingReport.id;
         const reportData = existingReport.data();
         
-        // Check if this user already reported this comment
-        const userReportQuery = query(
-          collection(db, "comment_reports", reportId, "details"),
-          where("reporterId", "==", user.uid)
-        );
-        const userReports = await getDocs(userReportQuery);
-        
-        if (userReports.docs.length > 0) {
-          // User already reported this comment
-          toast.error("You already reported this comment. Your previous report is being reviewed.");
-          setSubmitting(false);
-          return;
-        }
-        
         // Add new reporter details to subcollection
         await addDoc(collection(db, "comment_reports", reportId, "details"), {
           reporterId: user.uid,
