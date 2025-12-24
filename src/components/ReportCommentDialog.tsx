@@ -69,22 +69,23 @@ export default function ReportCommentDialog({
       const { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, increment } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
 
-      // Check if there's already an open report for this comment with the same reason
+      // First, check if there's already ANY open report for this comment (single report per comment)
       const reportsRef = collection(db, "comment_reports");
-      const existingReportQuery = query(
+      const existingCommentQuery = query(
         reportsRef,
         where("commentId", "==", commentId),
-        where("reason", "==", reason),
         where("status", "in", ["pending", "reviewed"]) // Only check open reports
       );
       
-      const existingReports = await getDocs(existingReportQuery);
+      const existingCommentReports = await getDocs(existingCommentQuery);
       
-      if (existingReports.docs.length > 0) {
-        const existingReport = existingReports.docs[0];
+      if (existingCommentReports.docs.length > 0) {
+        // A report already exists for this comment
+        const existingReport = existingCommentReports.docs[0];
         const reportId = existingReport.id;
+        const reportData = existingReport.data();
         
-        // Check if this user already reported for this reason
+        // Check if this user already reported this comment
         const userReportQuery = query(
           collection(db, "comment_reports", reportId, "details"),
           where("reporterId", "==", user.uid)
@@ -92,31 +93,34 @@ export default function ReportCommentDialog({
         const userReports = await getDocs(userReportQuery);
         
         if (userReports.docs.length > 0) {
-          // User already reported for this reason
-          toast.error("You already reported this comment for this reason. Your vote counts as community validation.");
+          // User already reported this comment
+          toast.error("You already reported this comment. Your previous report is being reviewed.");
           setSubmitting(false);
           return;
         }
         
-        // Add reporter details to a subcollection (new user reporting)
+        // Add new reporter details to subcollection
         await addDoc(collection(db, "comment_reports", reportId, "details"), {
           reporterId: user.uid,
           reporterName: user.displayName || "Anonymous",
           reporterEmail: user.email,
+          reason: reason,
           details: details.trim(),
           createdAt: serverTimestamp(),
         });
         
-        // Increment reason count (how many times this reason was reported)
+        // Increment reportCount (new user reporting)
+        // If same reason, increment reasonCount too
+        const isSameReason = reportData.reason === reason;
         await updateDoc(existingReport.ref, {
           reportCount: increment(1),
-          reasonCount: increment(1),
+          ...(isSameReason ? { reasonCount: increment(1) } : {}),
           updatedAt: serverTimestamp(),
         });
         
-        toast.success("Details added to existing report. Thank you for the additional information.");
+        toast.success(`Added your report to existing complaint. ${reportData.reportCount + 1} users have reported this comment.`);
       } else {
-        // Create new report if none exists
+        // Create new report if none exists for this comment
         const newReportRef = await addDoc(reportsRef, {
           commentId,
           commentText,

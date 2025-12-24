@@ -2485,9 +2485,9 @@ export default function UserProfile() {
                   <Button
                     variant="destructive"
                     onClick={() => {
-                      if (deleteConfirmData?.issueId && deleteConfirmData?.commentId) {
+                      if (deleteConfirmData?.issueId && deleteConfirmData?.commentId && deleteConfirmData?.reportId) {
                         deleteReportedComment.mutate(
-                          { issueId: deleteConfirmData.issueId, commentId: deleteConfirmData.commentId },
+                          { issueId: deleteConfirmData.issueId, commentId: deleteConfirmData.commentId, reportId: deleteConfirmData.reportId },
                           {
                             onSuccess: () => {
                               toast.success('Comment removed from your issue');

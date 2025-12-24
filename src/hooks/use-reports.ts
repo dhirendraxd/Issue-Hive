@@ -506,9 +506,11 @@ export function useDeleteReportedComment() {
     mutationFn: async ({
       issueId,
       commentId,
+      reportId,
     }: {
       issueId: string;
       commentId: string;
+      reportId: string;
     }) => {
       try {
         // Check if comment exists before deleting
@@ -519,13 +521,26 @@ export function useDeleteReportedComment() {
         
         if (!commentSnap.exists()) {
           console.warn('Comment not found, may have been deleted already');
-          // Don't throw error - just mark as resolved
+          // Update report status to resolved even if comment already deleted
+          const reportRef = doc(db, 'comment_reports', reportId);
+          await updateDoc(reportRef, {
+            status: 'resolved',
+            updatedAt: serverTimestamp(),
+          });
           return;
         }
         
         console.log('Deleting comment:', { issueId, commentId, path: `comments/${commentId}` });
         await deleteDoc(commentRef);
-        console.log('Comment deleted successfully');
+        
+        // Update report status to resolved after successful deletion
+        const reportRef = doc(db, 'comment_reports', reportId);
+        await updateDoc(reportRef, {
+          status: 'resolved',
+          updatedAt: serverTimestamp(),
+        });
+        
+        console.log('Comment deleted and report marked as resolved');
       } catch (error) {
         console.error('Delete comment error:', error);
         throw error;
@@ -539,6 +554,9 @@ export function useDeleteReportedComment() {
   });
 }
 
+/**
+ * Keep a reported comment (mark report as dismissed)
+ */
 /**
  * Keep a reported comment (mark report as dismissed)
  */
