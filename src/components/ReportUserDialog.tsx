@@ -112,6 +112,7 @@ export default function ReportUserDialog({
     }
 
     setSubmitting(true);
+    toast.loading("Submitting report...", { id: 'report-submit' });
     try {
       const { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, increment } = await import("firebase/firestore");
       const { db } = await import("@/integrations/firebase/config");
@@ -153,7 +154,7 @@ export default function ReportUserDialog({
           updatedAt: serverTimestamp(),
         });
         
-        toast.success(`Added your report to existing complaint. ${reportData.reportCount + 1} users have reported this person.`);
+        toast.success(`Added your report to existing complaint. ${reportData.reportCount + 1} users have reported this person.`, { id: 'report-submit' });
       } else {
         // Create new report if none exists
         const newReportRef = await addDoc(reportsRef, {
@@ -209,7 +210,7 @@ export default function ReportUserDialog({
           return oldData ? [newReport, ...oldData] : [newReport];
         });
 
-        toast.success("Report submitted successfully. Thank you for helping keep our community safe.");
+        toast.success("Report submitted successfully. Thank you for helping keep our community safe.", { id: 'report-submit' });
       }
       
       // Refresh the reports to get updated data
@@ -223,7 +224,7 @@ export default function ReportUserDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting report:", error);
-      toast.error("Failed to submit report. Please try again.");
+      toast.error("Failed to submit report. Please try again.", { id: 'report-submit' });
     } finally {
       setSubmitting(false);
     }

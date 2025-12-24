@@ -1767,6 +1767,14 @@ export default function UserProfile() {
                                       return (
                                       <Card key={report.id} className="rounded-2xl border border-orange-200/50 bg-orange-50/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-5 transition-all hover:shadow-xl">
                                         <CardContent className="p-0 space-y-4">
+                                          {/* Threshold Warning */}
+                                          {report.reportCount && report.reportCount >= 15 && (
+                                            <div className="mb-4 flex items-start gap-2 px-4 py-3 bg-red-100 border border-red-300 rounded-lg">
+                                              <AlertCircle className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                                              <span className="text-sm text-red-800"><strong>High Priority:</strong> This user has {report.reportCount} reports and may require administrative action.</span>
+                                            </div>
+                                          )}
+                                          
                                           {/* User Reported Info */}
                                           <div className="space-y-1 bg-orange-100/40 border border-orange-200 rounded-lg p-3">
                                             <div className="flex items-center justify-between">
@@ -2451,12 +2459,14 @@ export default function UserProfile() {
 
           {/* Report User Dialog */}
           {!isOwner && user && (
-            <ReportUserDialog
-              open={reportUserDialogOpen}
-              onOpenChange={setReportUserDialogOpen}
-              reportedUserId={uid!}
-              reportedUserName={ownerProfile?.displayName || 'User'}
-            />
+            <PortalErrorBoundary fallback={<div className="p-4 text-center text-red-600">Failed to load report dialog</div>}>
+              <ReportUserDialog
+                open={reportUserDialogOpen}
+                onOpenChange={setReportUserDialogOpen}
+                reportedUserId={uid!}
+                reportedUserName={ownerProfile?.displayName || 'User'}
+              />
+            </PortalErrorBoundary>
           )}
 
           {/* Followers Dialog */}

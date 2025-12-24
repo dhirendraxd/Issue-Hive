@@ -11,6 +11,7 @@ import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integr
 import { logActivity } from '@/lib/activity-tracker';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import ReportCommentDialog from './ReportCommentDialog';
+import PortalErrorBoundary from './PortalErrorBoundary';
 
 interface IssueCommentsProps {
   issueId: string;
@@ -426,17 +427,19 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
 
       {/* Report Comment Dialog */}
       {reportingCommentData && (
-        <ReportCommentDialog
-          open={reportDialogOpen}
-          onOpenChange={setReportDialogOpen}
-          commentId={reportingCommentData.id}
-          commentText={reportingCommentData.text}
-          commentAuthorName={reportingCommentData.authorName}
-          commentAuthorId={reportingCommentData.authorId}
-          issueId={issueId}
-          issueTitle={issueTitle}
-          issueOwnerId={issueOwnerId || ''}
-        />
+        <PortalErrorBoundary fallback={<div className="p-4 text-center text-red-600">Failed to load report dialog</div>}>
+          <ReportCommentDialog
+            open={reportDialogOpen}
+            onOpenChange={setReportDialogOpen}
+            commentId={reportingCommentData.id}
+            commentText={reportingCommentData.text}
+            commentAuthorName={reportingCommentData.authorName}
+            commentAuthorId={reportingCommentData.authorId}
+            issueId={issueId}
+            issueTitle={issueTitle}
+            issueOwnerId={issueOwnerId || ''}
+          />
+        </PortalErrorBoundary>
       )}
     </div>
   );

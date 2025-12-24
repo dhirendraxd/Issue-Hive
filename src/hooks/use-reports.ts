@@ -99,6 +99,8 @@ export function useReportsAgainstMe() {
       })) as Report[];
     },
     enabled: !!user?.uid,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes (replaces deprecated cacheTime)
   });
 }
 
@@ -207,6 +209,8 @@ export function useCommentReportsOnMyIssues(issueIds: string[]) {
       })) as Report[];
     },
     enabled: !!user?.uid,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
   });
 }
 
@@ -274,6 +278,8 @@ export function useReviewableReports() {
       }
     },
     enabled: !!user?.uid,
+    staleTime: 30000, // 30 seconds
+    gcTime: 300000, // 5 minutes
   });
 }
 
