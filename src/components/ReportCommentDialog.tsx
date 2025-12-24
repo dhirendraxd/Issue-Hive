@@ -4,10 +4,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AlertTriangle, Flag } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 
 interface ReportCommentDialogProps {
   open: boolean;
@@ -47,6 +49,51 @@ export default function ReportCommentDialog({
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [existingReport, setExistingReport] = useState<any>(null);
+  const [reportDetails, setReportDetails] = useState<any[]>([]);
+  const [loadingReport, setLoadingReport] = useState(false);
+
+  // Fetch existing report when dialog opens
+  useEffect(() => {
+    if (open && commentId) {
+      setLoadingReport(true);
+      const fetchExistingReport = async () => {
+        try {
+          const { db } = await import("@/integrations/firebase/config");
+          const { collection, query, where, getDocs, orderBy, limit } = await import("firebase/firestore");
+          
+          // Check for existing report
+          const reportsRef = collection(db, "comment_reports");
+          const q = query(reportsRef, where("commentId", "==", commentId), limit(1));
+          const querySnapshot = await getDocs(q);
+          
+          if (!querySnapshot.empty) {
+            const reportDoc = querySnapshot.docs[0];
+            const reportData = { id: reportDoc.id, ...reportDoc.data() };
+            setExistingReport(reportData);
+            
+            // Fetch details subcollection
+            const detailsRef = collection(db, `comment_reports/${reportDoc.id}/details`);
+            const detailsQ = query(detailsRef, orderBy("createdAt", "desc"));
+            const detailsSnapshot = await getDocs(detailsQ);
+            const details = detailsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setReportDetails(details);
+          } else {
+            setExistingReport(null);
+            setReportDetails([]);
+          }
+        } catch (error) {
+          console.error("Error fetching existing report:", error);
+        } finally {
+          setLoadingReport(false);
+        }
+      };
+      fetchExistingReport();
+    } else {
+      setExistingReport(null);
+      setReportDetails([]);
+    }
+  }, [open, commentId]);
 
   const handleSubmit = async () => {
     if (!user) {
@@ -178,7 +225,7 @@ export default function ReportCommentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader className="space-y-2">
           <DialogTitle className="text-2xl font-bold">Report Comment</DialogTitle>
           <DialogDescription className="text-base">
@@ -187,6 +234,50 @@ export default function ReportCommentDialog({
         </DialogHeader>
 
         <div className="space-y-5 py-4">
+          {/* Existing Report Info */}
+          {loadingReport && (
+            <Card className="p-4 bg-blue-50 border-blue-200">
+              <p className="text-sm text-blue-900">Loading existing reports...</p>
+            </Card>
+          )}
+          
+          {existingReport && !loadingReport && (
+            <Card className="p-4 bg-amber-50 border-amber-200">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-amber-900 mb-2">Existing Reports</h4>
+                  <div className="space-y-2 text-sm text-amber-800">
+                    <p>
+                      <span className="font-medium">{existingReport.reportCount || 0}</span> {existingReport.reportCount === 1 ? 'user has' : 'users have'} already reported this comment.
+                    </p>
+                    
+                    {reportDetails.length > 0 && (
+                      <div className="mt-3">
+                        <p className="font-medium mb-2">Reported reasons:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from(new Set(reportDetails.map(d => d.reason))).map((reason) => {
+                            const count = reportDetails.filter(d => d.reason === reason).length;
+                            const label = REPORT_REASONS.find(r => r.value === reason)?.label || reason;
+                            return (
+                              <Badge key={reason} variant="outline" className="bg-white">
+                                {label} {count > 1 && `(${count}x)`}
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <p className="mt-3 text-xs">
+                      Your report will add to this case and help moderators take appropriate action.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Comment Preview */}
           <div className="bg-slate-100 rounded-lg p-4 border border-slate-200">
             <p className="text-xs text-slate-600 font-semibold mb-2">COMMENT</p>

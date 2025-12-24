@@ -36,6 +36,13 @@ export interface Report {
   clarificationBy?: string;
   clarificationAt?: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
   userVote?: 1 | -1 | 0; // 1 for upvote, -1 for downvote, 0 for no vote
+  allDetails?: Array<{
+    reporterId: string;
+    reporterName: string;
+    reason: string;
+    details?: string;
+    createdAt: any;
+  }>;
 }
 
 /**
@@ -77,11 +84,17 @@ export function useReportsAgainstMe() {
           }
         });
         
+        // Fetch all report details from subcollection
+        const detailsRef = collection(db, 'reports', doc.id, 'details');
+        const detailsSnapshot = await getDocs(detailsRef);
+        const allDetails = detailsSnapshot.docs.map(detailDoc => detailDoc.data());
+        
         return {
           id: doc.id,
           ...reportData,
           upvotes,
-          downvotes
+          downvotes,
+          allDetails // Add all reporter details
         };
       })) as Report[];
     },
@@ -179,11 +192,17 @@ export function useCommentReportsOnMyIssues(issueIds: string[]) {
           }
         });
         
+        // Fetch all report details from subcollection
+        const detailsRef = collection(db, 'comment_reports', doc.id, 'details');
+        const detailsSnapshot = await getDocs(detailsRef);
+        const allDetails = detailsSnapshot.docs.map(detailDoc => detailDoc.data());
+        
         return {
           id: doc.id,
           ...reportData,
           upvotes,
-          downvotes
+          downvotes,
+          allDetails // Add all reporter details
         };
       })) as Report[];
     },
@@ -229,11 +248,17 @@ export function useReviewableReports() {
             }
           });
           
+          // Fetch all report details from subcollection
+          const detailsRef = collection(db, 'reports', doc.id, 'details');
+          const detailsSnapshot = await getDocs(detailsRef);
+          const allDetails = detailsSnapshot.docs.map(detailDoc => detailDoc.data());
+          
           return {
             id: doc.id,
             ...reportData,
             upvotes,
-            downvotes
+            downvotes,
+            allDetails // Add all reporter details
           };
         })) as Report[];
 

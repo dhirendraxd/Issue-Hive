@@ -1513,28 +1513,73 @@ export default function UserProfile() {
                                           </div>
                                         )}
 
-                                        {/* Reason & Details Section */}
-                                        <div className="space-y-3 pt-2">
-                                          <div className="space-y-2">
-                                            <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
-                                            <Badge 
-                                              variant="outline" 
-                                              className="bg-red-100 text-red-700 border-red-300 text-xs font-semibold"
-                                            >
-                                              {report.reason}
-                                            </Badge>
-                                          </div>
-
-                                          {/* Report Details */}
-                                          {report.details && (
-                                            <div className="space-y-2">
-                                              <p className="text-xs font-semibold text-stone-600 uppercase">Why it was reported</p>
-                                              <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
-                                                {report.details}
-                                              </p>
+                                        {/* All Reasons & Details from All Reporters */}
+                                        {report.allDetails && report.allDetails.length > 0 ? (
+                                          <div className="space-y-3 pt-2">
+                                            <div className="flex items-center justify-between">
+                                              <p className="text-xs font-semibold text-stone-600 uppercase">All Reports ({report.allDetails.length})</p>
+                                              <div className="flex flex-wrap gap-1">
+                                                {Array.from(new Set(report.allDetails.map(d => d.reason))).map((reason) => {
+                                                  const count = report.allDetails!.filter(d => d.reason === reason).length;
+                                                  return (
+                                                    <Badge 
+                                                      key={reason}
+                                                      variant="outline" 
+                                                      className="bg-red-100 text-red-700 border-red-300 text-xs font-semibold"
+                                                    >
+                                                      {reason} {count > 1 && `(${count}x)`}
+                                                    </Badge>
+                                                  );
+                                                })}
+                                              </div>
                                             </div>
-                                          )}
-                                        </div>
+                                            
+                                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                                              {report.allDetails.map((detail, idx) => (
+                                                <div key={idx} className="bg-white/70 border border-stone-200 rounded-lg p-3 space-y-1">
+                                                  <div className="flex items-center justify-between">
+                                                    <p className="text-xs font-semibold text-red-700">Anonymous</p>
+                                                    <Badge variant="outline" className="text-xs">
+                                                      {detail.reason}
+                                                    </Badge>
+                                                  </div>
+                                                  {detail.details && (
+                                                    <p className="text-sm text-stone-700 leading-relaxed">{detail.details}</p>
+                                                  )}
+                                                  <p className="text-xs text-stone-500">
+                                                    {formatRelativeTime(
+                                                      detail.createdAt?.toMillis?.() ||
+                                                      detail.createdAt?.seconds * 1000 ||
+                                                      Date.now()
+                                                    )}
+                                                  </p>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="space-y-3 pt-2">
+                                            <div className="space-y-2">
+                                              <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
+                                              <Badge 
+                                                variant="outline" 
+                                                className="bg-red-100 text-red-700 border-red-300 text-xs font-semibold"
+                                              >
+                                                {report.reason}
+                                              </Badge>
+                                            </div>
+
+                                            {/* Report Details */}
+                                            {report.details && (
+                                              <div className="space-y-2">
+                                                <p className="text-xs font-semibold text-stone-600 uppercase">Why it was reported</p>
+                                                <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
+                                                  {report.details}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
 
                                         {/* Status & Action Buttons */}
                                         {report.status !== 'deleted' && (
@@ -1727,14 +1772,9 @@ export default function UserProfile() {
                                             <div className="flex items-center justify-between">
                                               <p className="text-xs font-semibold text-orange-700 uppercase">User Reported</p>
                                               <div className="flex items-center gap-2">
-                                                {report.reasonCount && report.reasonCount > 1 && (
-                                                  <Badge className="bg-orange-600 text-white text-xs font-bold">
-                                                    {report.reasonCount}x {report.reason}
-                                                  </Badge>
-                                                )}
                                                 {report.reportCount && report.reportCount > 1 && (
                                                   <Badge className="bg-red-600 text-white text-xs font-bold">
-                                                    {report.reportCount} total
+                                                    {report.reportCount} {report.reportCount === 1 ? 'user' : 'users'} reported
                                                   </Badge>
                                                 )}
                                               </div>
@@ -1744,28 +1784,72 @@ export default function UserProfile() {
                                             </div>
                                           </div>
 
-                                          {/* Reason & Details Section */}
-                                          <div className="space-y-3">
-                                            <div className="space-y-2">
-                                              <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
-                                              <Badge 
-                                                variant="outline" 
-                                                className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
-                                              >
-                                                {report.reason}
-                                              </Badge>
-                                            </div>
-
-                                            {/* Report Details */}
-                                            {report.details && (
-                                              <div className="space-y-2">
-                                                <p className="text-xs font-semibold text-stone-600 uppercase">Details</p>
-                                                <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
-                                                  {report.details}
-                                                </p>
+                                          {/* All Reasons & Details from All Reporters */}
+                                          {report.allDetails && report.allDetails.length > 0 ? (
+                                            <div className="space-y-3">
+                                              <div className="flex items-center justify-between">
+                                                <p className="text-xs font-semibold text-stone-600 uppercase">All Reports ({report.allDetails.length})</p>
+                                                <div className="flex flex-wrap gap-1">
+                                                  {Array.from(new Set(report.allDetails.map(d => d.reason))).map((reason) => {
+                                                    const count = report.allDetails!.filter(d => d.reason === reason).length;
+                                                    return (
+                                                      <Badge 
+                                                        key={reason}
+                                                        variant="outline" 
+                                                        className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
+                                                      >
+                                                        {reason} {count > 1 && `(${count}x)`}
+                                                      </Badge>
+                                                    );
+                                                  })}
+                                                </div>
                                               </div>
-                                            )}
-                                          </div>
+                                              
+                                              <div className="space-y-2 max-h-64 overflow-y-auto">
+                                                {report.allDetails.map((detail, idx) => (
+                                                  <div key={idx} className="bg-white/70 border border-stone-200 rounded-lg p-3 space-y-1">
+                                                    <div className="flex items-center justify-between">
+                                                      <p className="text-xs font-semibold text-orange-700">Anonymous</p>
+                                                      <Badge variant="outline" className="text-xs">
+                                                        {detail.reason}
+                                                      </Badge>
+                                                    </div>
+                                                    {detail.details && (
+                                                      <p className="text-sm text-stone-700 leading-relaxed">{detail.details}</p>
+                                                    )}
+                                                    <p className="text-xs text-stone-500">
+                                                      {formatRelativeTime(
+                                                        detail.createdAt?.toMillis?.() ||
+                                                        detail.createdAt?.seconds * 1000 ||
+                                                        Date.now()
+                                                      )}
+                                                    </p>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          ) : (
+                                            <div className="space-y-3">
+                                              <div className="space-y-2">
+                                                <p className="text-xs font-semibold text-stone-600 uppercase">Reason</p>
+                                                <Badge 
+                                                  variant="outline" 
+                                                  className="bg-orange-100 text-orange-700 border-orange-300 text-xs font-semibold"
+                                                >
+                                                  {report.reason}
+                                                </Badge>
+                                              </div>
+
+                                              {report.details && (
+                                                <div className="space-y-2">
+                                                  <p className="text-xs font-semibold text-stone-600 uppercase">Details</p>
+                                                  <p className="text-sm text-stone-700 bg-white/70 border border-stone-200 rounded-lg p-3 leading-relaxed">
+                                                    {report.details}
+                                                  </p>
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
 
                                           {/* Report Timestamp */}
                                           <p className="text-xs font-medium text-stone-600">
