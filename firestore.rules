@@ -148,9 +148,10 @@ service cloud.firestore {
           )
         );
       
-      // Users can delete their own comments
+      // Users can delete their own comments, or issue owners can delete comments on their issues
       allow delete: if isSignedIn() 
-        && resource.data.userId == request.auth.uid;
+        && (resource.data.userId == request.auth.uid
+            || ('issueId' in resource.data && getIssue(resource.data.issueId).createdBy == request.auth.uid));
       
       // Comment likes subcollection - tracks individual user likes
       match /likes/{userId} {
@@ -266,8 +267,15 @@ service cloud.firestore {
         && request.resource.data.reason.size() > 0
         && request.resource.data.details.size() > 0 && request.resource.data.details.size() <= 5000;
       
-      // Only admins can update comment reports (status, resolution)
-      allow update: if false;
+      // Issue owners can update comment reports (dismiss them)
+      // Check either issueOwnerId field OR verify by looking up the issue
+      allow update: if isSignedIn() 
+        && (
+          ('issueOwnerId' in resource.data && resource.data.issueOwnerId == request.auth.uid)
+          || ('issueId' in resource.data && getIssue(resource.data.issueId).createdBy == request.auth.uid)
+        )
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+        && request.resource.data.status in ['dismissed', 'resolved'];
       
       // Only admins can delete comment reports
       allow delete: if false;

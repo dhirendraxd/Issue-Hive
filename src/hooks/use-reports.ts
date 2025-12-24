@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, deleteDoc, orderBy, addDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase/config';
 import { useAuth } from './use-auth';
 
@@ -17,6 +17,14 @@ export interface Report {
     issueTitle?: string;
     commentId?: string;
   };
+  // Comment report specific fields (at top level)
+  commentId?: string;
+  commentText?: string;
+  commentAuthorName?: string;
+  commentAuthorId?: string;
+  issueId?: string;
+  issueTitle?: string;
+  issueOwnerId?: string;
   status: 'pending' | 'reviewed' | 'resolved' | 'dismissed';
   createdAt: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
   updatedAt: { toMillis?: () => number; seconds?: number; nanoseconds?: number } | Date | number;
@@ -502,13 +510,30 @@ export function useDeleteReportedComment() {
       issueId: string;
       commentId: string;
     }) => {
-      // Delete the comment document
-      const commentRef = doc(db, 'issues', issueId, 'comments', commentId);
-      await deleteDoc(commentRef);
+      try {
+        // Check if comment exists before deleting
+        const commentRef = doc(db, 'comments', commentId);
+        const commentSnap = await getDoc(commentRef);
+        
+        console.log('Comment check:', { exists: commentSnap.exists(), commentId });
+        
+        if (!commentSnap.exists()) {
+          console.warn('Comment not found, may have been deleted already');
+          // Don't throw error - just mark as resolved
+          return;
+        }
+        
+        console.log('Deleting comment:', { issueId, commentId, path: `comments/${commentId}` });
+        await deleteDoc(commentRef);
+        console.log('Comment deleted successfully');
+      } catch (error) {
+        console.error('Delete comment error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['comments'] });
-      queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
+      queryClient.invalidateQueries({ queryKey: ['comment-reports-on-my-issues'] });
       queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
     },
   });
@@ -522,14 +547,21 @@ export function useKeepReportedComment() {
 
   return useMutation({
     mutationFn: async (reportId: string) => {
-      const reportRef = doc(db, 'reports', reportId);
-      await updateDoc(reportRef, {
-        status: 'dismissed',
-        updatedAt: serverTimestamp(),
-      });
+      try {
+        const reportRef = doc(db, 'comment_reports', reportId);
+        console.log('Dismissing report:', { reportId, path: `comment_reports/${reportId}` });
+        await updateDoc(reportRef, {
+          status: 'dismissed',
+          updatedAt: serverTimestamp(),
+        });
+        console.log('Report dismissed successfully');
+      } catch (error) {
+        console.error('Keep comment error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reports-against-me'] });
+      queryClient.invalidateQueries({ queryKey: ['comment-reports-on-my-issues'] });
       queryClient.invalidateQueries({ queryKey: ['reports-for-issue'] });
     },
   });
