@@ -3,9 +3,17 @@ import App from './App.tsx'
 import './index.css'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { validateEnv } from '@/lib/env'
+import { initializeCSRFToken } from '@/lib/csrf'
+import { setupCSPReporting } from '@/lib/csp'
 
 // Validate environment variables on startup
 validateEnv();
+
+// Initialize CSRF protection
+initializeCSRFToken();
+
+// Setup CSP violation monitoring
+setupCSPReporting();
 
 // Store React root instance globally so we can unmount it if needed
 let reactRoot: ReturnType<typeof createRoot> | null = null;

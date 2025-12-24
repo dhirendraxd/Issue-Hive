@@ -20,13 +20,14 @@ export function sanitizeHTML(input: string): string {
 
 /**
  * Sanitize text for display (basic cleanup)
- * Removes null bytes and normalizes whitespace
+ * Removes null bytes, control characters, and normalizes whitespace
  */
 export function sanitizeText(input: string): string {
   if (!input) return '';
   
   return input
     .replace(/\0/g, '') // Remove null bytes
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
     .replace(/\r\n/g, '\n') // Normalize line endings
     .trim();
 }
