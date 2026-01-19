@@ -12,22 +12,25 @@ dist
 dist-ssr
 *.local
 
+# Lock files for other package managers
+bun.lockb
+yarn.lock
+pnpm-lock.yaml
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-*.env.example
 
-# Documentation (keep only README.md)
-docs/
+# Documentation (only README in git)
 *.md
 !README.md
+docs/
 .git-safety-check.txt
 
 # Build and cache
@@ -38,6 +41,28 @@ docs/
 coverage
 
 # Environment variables (CRITICAL - DO NOT PUSH)
+.env
+.env.local
+.env.development
+.env.test
+.env*.local
+
+# Firebase test files
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+firebase-test.js
+firebase-verify.js
+test-firebase.sh
+
+# Setup/test scripts
+start-server.sh
+public/test-firebase.js
+
+# Mac system files
+.DS_Store
+Thumbs.db
 .env
 .env.example
 .env.local
