@@ -19,6 +19,20 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate configuration in production
+if (import.meta.env.PROD) {
+  const missingVars: string[] = [];
+  if (!firebaseConfig.apiKey) missingVars.push('VITE_FIREBASE_API_KEY');
+  if (!firebaseConfig.authDomain) missingVars.push('VITE_FIREBASE_AUTH_DOMAIN');
+  if (!firebaseConfig.projectId) missingVars.push('VITE_FIREBASE_PROJECT_ID');
+  if (!firebaseConfig.appId) missingVars.push('VITE_FIREBASE_APP_ID');
+  
+  if (missingVars.length > 0) {
+    console.error('[Firebase Config] Missing environment variables:', missingVars.join(', '));
+    console.error('[Firebase Config] Please set these in Vercel Dashboard → Settings → Environment Variables');
+  }
+}
+
 // Determine if Firebase is configured (prevent runtime crashes when env vars are missing)
 const isConfigured = Boolean(
   firebaseConfig.apiKey &&
