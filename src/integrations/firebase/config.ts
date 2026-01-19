@@ -19,18 +19,19 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
-// Validate configuration in production
-if (import.meta.env.PROD) {
-  const missingVars: string[] = [];
-  if (!firebaseConfig.apiKey) missingVars.push('VITE_FIREBASE_API_KEY');
-  if (!firebaseConfig.authDomain) missingVars.push('VITE_FIREBASE_AUTH_DOMAIN');
-  if (!firebaseConfig.projectId) missingVars.push('VITE_FIREBASE_PROJECT_ID');
-  if (!firebaseConfig.appId) missingVars.push('VITE_FIREBASE_APP_ID');
-  
-  if (missingVars.length > 0) {
-    console.error('[Firebase Config] Missing environment variables:', missingVars.join(', '));
-    console.error('[Firebase Config] Please set these in Vercel Dashboard → Settings → Environment Variables');
-  }
+// Validate configuration (always check, not just in production)
+const missingVars: string[] = [];
+if (!firebaseConfig.apiKey) missingVars.push('VITE_FIREBASE_API_KEY');
+if (!firebaseConfig.authDomain) missingVars.push('VITE_FIREBASE_AUTH_DOMAIN');
+if (!firebaseConfig.projectId) missingVars.push('VITE_FIREBASE_PROJECT_ID');
+if (!firebaseConfig.appId) missingVars.push('VITE_FIREBASE_APP_ID');
+
+if (missingVars.length > 0) {
+  console.error('[Firebase Config] ❌ Missing environment variables:', missingVars.join(', '));
+  console.error('[Firebase Config] Please check your .env file or Vercel environment variables');
+} else {
+  console.log('[Firebase Config] ✅ All required environment variables are set');
+  console.log('[Firebase Config] Project ID:', firebaseConfig.projectId);
 }
 
 // Determine if Firebase is configured (prevent runtime crashes when env vars are missing)
@@ -58,10 +59,13 @@ try {
     if (typeof window !== 'undefined') {
       analytics = getAnalytics(app);
     }
+    console.log('[Firebase] ✅ Successfully initialized');
   } else {
+    console.warn('[Firebase] ⚠️ Not configured - missing required environment variables');
     logger.warn('[Issue-Hive] Firebase not configured. Set VITE_FIREBASE_* env vars to enable auth and database.');
   }
 } catch (e) {
+  console.error('[Firebase] ❌ Initialization failed:', e);
   logger.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
 }
 
