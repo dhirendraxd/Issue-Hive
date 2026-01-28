@@ -4,12 +4,18 @@ import { Card } from '@/components/ui/card';
 import { ArrowLeft } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import Seo from "@/components/Seo";
 
 export default function Terms() {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
+      <Seo
+        title="Terms & Conditions"
+        description="IssueHive service terms and conditions for student voice and campus issue reporting in Nepal."
+        path="/terms"
+      />
       <ParticlesBackground fullPage hexOpacity={0.08}>
         <Navbar />
         <main className="pt-24 pb-24 px-4 mx-auto max-w-4xl">

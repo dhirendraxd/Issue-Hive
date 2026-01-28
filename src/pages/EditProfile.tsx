@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Save, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2, Bell, Mail, ShieldCheck, Sparkles } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -535,6 +535,66 @@ export default function EditProfile() {
                   </div>
                 </div>
               </div>
+            </div>
+          </Card>
+
+          {/* Coming Soon Features */}
+          <Card className="glass-card overflow-hidden border-2 border-dashed border-orange-200">
+            <div className="bg-gradient-to-r from-orange-500/10 to-amber-500/10 px-6 py-4 border-b border-orange-200/50">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-stone-900">Coming Soon</h2>
+                <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700 border-orange-300 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  In Development
+                </Badge>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              
+              {/* Email Notifications - Coming Soon */}
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/50 to-white/0 pointer-events-none z-10" />
+                <div className="opacity-60">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 grid place-items-center flex-shrink-0">
+                      <Mail className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Email Notifications</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Get notified when issues are resolved</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                  <Badge className="bg-blue-500 text-white border-0 shadow-lg px-3 py-1.5 text-xs">
+                    <Bell className="w-3 h-3 mr-1" />
+                    Soon
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Student Verification - Coming Soon */}
+              <div className="relative border-t border-stone-200 pt-4">
+                <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/50 to-white/0 pointer-events-none z-10" />
+                <div className="opacity-60">
+                  <div className="flex items-start gap-3">
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 grid place-items-center flex-shrink-0">
+                      <ShieldCheck className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="font-semibold">Student Verification</Label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Verify with .edu email for a badge</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+                  <Badge className="bg-green-500 text-white border-0 shadow-lg px-3 py-1.5 text-xs">
+                    <ShieldCheck className="w-3 h-3 mr-1" />
+                    Beta
+                  </Badge>
+                </div>
+              </div>
+
             </div>
           </Card>
 

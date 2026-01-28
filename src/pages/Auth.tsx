@@ -10,6 +10,7 @@ import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
 import { Loader2, Mail } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
+import Seo from "@/components/Seo";
 import { sanitizeEmail, limitLength } from '@/lib/sanitize';
 
 interface FirebaseError {
@@ -106,22 +107,18 @@ export default function Auth() {
       const uid = cred.user?.uid;
       if (!uid) throw new Error('Could not determine user');
 
-      // Check if this is a newly created account
-      const { doc, getDoc } = await import('firebase/firestore');
-      const { db } = await import('@/integrations/firebase/config');
-      const userDoc = await getDoc(doc(db, 'users', uid));
-      const userData = userDoc.data();
-      const createdAt = userData?.createdAt;
-      
-      // If created within last 10 seconds, redirect to edit profile
-      const isNewUser = createdAt && (Date.now() - createdAt) < 10000;
+      // Use Firebase metadata to determine if user is new (faster than Firestore check)
+      const isNewUser = cred.user?.metadata?.creationTime === cred.user?.metadata?.lastSignInTime;
 
       toast.success('Welcome!');
+      // Navigate immediately - don't wait for Firestore doc check
       navigate(isNewUser ? `/profile/${uid}/edit` : `/profile/${uid}`);
     } catch (error) {
       const firebaseError = error as FirebaseError;
       const msg = firebaseError.code === 'auth/not-configured'
         ? 'Authentication is disabled: Firebase is not configured.'
+        : firebaseError.code === 'auth/popup-closed-by-user'
+        ? 'Sign-in cancelled'
         : firebaseError.message || 'Google sign-in failed';
       toast.error(msg);
     } finally {
@@ -131,6 +128,12 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-stone-50 animate-in fade-in duration-300">
+      <Seo
+        title="Sign In"
+        description="Sign in to IssueHive to report campus problems and support campus voices."
+        path="/auth"
+        noIndex
+      />
       {/* Background Effects */}
       <ParticlesBackground fullPage hexOpacity={0.10}>
         <div />

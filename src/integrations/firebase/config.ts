@@ -56,8 +56,11 @@ try {
     db = getFirestore(app);
     realtimeDb = getDatabase(app);
     storage = getStorage(app);
+    // Defer analytics initialization to improve initial load performance
     if (typeof window !== 'undefined') {
-      analytics = getAnalytics(app);
+      setTimeout(() => {
+        analytics = getAnalytics(app!);
+      }, 3000); // Initialize after 3 seconds
     }
     console.log('[Firebase] ✅ Successfully initialized');
   } else {

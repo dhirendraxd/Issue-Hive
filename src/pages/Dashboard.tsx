@@ -48,6 +48,7 @@ import { useAvatarUrl } from '@/hooks/use-avatar-url';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import IssueCard from '@/components/IssueCard';
+import Seo from "@/components/Seo";
 
 export default function Dashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -159,6 +160,12 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-stone-50 animate-in fade-in duration-300">
+      <Seo
+        title="Dashboard"
+        description="Manage your IssueHive profile, track reported campus problems, and follow resolution updates."
+        path="/dashboard"
+        noIndex
+      />
       <Navbar />
       {/* Background */}
       <ParticlesBackground fullPage hexOpacity={0.10}>

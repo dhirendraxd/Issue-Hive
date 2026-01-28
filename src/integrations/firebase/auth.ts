@@ -37,6 +37,10 @@ export const signOut = async () => {
 export const signInWithGoogle = async () => {
   const a = ensureAuth();
   const provider = new GoogleAuthProvider();
+  // Enable instant sign-in for faster authentication
+  provider.setCustomParameters({
+    prompt: 'select_account' // Forces account selection (prevents auto-select delays)
+  });
   return signInWithPopup(a, provider);
 };
 

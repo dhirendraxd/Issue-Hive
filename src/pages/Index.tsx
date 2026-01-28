@@ -1,20 +1,23 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import HeroRings from "@/components/HeroRings";
-import HiveHexParticles from "@/components/HiveHexParticles";
-import CommunityNodes from "@/components/CommunityNodes";
-import AmbientDust from "@/components/AmbientDust";
-import BubbleParticles from "@/components/BubbleParticles";
+import Seo from "@/components/Seo";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
-import ParticlesBackground from "@/components/ParticlesBackground";
+
+// Lazy load heavy particle/animation components (framer-motion already code-split via vite.config)
+const HeroRings = lazy(() => import("@/components/HeroRings"));
+const HiveHexParticles = lazy(() => import("@/components/HiveHexParticles"));
+const CommunityNodes = lazy(() => import("@/components/CommunityNodes"));
+const AmbientDust = lazy(() => import("@/components/AmbientDust"));
+const BubbleParticles = lazy(() => import("@/components/BubbleParticles"));
+const ParticlesBackground = lazy(() => import("@/components/ParticlesBackground"));
 
 function Hero() {
   const { user } = useAuth();
@@ -33,12 +36,12 @@ function Hero() {
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
           <h1 className="text-4xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
-            Unified Campus Platform for
+            Student Voice Platform for
             <br />
-            Students & Admins
+            Campus Issue Reporting
           </h1>
           <p className="text-xs md:text-sm text-muted-foreground/90">
-            Community-driven, student‑first, and privacy‑friendly.
+            Campus voices in Nepal: report campus problems, share campus event posts, and grow community engagement.
           </p>
 
           <div className="mt-2 md:mt-4 flex gap-3">
@@ -143,6 +146,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">
+      <Seo
+        title="Issue Reporting Nepal & Campus Voices"
+        description="IssueHive is a student voice platform for issue reporting in Nepal. Report campus problems, share campus event posts, and drive community engagement with transparent resolution tracking."
+        path="/"
+      />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
   <Navbar />
 
@@ -178,7 +186,7 @@ const Index = () => {
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
             <p className="mt-2 text-muted-foreground">
-              IssueHive helps students surface problems and support solutions. Simple, transparent, and community‑driven.
+              IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
             </p>
             <div className="mt-6 flex justify-center">
               <Link to="/about">

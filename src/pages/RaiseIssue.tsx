@@ -31,6 +31,7 @@ import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
 import { sanitizeText, limitLength } from '@/lib/sanitize';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
+import Seo from "@/components/Seo";
 
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
@@ -195,6 +196,11 @@ export default function RaiseIssuePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50 relative overflow-hidden animate-in fade-in duration-300">
+      <Seo
+        title="Report Campus Problems"
+        description="Report campus problems in Nepal with IssueHive. Add details, category, and urgency to help campus voices drive community engagement and faster resolutions."
+        path="/raise-issue"
+      />
       {/* Navbar */}
       <Navbar />
 

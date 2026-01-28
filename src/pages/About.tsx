@@ -1,116 +1,120 @@
 import Navbar from "@/components/Navbar";
-import SiteFooter from "@/components/SiteFooter";
 import ParticlesBackground from "@/components/ParticlesBackground";
-import { Megaphone, ThumbsUp, CheckCircle2, UserPlus, MessageSquare, Wrench } from "lucide-react";
+import Seo from "@/components/Seo";
+import { Megaphone, ThumbsUp, CheckCircle2, Mail, ShieldCheck } from "lucide-react";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
+      <Seo
+        title="About IssueHive"
+        description="IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, rally support, and track resolutions with transparent community engagement."
+        path="/about"
+      />
       <Navbar />
       <main className="scroll-mt-20">
         <ParticlesBackground fullPage hexOpacity={0.10}>
-          <div className="px-4 md:px-6 pt-28 pb-20">
-            <section className="mx-auto max-w-4xl text-center">
-              <h1 className="text-4xl md:text-5xl font-display font-semibold tracking-tight">About IssueHive</h1>
-              <p className="mt-4 text-muted-foreground text-base">
-                IssueHive is a student‑first platform to surface campus problems, rally support, and work with admins
-                to resolve them—openly and transparently.
+          <div className="px-4 md:px-6 pt-28 pb-24">
+            
+            {/* Hero - Most Important First */}
+            <section className="mx-auto max-w-3xl">
+              <h1 className="text-4xl sm:text-5xl md:text-6xl font-display font-semibold tracking-tight leading-tight">
+                About IssueHive
+              </h1>
+              <p className="mt-6 text-lg text-stone-600 leading-relaxed">
+                A student platform to report campus issues, rally support, and track resolutions.
               </p>
-            </section>
-
-            <section className="mx-auto max-w-4xl mt-10">
-              <div className="flex flex-wrap items-center justify-center gap-3">
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/70 border border-white/60 text-stone-700">Student‑first</span>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/70 border border-white/60 text-stone-700">Transparent</span>
-                <span className="px-3 py-1 rounded-full text-xs font-medium bg-white/70 border border-white/60 text-stone-700">Collaborative</span>
+              <div className="flex flex-wrap gap-2 mt-8">
+                <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Student‑first</span>
+                <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Transparent</span>
+                <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Collaborative</span>
               </div>
             </section>
 
-            {/* How it works (Timeline) */}
-            <section className="mx-auto max-w-3xl mt-12 md:mt-16">
-              <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight text-center">How it works</h2>
-              <ol className="relative mt-8 border-l border-stone-200">
-                {/* Item 1 */}
-                <li className="mb-10 ml-6">
-                  <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white ring-8 ring-stone-50 shadow">
-                    <Megaphone className="h-3.5 w-3.5" />
-                  </span>
-                  <time className="mb-1 block text-xs font-medium text-orange-700">Step 1</time>
-                  <h3 className="text-base font-display font-semibold">Report an issue</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Share a campus problem with a clear title, description, and category.</p>
-                </li>
+            {/* How it works - Simple, Clean Layout */}
+            <section className="mx-auto max-w-3xl mt-24">
+              <h2 className="text-3xl font-display font-semibold tracking-tight mb-12">How it works</h2>
+              
+              <div className="space-y-8">
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                      <Megaphone className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Report an issue</h3>
+                    <p className="text-stone-600">Share a campus problem with title, description, and category.</p>
+                  </div>
+                </div>
 
-                {/* Item 2 */}
-                <li className="mb-10 ml-6">
-                  <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white ring-8 ring-stone-50 shadow">
-                    <ThumbsUp className="h-3.5 w-3.5" />
-                  </span>
-                  <time className="mb-1 block text-xs font-medium text-orange-700">Step 2</time>
-                  <h3 className="text-base font-display font-semibold">Gather support</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Upvotes signal priority; comments add helpful context (and the occasional spicy take).</p>
-                </li>
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                      <ThumbsUp className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Gather support</h3>
+                    <p className="text-stone-600">Upvotes show priority, comments add context.</p>
+                  </div>
+                </div>
 
-                {/* Item 3 */}
-                <li className="ml-6">
-                  <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white ring-8 ring-stone-50 shadow">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                  </span>
-                  <time className="mb-1 block text-xs font-medium text-orange-700">Step 3</time>
-                  <h3 className="text-base font-display font-semibold">Track to resolution</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">Admins update status and progress until it’s done. Yes, actually done.</p>
-                </li>
-              </ol>
-              <p className="mt-2 text-center text-xs text-muted-foreground">No capes, just clean timelines.</p>
-            </section>
-
-            {/* What you can do as a user */}
-            <section className="mx-auto max-w-4xl mt-12 md:mt-16">
-              <h3 className="text-xl md:text-2xl font-display font-semibold tracking-tight text-center">As a student, you can</h3>
-              <div className="mt-6 grid gap-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
-                    <UserPlus className="h-4 w-4" />
+                <div className="flex gap-6 group">
+                  <div className="flex-shrink-0">
+                    <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                      <CheckCircle2 className="h-5 w-5 text-white" />
+                    </div>
                   </div>
-                  <p>Create an account and set up your profile</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
-                    <Megaphone className="h-4 w-4" />
+                  <div>
+                    <h3 className="font-semibold text-lg mb-1">Track to resolution</h3>
+                    <p className="text-stone-600">Admins update status and progress until it's done.</p>
                   </div>
-                  <p>Raise a new issue with a clear title, description, and category</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
-                    <ThumbsUp className="h-4 w-4" />
-                  </div>
-                  <p>Support issues from others with upvotes</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
-                    <MessageSquare className="h-4 w-4" />
-                  </div>
-                  <p>Join the discussion in comments and follow progress</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="h-7 w-7 rounded-full bg-white/80 border border-white/60 grid place-items-center text-orange-600">
-                    <Wrench className="h-4 w-4" />
-                  </div>
-                  <p>Manage your own issues — update visibility, add progress, mark resolved</p>
                 </div>
               </div>
             </section>
 
-            <section className="mx-auto max-w-4xl text-center mt-16 md:mt-20">
-              <h2 className="text-2xl md:text-3xl font-display font-semibold tracking-tight">Our mission</h2>
-              <p className="mt-4 text-muted-foreground text-base">
-                Empower campuses to listen better and act faster. Make it easy to share problems, gather support,
-                and celebrate solutions.
-              </p>
+            {/* What's Next - Modern Card Layout */}
+            <section className="mx-auto max-w-3xl mt-24">
+              <div className="flex items-center gap-3 mb-8">
+                <h2 className="text-2xl font-display font-semibold tracking-tight">What's next</h2>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700 uppercase tracking-wide">Soon</span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-6">
+                <div className="group">
+                  <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:border-stone-300 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 transition-colors">
+                        <Mail className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-1.5">Email updates</h3>
+                        <p className="text-sm text-stone-600 leading-relaxed">Get notified when your issues are resolved</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="group">
+                  <div className="bg-white rounded-2xl p-6 border border-stone-200 hover:border-stone-300 transition-colors">
+                    <div className="flex items-start gap-4">
+                      <div className="h-11 w-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition-colors">
+                        <ShieldCheck className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold mb-1.5">Student verification</h3>
+                        <p className="text-sm text-stone-600 leading-relaxed">Verify with .edu email for a badge</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
+
           </div>
         </ParticlesBackground>
       </main>
-      <SiteFooter />
     </div>
   );
 }

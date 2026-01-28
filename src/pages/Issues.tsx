@@ -3,6 +3,7 @@ import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical,
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
+import Seo from "@/components/Seo";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { useAuth } from "@/hooks/use-auth";
@@ -210,6 +211,11 @@ export default function Issues() {
 
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
+      <Seo
+        title="Campus Issues Feed"
+        description="Browse campus issue reporting in Nepal. Upvote, comment, and support campus voices to improve community engagement and resolution tracking."
+        path="/issues"
+      />
       <Navbar />
       <main className="scroll-mt-20">
         <ParticlesBackground fullPage hexOpacity={0.11}>

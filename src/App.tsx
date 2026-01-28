@@ -24,10 +24,11 @@ const TermsOfUse = lazy(() => import("./pages/TermsOfUse"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 10, // 10 minutes (previously cacheTime)
+      staleTime: 1000 * 60 * 10, // 10 minutes - increased for better caching
+      gcTime: 1000 * 60 * 30, // 30 minutes - keep data longer
       retry: 2,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: false, // Disable refetch on reconnect for speed
     },
     mutations: {
       retry: 1,

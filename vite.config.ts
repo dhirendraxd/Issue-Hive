@@ -17,6 +17,15 @@ export default defineConfig((_) => ({
     },
   },
   build: {
+    // Improve build performance
+    target: 'es2020',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.logs in production
+        drop_debugger: true,
+      },
+    },
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
@@ -47,6 +56,8 @@ export default defineConfig((_) => ({
           'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/database'],
           // Icons
           'lucide': ['lucide-react'],
+          // Animation library (heavy)
+          'framer-motion': ['framer-motion'],
         },
       },
     },
