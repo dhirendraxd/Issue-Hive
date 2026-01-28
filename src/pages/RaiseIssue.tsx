@@ -200,6 +200,17 @@ export default function RaiseIssuePage() {
         title="Report Campus Problems"
         description="Report campus problems in Nepal with IssueHive. Add details, category, and urgency to help campus voices drive community engagement and faster resolutions."
         path="/raise-issue"
+        keywords={[
+          "report campus problems",
+          "report issues",
+          "campus issue form",
+          "student voice",
+          "campus feedback",
+          "problem reporting",
+          "issue submission",
+          "campus improvement suggestion",
+          "nepal college issues",
+        ]}
       />
       {/* Navbar */}
       <Navbar />

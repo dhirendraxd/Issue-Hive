@@ -15,6 +15,13 @@ export default function PrivacyPolicy() {
         title="Privacy Policy"
         description="IssueHive privacy policy for student voice and campus issue reporting in Nepal."
         path="/privacy"
+        keywords={[
+          "privacy policy",
+          "data protection",
+          "privacy statement",
+          "issuehive privacy",
+          "user privacy",
+        ]}
       />
       <ParticlesBackground fullPage hexOpacity={0.08}>
         <Navbar />

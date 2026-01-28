@@ -165,6 +165,7 @@ export default function Dashboard() {
         description="Manage your IssueHive profile, track reported campus problems, and follow resolution updates."
         path="/dashboard"
         noIndex
+        keywords={["dashboard", "profile", "my issues"]}
       />
       <Navbar />
       {/* Background */}

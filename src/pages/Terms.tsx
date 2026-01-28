@@ -15,6 +15,13 @@ export default function Terms() {
         title="Terms & Conditions"
         description="IssueHive service terms and conditions for student voice and campus issue reporting in Nepal."
         path="/terms"
+        keywords={[
+          "terms and conditions",
+          "service terms",
+          "user agreement",
+          "legal",
+          "issuehive terms",
+        ]}
       />
       <ParticlesBackground fullPage hexOpacity={0.08}>
         <Navbar />

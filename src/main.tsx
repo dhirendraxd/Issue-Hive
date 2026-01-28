@@ -125,3 +125,17 @@ reactRoot.render(
 		</HelmetProvider>
 	</ErrorBoundary>
 );
+// Defer GTM/Analytics initialization until after initial render
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', () => {
+		// GTM already loaded via script tag in index.html, just ensure it's deferred
+		if (typeof window !== 'undefined' && window.dataLayer) {
+			window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+		}
+	});
+} else {
+	// Page already loaded
+	if (typeof window !== 'undefined' && window.dataLayer) {
+		window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+	}
+}

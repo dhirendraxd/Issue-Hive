@@ -15,6 +15,13 @@ export default function TermsOfUse() {
         title="Terms of Use"
         description="IssueHive terms of use for student voice, campus voices, and community engagement across Nepalese campuses."
         path="/terms-of-use"
+        keywords={[
+          "terms of use",
+          "user agreement",
+          "acceptable use",
+          "issuehive terms",
+          "usage policy",
+        ]}
       />
       <ParticlesBackground fullPage hexOpacity={0.08}>
         <Navbar />

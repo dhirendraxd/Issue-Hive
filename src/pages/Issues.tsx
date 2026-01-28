@@ -215,6 +215,17 @@ export default function Issues() {
         title="Campus Issues Feed"
         description="Browse campus issue reporting in Nepal. Upvote, comment, and support campus voices to improve community engagement and resolution tracking."
         path="/issues"
+        keywords={[
+          "campus issues",
+          "issue feed",
+          "report problems",
+          "campus voices nepal",
+          "student issues",
+          "college problems",
+          "campus improvement tracking",
+          "issue resolution",
+          "community feedback",
+        ]}
       />
       <Navbar />
       <main className="scroll-mt-20">

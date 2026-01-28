@@ -10,6 +10,17 @@ export default function About() {
         title="About IssueHive"
         description="IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, rally support, and track resolutions with transparent community engagement."
         path="/about"
+        keywords={[
+          "about issuehive",
+          "student voice platform",
+          "campus voices",
+          "issue reporting nepal",
+          "college issue reporting",
+          "community engagement platform",
+          "campus problem reporting",
+          "nepalese student platform",
+          "transparent issue tracking",
+        ]}
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "FAQPage",

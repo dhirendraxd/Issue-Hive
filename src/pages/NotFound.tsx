@@ -30,7 +30,12 @@ const NotFound = () => {
   const quip = useMemo(() => QUIPS[Math.floor(Math.random() * QUIPS.length)], []);
   return (
     <div className="min-h-screen bg-stone-50 relative overflow-hidden animate-in fade-in duration-300">
-      <Seo title="Page Not Found" description="IssueHive page not found." noIndex />
+      <Seo 
+        title="Page Not Found" 
+        description="IssueHive page not found." 
+        noIndex
+        keywords={["404", "page not found"]}
+      />
       <ParticlesBackground fullPage hexOpacity={0.12}>
         <div className="absolute inset-0 pointer-events-none opacity-40" aria-hidden>
           <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full bg-gradient-to-br from-orange-500/20 via-amber-500/15 to-red-500/20 blur-3xl" />

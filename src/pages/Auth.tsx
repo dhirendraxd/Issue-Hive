@@ -133,6 +133,7 @@ export default function Auth() {
         description="Sign in to IssueHive to report campus problems and support campus voices."
         path="/auth"
         noIndex
+        keywords={["login", "sign in", "authentication"]}
       />
       {/* Background Effects */}
       <ParticlesBackground fullPage hexOpacity={0.10}>

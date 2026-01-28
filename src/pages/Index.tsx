@@ -1,4 +1,4 @@
-import { useEffect, useState, lazy } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,8 +10,10 @@ import { useAuth } from "@/hooks/use-auth";
 import { ArrowRight } from "lucide-react";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Lazy load heavy particle/animation components (framer-motion already code-split via vite.config)
+// Only load on desktop for better mobile performance
 const HeroRings = lazy(() => import("@/components/HeroRings"));
 const HiveHexParticles = lazy(() => import("@/components/HiveHexParticles"));
 const CommunityNodes = lazy(() => import("@/components/CommunityNodes"));
@@ -143,6 +145,7 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
 
 const Index = () => {
   const { stats } = useIssuesFirebase();
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">
@@ -150,6 +153,18 @@ const Index = () => {
         title="Issue Reporting Nepal & Campus Voices"
         description="IssueHive is a student voice platform for issue reporting in Nepal. Report campus problems, share campus event posts, and drive community engagement with transparent resolution tracking."
         path="/"
+        keywords={[
+          "issue reporting nepal",
+          "college issue reporting system nepal",
+          "campus events posts nepal",
+          "report campus problems",
+          "student voice",
+          "campus voices",
+          "community engagement",
+          "nepalese college platform",
+          "student activism",
+          "campus improvement",
+        ]}
       />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
   <Navbar />
@@ -157,51 +172,89 @@ const Index = () => {
   <main id="main" className="scroll-mt-20">
         {/* Hero */}
         <div className="relative min-h-[100svh]">
-          {/* Background decorative layers with softer edges */}
-          <div 
-            className="absolute inset-0 z-0 pointer-events-none"
-            style={{
-              WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
-              maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
-            }}
-          >
-            <HiveHexParticles className="absolute inset-0 pointer-events-none" opacity={0.12} />
-            <CommunityNodes className="absolute inset-0 pointer-events-none" />
-          </div>
-          <HeroRings />
-          <AmbientDust className="absolute inset-0 z-0 pointer-events-none" />
-          <BubbleParticles className="absolute inset-0 z-0 pointer-events-none" />
+          {/* Background decorative layers - only on desktop for performance */}
+          {!isMobile && (
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none"
+              style={{
+                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
+                maskImage: "linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,1) 10%, rgba(0,0,0,1) 85%, rgba(0,0,0,0.85) 100%)",
+              }}
+            >
+              <Suspense fallback={null}>
+                <HiveHexParticles className="absolute inset-0 pointer-events-none" opacity={0.12} />
+                <CommunityNodes className="absolute inset-0 pointer-events-none" />
+              </Suspense>
+            </div>
+          )}
+          {!isMobile && (
+            <Suspense fallback={null}>
+              <HeroRings />
+              <AmbientDust className="absolute inset-0 z-0 pointer-events-none" />
+              <BubbleParticles className="absolute inset-0 z-0 pointer-events-none" />
+            </Suspense>
+          )}
           <Hero />
         </div>
 
       {/* Below-hero content with subtle background layers */}
-  <ParticlesBackground longFade hexOpacity={0.16}>
-        {/* Stats */}
-        <div className="py-8">
-          <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
-        </div>
+  {!isMobile ? (
+    <ParticlesBackground longFade hexOpacity={0.16}>
+      {/* Stats */}
+      <div className="py-8">
+        <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
+      </div>
 
-        {/* Mid CTA (replaces form section) */}
-        <section id="submit" className="px-4 py-16">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
-            <p className="mt-2 text-muted-foreground">
-              IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Link to="/about">
-                <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
-                  How It Works
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+      {/* Mid CTA (replaces form section) */}
+      <section id="submit" className="px-4 py-16">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
+          <p className="mt-2 text-muted-foreground">
+            IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/about">
+              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+                How It Works
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Community */}
-        <CommunityCTA />
-  </ParticlesBackground>
+      {/* Community */}
+      <CommunityCTA />
+    </ParticlesBackground>
+  ) : (
+    <>
+      {/* Stats */}
+      <div className="py-8 bg-stone-50">
+        <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
+      </div>
+
+      {/* Mid CTA (replaces form section) */}
+      <section id="submit" className="px-4 py-16 bg-stone-50">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">Your Voice, Your Campus</h2>
+          <p className="mt-2 text-muted-foreground">
+            IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Link to="/about">
+              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+                How It Works
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Community */}
+      <CommunityCTA />
+    </>
+  )}
       </main>
 
       {/* Footer */}
