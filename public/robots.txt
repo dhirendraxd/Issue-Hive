@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://issue-hive-64473.firebaseapp.com/sitemap.xml
+Sitemap: https://issue-hive-nine.vercel.app/sitemap.xml

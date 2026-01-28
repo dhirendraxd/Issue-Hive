@@ -1,55 +1,55 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/</loc>
+    <loc>https://issue-hive-nine.vercel.app/</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/about</loc>
+    <loc>https://issue-hive-nine.vercel.app/about</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/issues</loc>
+    <loc>https://issue-hive-nine.vercel.app/issues</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/raise-issue</loc>
+    <loc>https://issue-hive-nine.vercel.app/raise-issue</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/auth</loc>
+    <loc>https://issue-hive-nine.vercel.app/auth</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/dashboard</loc>
+    <loc>https://issue-hive-nine.vercel.app/dashboard</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/terms</loc>
+    <loc>https://issue-hive-nine.vercel.app/terms</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/privacy</loc>
+    <loc>https://issue-hive-nine.vercel.app/privacy</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>
   </url>
   <url>
-    <loc>https://issue-hive-64473.firebaseapp.com/terms-of-use</loc>
+    <loc>https://issue-hive-nine.vercel.app/terms-of-use</loc>
     <lastmod>2026-01-28</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.4</priority>

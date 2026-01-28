@@ -8,6 +8,7 @@ type SeoProps = {
   keywords?: string[];
   ogImage?: string;
   noIndex?: boolean;
+  jsonLd?: Record<string, unknown> | Array<Record<string, unknown>>;
 };
 
 export default function Seo({
@@ -17,12 +18,15 @@ export default function Seo({
   keywords,
   ogImage,
   noIndex,
+  jsonLd,
 }: SeoProps) {
   const fullTitle = buildTitle(title);
   const metaDescription = description || SEO.defaultDescription;
   const keywordList = (keywords || SEO.keywords).join(", ");
   const pageUrl = path ? `${SEO.baseUrl}${path}` : SEO.baseUrl;
   const imageUrl = ogImage ? `${SEO.baseUrl}${ogImage}` : `${SEO.baseUrl}${SEO.ogImage}`;
+
+  const jsonLdArray = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
 
   return (
     <Helmet>
@@ -58,6 +62,11 @@ export default function Seo({
           },
         })}
       </script>
+      {jsonLdArray.map((entry, index) => (
+        <script key={`jsonld-${index}`} type="application/ld+json">
+          {JSON.stringify(entry)}
+        </script>
+      ))}
     </Helmet>
   );
 }

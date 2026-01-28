@@ -1,6 +1,6 @@
 export const SEO = {
   siteName: "IssueHive",
-  baseUrl: "https://issue-hive-64473.firebaseapp.com",
+  baseUrl: "https://issue-hive-nine.vercel.app",
   defaultTitle: "IssueHive | Issue Reporting Nepal & Campus Voices",
   defaultDescription:
     "IssueHive is a student voice platform for issue reporting in Nepal. Report campus problems, share campus event posts, and drive community engagement with transparent resolution tracking.",

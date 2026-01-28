@@ -10,6 +10,36 @@ export default function About() {
         title="About IssueHive"
         description="IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, rally support, and track resolutions with transparent community engagement."
         path="/about"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            {
+              "@type": "Question",
+              name: "What is IssueHive?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "IssueHive is a student voice platform for issue reporting in Nepal. Students report campus problems, gather support, and track resolutions.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "How do students report campus problems?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Create a post with a title, description, and category. Campus voices can comment and upvote to drive community engagement.",
+              },
+            },
+            {
+              "@type": "Question",
+              name: "Does IssueHive support campus events posts?",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: "Yes, campus events posts can be shared to keep the community informed and engaged.",
+              },
+            },
+          ],
+        }}
       />
       <Navbar />
       <main className="scroll-mt-20">
@@ -108,6 +138,31 @@ export default function About() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </section>
+
+            {/* FAQ */}
+            <section className="mx-auto max-w-3xl mt-24">
+              <h2 className="text-2xl font-display font-semibold tracking-tight mb-8">FAQ</h2>
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold">What is IssueHive?</h3>
+                  <p className="text-sm text-stone-600 mt-1">
+                    IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, gather support, and track resolutions.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">How do students report campus problems?</h3>
+                  <p className="text-sm text-stone-600 mt-1">
+                    Create a post with a title, description, and category. Community engagement grows through upvotes and comments.
+                  </p>
+                </div>
+                <div>
+                  <h3 className="font-semibold">Does IssueHive support campus events posts?</h3>
+                  <p className="text-sm text-stone-600 mt-1">
+                    Yes. Campus events posts help keep the community informed and active.
+                  </p>
                 </div>
               </div>
             </section>
