@@ -1,0 +1,26 @@
+# Exclude documentation and reports from deployment
+*.md
+!README.md
+/docs/
+
+# Local/cache folders
+.cache/
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Local env files
+.env*
+
+# Firebase tooling artifacts
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# Local scripts not needed for deploy
+start-server.sh
+
+# Sensitive files
+serviceAccountKey.json
