@@ -307,6 +307,16 @@ export function useIssuesFirebase() {
       }
     },
     // No onSuccess invalidation needed - real-time subscription handles it
+    onSettled: (_data, _error, id) => {
+      qc.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'issue-engagement',
+      });
+      if (id && user?.uid) {
+        qc.invalidateQueries({ queryKey: ["user-vote", id, user.uid] });
+        qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+        qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
+      }
+    },
   });
 
   const downvoteIssue = useMutation({
@@ -395,13 +405,6 @@ export function useIssuesFirebase() {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
-    // Keep UI in sync for analytics
-    onSettled: (_data, _error, id) => {
-      if (user?.uid) {
-        qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
-        qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
-      }
-    },
     onSuccess: (id, _vars, context) => {
       // Log activity to local storage using previous vote
       if (user?.uid) {
@@ -416,6 +419,16 @@ export function useIssuesFirebase() {
           // User added downvote
           logActivity(user.uid, 'downvote', { issueId: id, voteValue: -1 });
         }
+      }
+    },
+    onSettled: (_data, _error, id) => {
+      qc.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'issue-engagement',
+      });
+      if (id && user?.uid) {
+        qc.invalidateQueries({ queryKey: ["user-vote", id, user.uid] });
+        qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
+        qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
       }
     },
   });

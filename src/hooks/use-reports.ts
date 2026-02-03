@@ -41,7 +41,7 @@ export interface Report {
     reporterName: string;
     reason: string;
     details?: string;
-    createdAt: any;
+    createdAt: number | { toMillis?: () => number };
   }>;
 }
 

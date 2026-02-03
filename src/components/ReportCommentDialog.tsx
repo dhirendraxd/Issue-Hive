@@ -49,8 +49,8 @@ export default function ReportCommentDialog({
   const [reason, setReason] = useState("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [existingReport, setExistingReport] = useState<any>(null);
-  const [reportDetails, setReportDetails] = useState<any[]>([]);
+  const [existingReport, setExistingReport] = useState<Record<string, unknown> | null>(null);
+  const [reportDetails, setReportDetails] = useState<Record<string, unknown>[]>([]);
   const [loadingReport, setLoadingReport] = useState(false);
 
   // Fetch existing report when dialog opens
