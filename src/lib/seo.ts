@@ -3,7 +3,7 @@ export const SEO = {
   baseUrl: "https://issue-hive-nine.vercel.app",
   defaultTitle: "IssueHive | Issue Reporting Nepal & Campus Voices",
   defaultDescription:
-    "IssueHive is a student voice platform for issue reporting in Nepal. Report campus problems, share campus event posts, and drive community engagement with transparent resolution tracking.",
+    "College-focused platform that enables students to submit, support, and track campus-related issues simply and transparently. Designed with a minimal, student-first approach, the project emphasizes community moderation, voice, and clarity in how issues are visible.",
   keywords: [
     "issue reporting nepal",
     "college issue reporting system nepal",
@@ -14,7 +14,7 @@ export const SEO = {
     "campus voices",
     "community engagement",
   ],
-  ogImage: "/og%20image%20new%20.png",
+  ogImage: "/og-image.png",
 };
 
 export function buildTitle(pageTitle?: string) {

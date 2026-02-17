@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "preview": "vite preview",
-    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:rules": "npx firebase-tools deploy --only firestore:rules",
     "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
   },
   "lint-staged": {
@@ -88,7 +88,6 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "firebase-admin": "^13.6.0",
-    "firebase-tools": "^13.4.0",
     "globals": "^15.9.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
@@ -97,7 +96,7 @@
     "tailwindcss": "^3.4.11",
     "terser": "^5.46.0",
     "typescript": "^5.5.3",
-    "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "typescript-eslint": "^8.14.0",
+    "vite": "^5.4.21"
   }
 }

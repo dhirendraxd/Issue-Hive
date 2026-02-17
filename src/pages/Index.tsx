@@ -151,7 +151,7 @@ const Index = () => {
     <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">
       <Seo
         title="Issue Reporting Nepal & Campus Voices"
-        description="IssueHive is a student voice platform for issue reporting in Nepal. Report campus problems, share campus event posts, and drive community engagement with transparent resolution tracking."
+        description="College-focused platform that enables students to submit, support, and track campus-related issues simply and transparently. Designed with a minimal, student-first approach, the project emphasizes community moderation, voice, and clarity in how issues are visible."
         path="/"
         keywords={[
           "issue reporting nepal",
