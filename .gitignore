@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+*.md
+
+
 # Lock files for other package managers
 bun.lockb
 yarn.lock

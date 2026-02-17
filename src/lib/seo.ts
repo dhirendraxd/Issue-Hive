@@ -14,7 +14,7 @@ export const SEO = {
     "campus voices",
     "community engagement",
   ],
-  ogImage: "/og-image.webp",
+  ogImage: "/og%20image%20new%20.png",
 };
 
 export function buildTitle(pageTitle?: string) {

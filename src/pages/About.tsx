@@ -65,6 +65,9 @@ export default function About() {
               <p className="mt-6 text-lg text-stone-600 leading-relaxed">
                 A student platform to report campus issues, rally support, and track resolutions.
               </p>
+              <p className="mt-4 text-sm sm:text-base text-stone-600 leading-relaxed">
+                This project won <span className="font-semibold text-stone-800">3rd Prize at KIST IT Fair 2082</span> in February 2026. For the future, we are focused on improving IssueHive so it can win even more and create bigger impact for campus voices.
+              </p>
               <div className="flex flex-wrap gap-2 mt-8">
                 <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Student‑first</span>
                 <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Transparent</span>

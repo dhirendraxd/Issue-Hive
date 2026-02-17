@@ -1,0 +1,339 @@
+Issue Hive — Full Project Documentation (Technical + Business)
+
+Last updated: 2026-02-04
+
+============================================================
+1) Executive Summary (Business + Product)
+============================================================
+Issue Hive is a collaborative issue-reporting platform built for college communities. It lets students, faculty, and administrators report campus problems, discuss them publicly, and track resolutions transparently. The business goal is to reduce fragmented issue reporting (emails, chats, informal messages), increase accountability, and create a public feedback loop that accelerates resolution and improves trust.
+
+Primary outcomes:
+- Faster issue triage and resolution.
+- Transparent public status tracking.
+- Community engagement (comments, votes, follow, messages).
+- Data-driven campus management (analytics and engagement metrics).
+
+Core user groups:
+- Students: report issues, upvote, comment, follow updates.
+- Faculty/Staff: track issues and communicate progress.
+- Administrators: see trends, manage moderation, and resolve issues.
+
+============================================================
+2) Tech Stack & Tooling
+============================================================
+Frontend:
+- Vite (build + dev server)
+- React 18 + TypeScript
+- React Router for routing
+- Tailwind CSS for styling
+- shadcn-style UI components (Radix UI primitives + Tailwind)
+- React Query for client state caching and server sync
+- Framer Motion for animations
+- Recharts for charts
+- Sonner for toast notifications
+- Lucide React for icons
+
+Backend / Data Layer (Client-side Firebase):
+- Firebase Auth (email/password + Google)
+- Firestore (issues, comments, users, votes, reports, messages)
+- Firebase Storage (profile pictures)
+- Firebase Realtime Database (presence, live notifications, realtime issues/comments)
+- Firebase Analytics (optional, GA4 + GTM integrations)
+
+Security & Quality:
+- Client-side input sanitization and validation
+- Rate limiting (client-side, plus expected rules in Firebase)
+- CSP/CSRF helpers
+- ESLint for linting
+
+============================================================
+3) High-Level Architecture
+============================================================
+App structure:
+- Single Page Application (SPA)
+- Entry: main.tsx sets up security utilities, global error handling, Helmet provider, then renders App.
+- App.tsx wires providers (React Query, Tooltips, Toasts), router routes, and lazy-loaded pages.
+
+Data model (Firestore + Realtime DB):
+- issues (collection)
+  - fields: title, description, category, status, votes, createdBy, createdByName, createdByPhotoURL, college, createdAt, updatedAt, visibility, urgency, anonymous, attachments
+  - nested: votes subcollection
+- comments (collection)
+  - fields: issueId, userId, userName, content, likes, createdAt, parentId?, pinnedAt?, pinnedBy?
+  - nested: likes subcollection
+- users (collection)
+  - profile + stats: displayName, photoURL, username, coverUrl, bio, socials, stats
+  - subcollections: followers, following
+- reports & comment_reports (collections)
+  - moderation reports, votes, clarifications, status
+- conversations (collection)
+  - participants[] with messages subcollection
+- Realtime Database nodes: issues, notifications, status, comments (used for optional realtime features)
+
+============================================================
+4) User & Data Flow (End-to-End)
+============================================================
+1) Authentication
+   - User signs in via email/password or Google.
+   - Auth state tracked by useAuth hook.
+   - User profile is synced into Firestore on sign-in.
+
+2) Raise Issue
+   - Authenticated user submits issue details.
+   - Input validation (length, suspicious patterns, allowed categories).
+   - Issue is saved in Firestore; React Query cache updated via realtime listener.
+   - User stats incremented.
+
+3) Browse Issues
+   - Issues page lists entries from Firestore in realtime.
+   - Filter by search, category, status, and sort.
+
+4) Issue Engagement
+   - Users upvote/downvote (stored in votes subcollection + aggregate votes).
+   - Comments can be added, replied to, or pinned by issue owner.
+   - Comment likes tracked via subcollection on each comment.
+
+5) Progress & Resolution
+   - Issue owners can update status history, add progress updates, and resolve issues with resolution metadata.
+
+6) Moderation / Reports
+   - Users can report issues or comments.
+   - Report voting & clarification flows allow community validation.
+   - Moderators/owners can dismiss or resolve reports.
+
+7) Messaging & Following
+   - Users can follow each other.
+   - Direct messaging via conversations/messages collections.
+
+8) Analytics & SEO
+   - Issue analytics dialog composes engagement metrics.
+   - JSON-LD schema markup for SEO.
+   - GA4 events + pageview tracking.
+
+============================================================
+5) Key Entry Points
+============================================================
+- main.tsx: bootstraps app, security helpers (CSRF/CSP), global error handling.
+- App.tsx: React Router routes, React Query, Toasters, lazy loading.
+
+Routes:
+- / -> Index (home)
+- /about
+- /issues
+- /raise-issue
+- /auth
+- /dashboard
+- /u/:uid (user profile)
+- /profile/:uid/edit
+- /terms, /privacy, /terms-of-use
+- * -> NotFound
+
+============================================================
+6) Function Reference (Exported Functions & Hooks)
+============================================================
+Below is a full list of exported functions by module. These are the primary functional contracts used throughout the app.
+
+A) integrations/firebase/auth.ts
+- signIn(email, password): email/password login
+- signUp(email, password): account creation
+- signOut(): logout
+- signInWithGoogle(): Google popup auth
+
+B) integrations/firebase/firestore.ts
+- createIssue(issueData): create new issue
+- getIssue(id): fetch single issue
+- getIssues(constraints?): fetch list of issues
+- subscribeToIssues(onUpdate, onError?, constraints?): realtime list listener
+- subscribeToIssue(issueId, onUpdate, onError?): realtime single issue listener
+- updateIssue(id, data): partial update
+- deleteIssue(id): delete issue
+- pinComment(commentId, issueId, userId): toggle pinned comment (owner only)
+- createComment(data): add a comment
+- getCommentsForIssue(issueId, constraints?): fetch issue comments
+- subscribeToComments(issueId, onUpdate, onError?, constraints?): realtime comment listener
+- getUserVote(issueId, userId): fetch user vote on an issue
+- setVote(issueId, userId, vote): set or toggle vote
+- removeVote(issueId, userId): delete user vote
+- getIssueVoteCounts(issueId): compute upvote/downvote counts
+- countUserTopLevelComments(issueId, userId): count non-reply comments
+- getUserCommentLike(commentId, userId): fetch comment like
+- toggleCommentLike(commentId, userId): toggle like/unlike
+- getUserActivity(userId): aggregate votes/comments/likes for user
+
+C) integrations/firebase/realtime.ts
+- createRealtimeIssue(issue): create realtime issue
+- getRealtimeIssues(): list realtime issues
+- getRealtimeIssuesByStatus(status): filter realtime issues by status
+- getRealtimeIssuesByUser(userId): filter realtime issues by creator
+- updateRealtimeIssue(issueId, updates): update realtime issue
+- deleteRealtimeIssue(issueId): remove issue
+- incrementRealtimeIssueVotes(issueId): increment votes count
+- subscribeToRealtimeIssues(callback, onError?): realtime issues listener
+- subscribeToRealtimeIssue(issueId, callback, onError?): realtime issue listener
+- createNotification(notification): add realtime notification
+- getUserNotifications(userId): list notifications
+- markNotificationAsRead(notificationId): set read
+- subscribeToUserNotifications(userId, callback, onError?): realtime notifications listener
+- setUserOnlineStatus(userId, isOnline): presence status
+- subscribeToUserStatus(userId, callback): realtime status
+- addRealtimeComment(comment): add realtime comment
+- subscribeToIssueComments(issueId, callback): realtime comments listener
+
+D) integrations/firebase/profile.ts
+- uploadProfilePicture(file, userId): upload to Storage
+- updateUserProfilePicture(user, photoURL): sync to Auth + Firestore
+- setDefaultAvatar(user, style): set DiceBear avatar
+- deleteProfilePicture(photoURL): no-op for external/base64
+- updateUserDisplayName(user, displayName): sync displayName across data
+- updateUsername(userId, username): update username in Firestore
+
+E) integrations/firebase/user-sync.ts
+- syncUserProfile(user): ensure profile fields and createdAt
+- updateUserNameInIssues(userId, newDisplayName): backfill createdByName
+- updateUserPhotoInIssues(userId, newPhotoURL): backfill createdByPhotoURL
+
+F) hooks (React Query + React)
+- useActivityTracker(): combines local activity + Firebase activity
+- useAuth(): auth state + Firestore sync
+- useAvatarUrl(photoURL, userId): resolve firestore:// avatar refs
+- useComments(issueId): realtime comments with optimistic updates
+- useDebounce(callback, delay): debounce helper
+- useIsFollowing(targetUserId): query following status
+- useFollowCounts(userId): query followers/following count
+- useFollowUser(): follow mutation
+- useUnfollowUser(): unfollow mutation
+- useFollowersList(userId): list followers
+- useFollowingList(userId): list following
+- useIssueComments(issueId): query comments list
+- useIssueEngagement(issueIds): compute engagement metrics
+- useIssueVotes(issueId): fetch vote list
+- useIssuesFirebase(): primary issues hook (CRUD + realtime + stats)
+- useIssuesByCategory(category): filter issues
+- useIssuesByStatus(status): filter issues
+- useUserConversations(): list conversations
+- useConversationMessages(conversationId): list messages
+- useCreateConversation(): create or reuse conversation
+- useSendMessage(): send message
+- useSentMessages(): list user’s sent messages
+- useReceivedMessages(): list user’s received messages
+- useMarkMessagesAsRead(): mark unread messages
+- useIsMobile(): breakpoint hook
+- useReportsAgainstMe(): reports about my content
+- useCommentReportsAgainstMe(): comment reports about me
+- useCommentReportsOnMyIssues(issueIds): reports on comments for my issues
+- useReviewableReports(): moderation queue
+- useReportsForIssue(issueId): issue-specific reports
+- useVoteOnReport(): vote on report validity
+- useReportVote(reportId): my vote on report
+- useReportVoteCounts(reportId): report vote totals
+- useUpdateReportStatus(): update report status
+- useDeleteReportedComment(): delete comment + resolve report
+- useKeepReportedComment(): dismiss report
+- useSubmitClarification(): add clarification
+- useToast(): toast state access
+- toast(...): create a toast
+- useUserActivity(): Firebase-backed activity analytics
+- useUserProfile(userId): fetch profile data
+- useUserVote(issueId): get current user vote
+
+G) lib utilities
+- cn(...): Tailwind class merger
+- formatRelativeTime(input): relative time formatting
+- formatDateShort(input): date formatting
+- formatDateWithRelative(input): combo format
+- sanitizeInput(input): remove scripts and handlers
+- sanitizeUrl(url): safe URL only
+- isValidEmail(email)
+- validateLength(input, min, max)
+- containsSuspiciousPatterns(input)
+- RateLimiter class: isAllowed(), recordAttempt(), reset(), getRemainingAttempts(), getTimeUntilReset()
+- debounce(func, waitMs)
+- throttle(func, limitMs)
+- validateIssueData({title, description, category})
+- validateCommentData(content)
+- sanitizeHTML(input)
+- sanitizeText(input)
+- sanitizeEmail(email)
+- sanitizeURL(url)
+- sanitizeFileName(fileName)
+- limitLength(input, maxLength)
+- isSafeString(input)
+- resolveAvatarUrl(photoURL, userId)
+- getResolvedAvatarUrlSync(photoURL, userId)
+- getDefaultAvatarUrl(userId, style)
+- getAvatarPreviews(userId)
+- getUserAvatarUrl(userId, seed?)
+- getUserAvatarWithStyle(userId, style, seed?)
+- getUserActivities(userId)
+- logActivity(userId, type, data)
+- getActivitySummary(userId)
+- clearUserActivities(userId)
+- exportActivities(userId)
+- getRecentActivities(userId, limit?)
+- validateEnv()
+- isFirebaseConfigured()
+- initializeGA4()
+- trackEvent(eventName, params?)
+- trackPageView(pageName, pagePath)
+- useGA4()
+- formatResetTime(ms)
+- setupCSPReporting()
+- validateCSP()
+- checkSecurityHeaders()
+- generateCSRFToken()
+- storeCSRFToken(token)
+- getCSRFToken()
+- validateCSRFToken(token)
+- clearCSRFToken()
+- initializeCSRFToken()
+- buildTitle(pageTitle?)
+
+H) components (exported function components)
+- FirebaseStatus(): Firebase setup diagnostics UI
+- IssuesFilterBar(...): issue filtering UI
+- UserDisplayName(...): display name text from profile
+- BreadcrumbSchema(...): JSON-LD breadcrumbs
+- IssuePageSchema(...): JSON-LD for issue detail
+- ArticlePageSchema(...): JSON-LD for article
+- LocalBusinessSchema(...): JSON-LD for college
+- Toaster(): toast renderer
+- useSidebar(): hook for sidebar context
+
+============================================================
+7) Business Logic Highlights
+============================================================
+- Issue reporting is the primary business workflow. It creates public visibility, enabling student voices to surface operational issues.
+- Voting and comments provide community validation. High support drives attention.
+- Progress updates and resolution create accountability.
+- Reporting and moderation provide community safety and trust.
+- Messaging and following create community networks and real-time collaboration.
+
+============================================================
+8) Security & Trust Design
+============================================================
+- Input sanitization (XSS-safe, URL validation, file name checks).
+- Client-side rate limiting (spam throttling).
+- CSP violation monitoring and CSRF token generation.
+- Firebase rules and validation are expected to enforce server-side access control.
+
+============================================================
+9) SEO & Discoverability
+============================================================
+- JSON-LD schema for website, breadcrumbs, issue pages, articles, and local business.
+- Open Graph defaults and canonical URL strategy.
+- GA4 tracking for engagement and page views.
+
+============================================================
+10) Operational Notes
+============================================================
+Scripts:
+- dev: run Vite dev server (port 8080)
+- build: production bundle
+- preview: local preview of build
+- lint: lint check
+- deploy:rules: deploy Firestore rules
+
+============================================================
+11) Summary
+============================================================
+Issue Hive is a full-stack, Firebase-backed community issue tracker. It combines strong UX, realtime data, and collaboration features to deliver transparent, accountable issue reporting for campuses. This document lists the complete exported function surface area, explains the data flow, and covers both technical and business context so that other LLMs and human engineers can understand and extend the system safely.

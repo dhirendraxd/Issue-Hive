@@ -35,8 +35,11 @@ export const COLLECTIONS = {
 // Issue CRUD operations
 export const createIssue = async (issueData: Omit<Issue, 'id' | 'createdAt' | 'updatedAt'>) => {
   const now = Timestamp.now();
+  const sanitizedIssueData = Object.fromEntries(
+    Object.entries(issueData).filter(([, value]) => value !== undefined)
+  );
   const docRef = await addDoc(collection(db, COLLECTIONS.ISSUES), {
-    ...issueData,
+    ...sanitizedIssueData,
     createdAt: now,
     updatedAt: now,
   });
