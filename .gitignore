@@ -1,5 +1,5 @@
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,89 +7,60 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
+coverage/
+.cache/
+.next/
+.out/
+.build/
 *.local
-
-*.md
-
+public/og-image.webp
+bundle-stats.html
 
 # Lock files for other package managers
 bun.lockb
 yarn.lock
 pnpm-lock.yaml
 
-# Editor directories and files
+# Editor files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+.DS_Store
+Thumbs.db
 
-# Documentation (only README in git)
+# Markdown documentation
 *.md
-!README.md
 docs/
 .git-safety-check.txt
 
-# Build and cache
-.cache
-.next
-.out
-.build
-coverage
-
-# Environment variables (CRITICAL - DO NOT PUSH)
+# Environment variables and credentials
 .env
-.env.local
-.env.development
-.env.test
-.env*.local
+.env.*
+serviceAccountKey.json
 
-# Firebase test files
+# Firebase local state and debug output
 .firebase/
 .firebaserc
 firebase-debug.log
 firebase-debug.*.log
+
+# Local test and maintenance scripts
 firebase-test.js
 firebase-verify.js
 test-firebase.sh
-
-# Setup/test scripts
-start-server.sh
 public/test-firebase.js
-
-# Mac system files
-.DS_Store
-Thumbs.db
-.env
-.env.example
-.env.local
-.env.development
-.env.production
-.env.test
-.env*.local
-
-# Firebase
-.firebase/
-.firebaserc
-firebase-debug.log
-firebase-debug.*.log
-test-firebase.sh
-public/test-firebase.js
-
-# Mac system files
-.DS_Store
-public/og-image.webp
-serviceAccountKey.json
 check-firebase.js
 verify-fix.js
 fix-timestamps.js
 reset-user-profiles.js
 reset-usernames.js
-reset-user-emails.js
-
+node_modules

@@ -1,9 +1,6 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
-import { getAnalytics, type Analytics } from 'firebase/analytics';
-import { getDatabase, type Database } from 'firebase/database';
 import { logger } from '@/lib/logger';
 
 // Firebase configuration
@@ -45,23 +42,12 @@ const isConfigured = Boolean(
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
-let realtimeDb: Database | null = null;
-let storage: FirebaseStorage | null = null;
-let analytics: Analytics | null = null;
 
 try {
   if (isConfigured) {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    realtimeDb = getDatabase(app);
-    storage = getStorage(app);
-    // Defer analytics initialization to improve initial load performance
-    if (typeof window !== 'undefined') {
-      setTimeout(() => {
-        analytics = getAnalytics(app!);
-      }, 3000); // Initialize after 3 seconds
-    }
     console.log('[Firebase] ✅ Successfully initialized');
   } else {
     console.warn('[Firebase] ⚠️ Not configured - missing required environment variables');
@@ -72,6 +58,6 @@ try {
   logger.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
 }
 
-export { app, auth, db, realtimeDb, storage, analytics };
+export { app, auth, db };
 export const isFirebaseConfigured = isConfigured;
 export default app;

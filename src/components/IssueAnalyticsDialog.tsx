@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, AlertCircle, CheckCircle2, Pin } from "lucide-react";
+import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, CheckCircle2, Pin } from "lucide-react";
 import { formatRelativeTime } from "@/lib/utils";
 import type { Issue } from "@/types/issue";
 import { useIssueComments } from "@/hooks/use-issue-comments";
@@ -62,7 +62,7 @@ export default function IssueAnalyticsDialog({
         return old.map(c => {
           if (c.id === commentId) {
             if (c.pinnedAt) {
-              const { pinnedAt, pinnedBy, ...rest } = c;
+              const { pinnedAt: _pinnedAt, pinnedBy: _pinnedBy, ...rest } = c;
               return rest as CommentDoc;
             } else {
               return { ...c, pinnedAt: Timestamp.now(), pinnedBy: user!.uid };

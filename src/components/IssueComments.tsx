@@ -30,7 +30,6 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
   const [value, setValue] = useState('');
   const [replyTo, setReplyTo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [reportedCommentId, setReportedCommentId] = useState<string | null>(null);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportingCommentData, setReportingCommentData] = useState<{
     id: string;
@@ -444,4 +443,3 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
     </div>
   );
 }
-

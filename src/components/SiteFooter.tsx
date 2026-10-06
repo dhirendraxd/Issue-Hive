@@ -31,7 +31,7 @@ export default function SiteFooter() {
             <div className="font-medium mb-3 text-stone-900">Community</div>
             <ul className="space-y-2 text-sm">
               <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-orange-600 transition-colors">GitHub</a></li>
-              <li><a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-orange-600 transition-colors">Twitter</a></li>
+              <li><a href="https://x.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-orange-600 transition-colors">X</a></li>
               <li><a href="mailto:support@issue-hive.com" className="text-muted-foreground hover:text-orange-600 transition-colors">Contact</a></li>
             </ul>
           </div>

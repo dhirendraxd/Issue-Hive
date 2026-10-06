@@ -158,7 +158,7 @@ export function useCommentReportsAgainstMe() {
  * Fetch comment reports filed on the user's issues
  * Used by issue owners to see reports on comments in their issues
  */
-export function useCommentReportsOnMyIssues(issueIds: string[]) {
+export function useCommentReportsOnMyIssues() {
   const { user } = useAuth();
   
   return useQuery({
@@ -535,7 +535,6 @@ export function useDeleteReportedComment() {
 
   return useMutation({
     mutationFn: async ({
-      issueId,
       commentId,
       reportId,
     }: {

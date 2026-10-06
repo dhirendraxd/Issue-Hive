@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, RefreshCw, Bug, Coffee } from 'lucide-react';
+import { Home, RefreshCw, Coffee } from 'lucide-react';
 
 type State = { hasError: boolean; error?: Error | null; info?: React.ErrorInfo | null };
 

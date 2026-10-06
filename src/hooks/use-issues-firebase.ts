@@ -7,7 +7,6 @@ import {
   getIssue,
   createIssue, 
   updateIssue,
-  getUserVote,
   setVote,
   subscribeToIssues,
   where,
@@ -18,10 +17,32 @@ import {
   updateDoc,
   db,
   arrayUnion,
-  type FieldValue,
 } from "@/integrations/firebase";
 import { useAuth } from "./use-auth";
 import { isFirebaseConfigured } from "@/integrations/firebase/config";
+
+function normalizeIssue(issue: Issue): Issue {
+  const toMillis = (value: unknown): number => {
+    if (typeof value === "number") return value;
+    if (value instanceof Timestamp) return value.toMillis();
+    if (value instanceof Date) return value.getTime();
+    return Date.now();
+  };
+
+  return {
+    ...issue,
+    createdAt: toMillis(issue.createdAt),
+    updatedAt: toMillis(issue.updatedAt),
+  };
+}
+
+function mergeIssues(...lists: Issue[][]): Issue[] {
+  const issuesById = new Map<string, Issue>();
+  for (const issue of lists.flat()) {
+    issuesById.set(issue.id, normalizeIssue(issue));
+  }
+  return [...issuesById.values()].sort((a, b) => b.createdAt - a.createdAt);
+}
 
 /**
  * Firebase-enabled version of useIssues hook
@@ -32,62 +53,68 @@ export function useIssuesFirebase() {
   const qc = useQueryClient();
   const { user } = useAuth();
   const firebaseEnabled = isFirebaseConfigured;
+  const issuesQueryKey = useMemo(
+    () => ["issues-firebase", user?.uid ?? null] as const,
+    [user?.uid]
+  );
 
-  // Use real-time subscription for issues
+  // Keep public issues and the signed-in user's own private/draft issues separate
+  // so each Firestore query can be proven safe by the security rules.
   useEffect(() => {
     if (!firebaseEnabled) return;
 
-    const unsubscribe = subscribeToIssues(
+    let publicIssues: Issue[] = [];
+    let ownedIssues: Issue[] = [];
+    const updateCache = () => {
+      qc.setQueryData(issuesQueryKey, mergeIssues(publicIssues, ownedIssues));
+    };
+    const onError = (error: Error) => {
+      console.error("Real-time issues subscription error:", error);
+    };
+    const unsubscribePublic = subscribeToIssues(
       (issues) => {
-        // Convert Firestore Timestamps to numbers for consistency
-        const isTimestamp = (v: unknown): v is Timestamp =>
-          typeof v === 'object' && v !== null && 'toMillis' in (v as Record<string, unknown>);
-        const toMillis = (v: unknown): number => {
-          if (typeof v === 'number') return v;
-          if (isTimestamp(v)) return v.toMillis();
-          return Date.now();
-        };
-        const normalizedIssues = issues.map((issue) => ({
-          ...issue,
-          createdAt: toMillis((issue as unknown as { createdAt?: unknown }).createdAt),
-          updatedAt: toMillis((issue as unknown as { updatedAt?: unknown }).updatedAt),
-        } as Issue));
-        
-        // Update React Query cache with real-time data
-        qc.setQueryData(["issues-firebase"], normalizedIssues);
+        publicIssues = issues;
+        updateCache();
       },
-      (error) => {
-        console.error('Real-time issues subscription error:', error);
-      },
-      [orderBy("createdAt", "desc")]
+      onError,
+      [where("visibility", "==", "public"), orderBy("createdAt", "desc")]
     );
+    const unsubscribeOwned = user?.uid
+      ? subscribeToIssues(
+          (issues) => {
+            ownedIssues = issues;
+            updateCache();
+          },
+          onError,
+          [where("createdBy", "==", user.uid)]
+        )
+      : undefined;
 
     return () => {
-      unsubscribe();
+      unsubscribePublic();
+      unsubscribeOwned?.();
     };
-  }, [qc, firebaseEnabled]);
+  }, [qc, firebaseEnabled, issuesQueryKey, user?.uid]);
 
   const issuesQuery = useQuery({
-    queryKey: ["issues-firebase"],
+    queryKey: issuesQueryKey,
     queryFn: async () => {
       if (!firebaseEnabled) return [] as Issue[];
-      const issues = await getIssues([orderBy("createdAt", "desc")]);
-      // Convert Firestore Timestamps to numbers for consistency
-      const isTimestamp = (v: unknown): v is Timestamp =>
-        typeof v === 'object' && v !== null && 'toMillis' in (v as Record<string, unknown>);
-      const toMillis = (v: unknown): number => {
-        if (typeof v === 'number') return v;
-        if (isTimestamp(v)) return v.toMillis();
-        return Date.now();
-      };
-      return issues.map((issue) => ({
-        ...issue,
-        createdAt: toMillis((issue as unknown as { createdAt?: unknown }).createdAt),
-        updatedAt: toMillis((issue as unknown as { updatedAt?: unknown }).updatedAt),
-      } as Issue));
+      const publicIssuesPromise = getIssues([
+        where("visibility", "==", "public"),
+        orderBy("createdAt", "desc"),
+      ]);
+      const ownedIssuesPromise = user?.uid
+        ? getIssues([where("createdBy", "==", user.uid)])
+        : Promise.resolve([] as Issue[]);
+      const [publicIssues, ownedIssues] = await Promise.all([
+        publicIssuesPromise,
+        ownedIssuesPromise,
+      ]);
+      return mergeIssues(publicIssues, ownedIssues);
     },
-    staleTime: Infinity, // Real-time updates handle freshness
-    gcTime: Infinity, // Keep data in cache
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
   const addIssue = useMutation({
@@ -153,14 +180,14 @@ export function useIssuesFirebase() {
       return id;
     },
     onMutate: async (id: string) => {
-      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: issuesQueryKey });
       await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
       
-      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousIssues = qc.getQueryData<Issue[]>(issuesQueryKey);
       const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
       
       if (previousIssues) {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map(issue => {
             if (issue.id === id) {
@@ -189,14 +216,14 @@ export function useIssuesFirebase() {
     },
     onError: (err, id, context) => {
       if (context?.previousIssues) {
-        qc.setQueryData(["issues-firebase"], context.previousIssues);
+        qc.setQueryData(issuesQueryKey, context.previousIssues);
       }
       if (context?.previousVote !== undefined) {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
       }
     },
     // Keep UI in sync for analytics
-    onSettled: (_data, _error, id) => {
+    onSettled: () => {
       if (user?.uid) {
         qc.invalidateQueries({ queryKey: ["user-activity", user.uid] });
         qc.invalidateQueries({ queryKey: ["local-activity", user.uid] });
@@ -259,16 +286,16 @@ export function useIssuesFirebase() {
     },
     onMutate: async (id: string) => {
       // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: issuesQueryKey });
       await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
       
       // Snapshot previous value
-      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousIssues = qc.getQueryData<Issue[]>(issuesQueryKey);
       const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
       
       // Optimistically update the cache
       if (previousIssues) {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map(issue => {
             if (issue.id === id) {
@@ -300,7 +327,7 @@ export function useIssuesFirebase() {
     onError: (err, id, context) => {
       // Rollback on error
       if (context?.previousIssues) {
-        qc.setQueryData(["issues-firebase"], context.previousIssues);
+        qc.setQueryData(issuesQueryKey, context.previousIssues);
       }
       if (context?.previousVote !== undefined) {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
@@ -358,16 +385,16 @@ export function useIssuesFirebase() {
     },
     onMutate: async (id: string) => {
       // Cancel outgoing refetches
-      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
+      await qc.cancelQueries({ queryKey: issuesQueryKey });
       await qc.cancelQueries({ queryKey: ["user-vote", id, user?.uid] });
       
       // Snapshot previous value
-      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      const previousIssues = qc.getQueryData<Issue[]>(issuesQueryKey);
       const previousVote = qc.getQueryData(["user-vote", id, user?.uid]);
       
       // Optimistically update the cache
       if (previousIssues) {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map(issue => {
             if (issue.id === id) {
@@ -399,7 +426,7 @@ export function useIssuesFirebase() {
     onError: (err, id, context) => {
       // Rollback on error
       if (context?.previousIssues) {
-        qc.setQueryData(["issues-firebase"], context.previousIssues);
+        qc.setQueryData(issuesQueryKey, context.previousIssues);
       }
       if (context?.previousVote !== undefined) {
         qc.setQueryData(["user-vote", id, user?.uid], context.previousVote);
@@ -495,11 +522,11 @@ export function useIssuesFirebase() {
     },
     onMutate: async (params) => {
       // Optimistically mark as resolved in cache
-      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
-      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      await qc.cancelQueries({ queryKey: issuesQueryKey });
+      const previousIssues = qc.getQueryData<Issue[]>(issuesQueryKey);
       const optimisticAt = Date.now();
       if (previousIssues) {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map((issue) =>
             issue.id === params.id
@@ -523,13 +550,13 @@ export function useIssuesFirebase() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previousIssues) {
-        qc.setQueryData(["issues-firebase"], ctx.previousIssues);
+        qc.setQueryData(issuesQueryKey, ctx.previousIssues);
       }
     },
     onSuccess: (id) => {
       // Strip __optimistic flag once real-time update arrives (best-effort cleanup after slight delay)
       setTimeout(() => {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map(issue => {
             const res = issue.resolution as (Issue['resolution'] & { __optimistic?: boolean }) | undefined;
@@ -580,8 +607,8 @@ export function useIssuesFirebase() {
     },
     onMutate: async (params) => {
       // Optimistically append progress update to cache
-      await qc.cancelQueries({ queryKey: ["issues-firebase"] });
-      const previousIssues = qc.getQueryData<Issue[]>(["issues-firebase"]);
+      await qc.cancelQueries({ queryKey: issuesQueryKey });
+      const previousIssues = qc.getQueryData<Issue[]>(issuesQueryKey);
       const optimisticAt = Date.now();
       const optimisticUpdate = {
         message: params.message,
@@ -590,7 +617,7 @@ export function useIssuesFirebase() {
         updatedBy: user?.uid || 'me',
       } as NonNullable<Issue['progressUpdates']>[number];
       if (previousIssues) {
-        qc.setQueryData<Issue[]>(["issues-firebase"], (old) => {
+        qc.setQueryData<Issue[]>(issuesQueryKey, (old) => {
           if (!old) return old;
           return old.map((issue) =>
             issue.id === params.id
@@ -608,7 +635,7 @@ export function useIssuesFirebase() {
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.previousIssues) {
-        qc.setQueryData(["issues-firebase"], ctx.previousIssues);
+        qc.setQueryData(issuesQueryKey, ctx.previousIssues);
       }
     },
     // No invalidation needed - real-time subscription handles it
@@ -634,36 +661,4 @@ export function useIssuesFirebase() {
     addProgress,
     stats,
   };
-}
-
-/**
- * Get issues filtered by category
- */
-export function useIssuesByCategory(category: IssueCategory) {
-  return useQuery({
-    queryKey: ["issues", "category", category],
-    queryFn: async () => {
-      const issues = await getIssues([
-        where("category", "==", category),
-        orderBy("createdAt", "desc"),
-      ]);
-      return issues;
-    },
-  });
-}
-
-/**
- * Get issues filtered by status
- */
-export function useIssuesByStatus(status: IssueStatus) {
-  return useQuery({
-    queryKey: ["issues", "status", status],
-    queryFn: async () => {
-      const issues = await getIssues([
-        where("status", "==", status),
-        orderBy("createdAt", "desc"),
-      ]);
-      return issues;
-    },
-  });
 }

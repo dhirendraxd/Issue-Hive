@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Twitter, Linkedin, Send, MessageCircle, Mail } from "lucide-react";
-import type { ComponentType } from "react";
+import { Compass, Send, MessageCircle, Mail } from "lucide-react";
+import type { ReactNode } from "react";
+import SocialIcon from "@/components/SocialIcon";
 
 type CommunityLink = {
-  icon: ComponentType<{ className?: string }>;
+  icon: ReactNode;
   label: string;
   to?: string;
   href?: string;
@@ -14,17 +15,18 @@ export default function CommunityCTA() {
   const items: CommunityLink[] = [
     { icon: MessageCircle, label: "Browse issues", to: "/issues" },
     { icon: Send, label: "Raise an issue", to: "/raise-issue" },
-    { icon: Linkedin, label: "Learn more", to: "/about" },
-    { icon: Twitter, label: "Updates on X", href: "https://twitter.com" },
+    { icon: <Compass className="h-6 w-6" />, label: "Learn more", to: "/about" },
+    { icon: <SocialIcon platform="x" className="h-4 w-4" />, label: "Updates on X", href: "https://x.com" },
     { icon: Mail, label: "Contact", href: "mailto:support@issue-hive.com" },
   ];
 
   const renderItem = (item: CommunityLink) => {
-    const Icon = item.icon;
     const content = (
       <>
         <div className="rounded-xl glass-subtle hover:shadow-md hover:shadow-orange-400/15 hover:border-orange-100/40 transition-all duration-300 p-6 text-center">
-          <Icon className="mx-auto h-6 w-6 transition-colors group-hover:text-orange-500" />
+          <span className="inline-flex h-6 w-6 items-center justify-center transition-colors group-hover:text-orange-500">
+            {item.icon}
+          </span>
         </div>
         <div className="mt-2 text-center text-xs text-muted-foreground transition-colors group-hover:text-orange-500">
           {item.label}

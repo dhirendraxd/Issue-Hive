@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useIssuesFirebase } from '@/hooks/use-issues-firebase';
 import { useAuth } from '@/hooks/use-auth';
 import { useUserActivity } from '@/hooks/use-user-activity';
-import { useReceivedMessages, useSentMessages } from '@/hooks/use-messaging';
+import { useSentMessages } from '@/hooks/use-messaging';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Issue } from '@/types/issue';
@@ -16,7 +16,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Github, Twitter, Linkedin, Instagram, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, Send, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
+import SocialIcon from '@/components/SocialIcon';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
 import IssueDetailDialog from '@/components/IssueDetailDialog';
@@ -28,7 +29,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsFollowing, useFollowUser, useUnfollowUser, useFollowCounts, useFollowersList, useFollowingList } from '@/hooks/use-follow';
 import { useIssueEngagement } from '@/hooks/use-issue-engagement';
 import { useComments } from '@/hooks/use-comments';
-import { useReportsAgainstMe, useReviewableReports, useVoteOnReport, useReportVoteCounts, useReportVote, useUpdateReportStatus, useCommentReportsOnMyIssues, useSubmitClarification, useDeleteReportedComment, useKeepReportedComment } from '@/hooks/use-reports';
+import { useReviewableReports, useVoteOnReport, useUpdateReportStatus, useCommentReportsOnMyIssues, useSubmitClarification, useDeleteReportedComment, useKeepReportedComment } from '@/hooks/use-reports';
 import { toast } from 'sonner';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,8 +65,6 @@ type ReportSummary = {
   clarificationBy?: string;
   clarificationAt?: TimestampLike;
 };
-type VoteMutation = { mutate: (args: { reportId: string; upvote: boolean }) => void; isPending?: boolean };
-
 function CommentNotificationsList({ issues, engagementMap, onIssueClick }: { issues: Issue[], engagementMap: EngagementMap, onIssueClick: (issue: Issue) => void }) {
   return (
     <div className="space-y-4">
@@ -174,154 +173,8 @@ function IssueCommentCard({ issue, commentCount, onViewIssue }: { issue: Issue, 
   );
 }
 
-// Component to display a report card with voting
-function ReportCard({ report, voteOnReport }: { report: ReportSummary; voteOnReport: VoteMutation }) {
-  const { data: voteCounts = { upvotes: 0, downvotes: 0 } } = useReportVoteCounts(report.id);
-  const { data: userVote = 0 } = useReportVote(report.id);
-  const { user } = useAuth();
-
-  const getTimeInMs = (timestamp: TimestampLike | undefined): number => {
-    if (!timestamp) return Date.now();
-    if (typeof timestamp === 'number') return timestamp;
-    if (timestamp instanceof Date) return timestamp.getTime();
-    if (typeof (timestamp as { toMillis?: () => number }).toMillis === 'function') return (timestamp as { toMillis: () => number }).toMillis();
-    if ((timestamp as { seconds?: number }).seconds) {
-      const seconds = (timestamp as { seconds: number; nanoseconds?: number }).seconds;
-      const nanos = (timestamp as { nanoseconds?: number }).nanoseconds || 0;
-      return seconds * 1000 + nanos / 1_000_000;
-    }
-    return Date.now();
-  };
-
-  const handleVote = (isUpvote: boolean) => {
-    if (!user) {
-      toast.error('Please sign in to vote');
-      return;
-    }
-    voteOnReport.mutate({ reportId: report.id, upvote: isUpvote });
-  };
-
-  return (
-    <Card className="rounded-2xl border border-amber-200/50 bg-amber-50/50 backdrop-blur-xl shadow-lg shadow-amber-100/20 p-4">
-      <CardContent className="p-0 space-y-3">
-        {/* Report Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-stone-900">
-              <span className="font-bold text-red-600">{report.reportedUserName}</span> reported
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {formatRelativeTime(getTimeInMs(report.createdAt))}
-            </p>
-          </div>
-          <Badge 
-            variant="outline" 
-            className="bg-amber-100 text-amber-700 border-amber-300 whitespace-nowrap"
-          >
-            {report.reason}
-          </Badge>
-        </div>
-
-        {/* Report Context - Issue or General */}
-        {report.context?.issueTitle ? (
-          <div className="bg-amber-100/50 border border-amber-200 rounded-lg p-2 text-sm">
-            <p className="text-muted-foreground">Related to Issue:</p>
-            <p className="font-medium text-stone-900">{report.context.issueTitle}</p>
-          </div>
-        ) : (
-          <div className="bg-red-100/50 border border-red-200 rounded-lg p-2 text-sm">
-            <p className="text-muted-foreground">Type:</p>
-            <p className="font-medium text-red-900">General User Behavior Report</p>
-          </div>
-        )}
-
-        {/* Report Details */}
-        <div>
-          <p className="text-sm text-muted-foreground mb-1">Report Details:</p>
-          <p className="text-sm text-stone-700 bg-white/50 rounded p-2">
-            {report.details}
-          </p>
-        </div>
-
-        {/* Reported Comment (if available) */}
-        {report.commentText && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-2">
-            <p className="text-sm font-medium text-red-900">Reported Comment by {report.commentAuthorName}:</p>
-            <div className="bg-white border border-red-100 rounded p-2">
-              <p className="text-sm text-stone-700 italic">{report.commentText}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="destructive"
-                className="h-8 text-xs"
-              >
-                <MessageSquare className="h-3 w-3 mr-1" />
-                Delete Comment
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 text-xs"
-              >
-                Keep Comment
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Status & Voting */}
-        <div className="flex items-center justify-between pt-2 border-t border-amber-200/50">
-          <Badge
-            variant="secondary"
-            className={cn(
-              "capitalize",
-              report.status === 'pending' && 'bg-yellow-100 text-yellow-700',
-              report.status === 'reviewed' && 'bg-blue-100 text-blue-700',
-              report.status === 'resolved' && 'bg-green-100 text-green-700',
-              report.status === 'dismissed' && 'bg-gray-100 text-gray-700',
-            )}
-          >
-            {report.status}
-          </Badge>
-
-          {/* Community Vote Buttons */}
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={userVote === 1 ? "default" : "outline"}
-              className={cn(
-                "h-8 px-2 gap-1",
-                userVote === 1 && "bg-green-600 hover:bg-green-700 border-green-600"
-              )}
-              onClick={() => handleVote(true)}
-              disabled={voteOnReport.isPending}
-            >
-              <ThumbsUp className="h-4 w-4" />
-              <span className="text-xs">{voteCounts.upvotes}</span>
-            </Button>
-            <Button
-              size="sm"
-              variant={userVote === -1 ? "default" : "outline"}
-              className={cn(
-                "h-8 px-2 gap-1",
-                userVote === -1 && "bg-red-600 hover:bg-red-700 border-red-600"
-              )}
-              onClick={() => handleVote(false)}
-              disabled={voteOnReport.isPending}
-            >
-              <ThumbsDown className="h-4 w-4" />
-              <span className="text-xs">{voteCounts.downvotes}</span>
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function UserProfile() {
-  const { uid } = useParams();
+  const uid = useParams().uid ?? "";
   const [search] = useSearchParams();
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -329,7 +182,6 @@ export default function UserProfile() {
   // Call all hooks first (before any early returns)
   const { data: issues, isLoading, setVisibility, setStatus, resolveIssue, addProgress } = useIssuesFirebase();
   const { data: userActivity, isLoading: isActivityLoading } = useUserActivity();
-  const { data: receivedMessages } = useReceivedMessages();
   const { data: sentMessages, isLoading: sentMessagesLoading } = useSentMessages();
   const updateReportStatus = useUpdateReportStatus();
   const queryClient = useQueryClient();
@@ -338,12 +190,6 @@ export default function UserProfile() {
   const { data: ownerProfile, isLoading: profileLoading } = useUserProfile(uid || '');
   
   const avatarUrl = useAvatarUrl(ownerProfile?.photoURL, uid || '');
-
-  // Early guard: redirect if no uid (after hooks)
-  if (!uid) {
-    navigate('/');
-    return null;
-  }
 
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [progressDialogOpen, setProgressDialogOpen] = useState(false);
@@ -408,7 +254,7 @@ export default function UserProfile() {
   
   const ownedIssueIds = useMemo(() => owned.map(i => i.id), [owned]);
   const { data: engagementMap = {} as EngagementMap } = useIssueEngagement(ownedIssueIds);
-  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues([]);
+  const { data: commentReportsOnMyIssues = [] } = useCommentReportsOnMyIssues();
   const { data: reviewableReportsRaw = [] } = useReviewableReports();
   const voteOnReport = useVoteOnReport();
   const submitClarification = useSubmitClarification();
@@ -417,18 +263,6 @@ export default function UserProfile() {
   const [clarifications, setClarifications] = useState<Record<string, string>>({});
   
   const reportsAgainstMe = commentReportsOnMyIssues;
-
-  // Auto-delete comments with >10 reports
-  useMemo(() => {
-    reportsAgainstMe.forEach((report) => {
-      if (report.reportCount && report.reportCount > 10 && report.status === 'pending' && report.commentId) {
-        report.status = 'deleted';
-        toast.error(`Comment by "${report.commentAuthorName}" was deleted (${report.reportCount} reports)`, {
-          description: 'Comment exceeded the report threshold and was automatically removed',
-        });
-      }
-    });
-  }, []);
 
   const reviewableReports = reviewableReportsRaw;
 
@@ -626,7 +460,7 @@ export default function UserProfile() {
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-slate-100/50 text-slate-800 hover:text-slate-900 transition-all duration-200"
           title="GitHub"
         >
-          <Github className="h-4 w-4" />
+          <SocialIcon platform="github" />
         </a>
       )}
       {ownerProfile?.social?.twitter?.trim() && (
@@ -635,9 +469,9 @@ export default function UserProfile() {
           target="_blank" 
           rel="noopener noreferrer" 
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-500 hover:text-blue-600 transition-all duration-200"
-          title="Twitter"
+          title="X (Twitter)"
         >
-          <Twitter className="h-4 w-4" />
+          <SocialIcon platform="x" />
         </a>
       )}
       {ownerProfile?.social?.linkedin?.trim() && (
@@ -648,7 +482,7 @@ export default function UserProfile() {
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-blue-100/50 text-blue-700 hover:text-blue-800 transition-all duration-200"
           title="LinkedIn"
         >
-          <Linkedin className="h-4 w-4" />
+          <SocialIcon platform="linkedin" />
         </a>
       )}
       {ownerProfile?.social?.instagram?.trim() && (
@@ -659,7 +493,7 @@ export default function UserProfile() {
           className="inline-flex items-center justify-center w-8 h-8 rounded-full hover:bg-pink-100/50 text-pink-600 hover:text-pink-700 transition-all duration-200"
           title="Instagram"
         >
-          <Instagram className="h-4 w-4" />
+          <SocialIcon platform="instagram" />
         </a>
       )}
     </div>
@@ -1666,8 +1500,6 @@ export default function UserProfile() {
                                     .slice((userReportsPage - 1) * reportsPerPage, userReportsPage * reportsPerPage)
                                     .map((report: ReportSummary) => {
                                       const isReportedUser = user?.uid === report.reportedUserId;
-                                      const isReporter = user?.uid === report.reporterId;
-                                      
                                       return (
                                       <Card key={report.id} className="rounded-2xl border border-orange-200/50 bg-orange-50/50 backdrop-blur-2xl shadow-lg shadow-orange-100/20 p-5 transition-all hover:shadow-xl">
                                         <CardContent className="p-0 space-y-4">
@@ -2492,9 +2324,9 @@ export default function UserProfile() {
                               setDeleteConfirmOpen(false);
                               setDeleteConfirmData(null);
                             },
-                            onError: (error: any) => {
+                            onError: (error: unknown) => {
                               console.error('Delete error:', error);
-                              const message = error?.message || 'Failed to remove comment';
+                              const message = error instanceof Error ? error.message : 'Failed to remove comment';
                               if (message.includes('not found') || message.includes('No document')) {
                                 toast.error('Comment was already deleted');
                               } else if (message.includes('permission')) {
@@ -2521,4 +2353,3 @@ export default function UserProfile() {
     </div>
   );
 }
-

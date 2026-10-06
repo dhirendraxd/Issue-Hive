@@ -44,8 +44,8 @@ export function useIssueEngagement(issueIds: string[] | undefined) {
               upvotes: voteCounts.upvotes,
               downvotes: voteCounts.downvotes
             };
-          } catch (e) {
-            // On error keep it absent; could add logging
+          } catch (error) {
+            console.error(`Failed to load engagement for issue ${id}:`, error);
             results[id] = { 
               issueId: id, 
               comments: 0, 

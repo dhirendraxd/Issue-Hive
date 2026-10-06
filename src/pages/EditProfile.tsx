@@ -8,7 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Loader2, Save, Github, Twitter, Linkedin, Instagram, Edit2, Check, X, LogIn, CheckCircle2, Bell, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Edit2, CheckCircle2, Bell, Mail, ShieldCheck, Sparkles } from 'lucide-react';
+import SocialIcon from '@/components/SocialIcon';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/integrations/firebase';
 import { useQueryClient } from '@tanstack/react-query';
@@ -120,7 +121,7 @@ export default function EditProfile() {
       
       queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       setLastSaved(new Date());
-    } catch (error) {
+    } catch {
       console.error('Auto-save failed:', error);
     } finally {
       setAutoSaving(false);
@@ -188,7 +189,7 @@ export default function EditProfile() {
       queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       toast.success('Profile updated successfully!');
       navigate(`/profile/${user.uid}`);
-    } catch (error) {
+    } catch {
       toast.error('Failed to update profile');
     } finally {
       setSaving(false);
@@ -207,7 +208,7 @@ export default function EditProfile() {
       await setDefaultAvatar(user, style);
       queryClient.invalidateQueries({ queryKey: ['user-profile', user.uid] });
       toast.success('Avatar updated!');
-    } catch (error) {
+    } catch {
       toast.error('Failed to update avatar');
     } finally {
       setUploadingAvatar(false);
@@ -488,21 +489,21 @@ export default function EditProfile() {
                       className="text-sm px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-400 w-64"
                     />
                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-slate-50 to-slate-100 hover:from-slate-100 hover:to-slate-200 text-slate-800 hover:text-slate-900 transition-all hover:shadow-md cursor-help" title="GitHub">
-                      <Github className="h-5 w-5" />
+                      <SocialIcon platform="github" />
                     </div>
                   </div>
 
-                  {/* Twitter */}
+                  {/* X (Twitter) */}
                   <div className="flex items-center gap-2 mt-4 w-full">
                     <input
                       type="url"
                       value={twitter}
                       onChange={(e) => setTwitter(e.target.value)}
-                      placeholder="https://twitter.com/username"
+                      placeholder="https://x.com/username"
                       className="text-sm px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-64"
                     />
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md cursor-help" title="Twitter">
-                      <Twitter className="h-5 w-5" />
+                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 text-blue-500 hover:text-blue-600 transition-all hover:shadow-md cursor-help" title="X (Twitter)">
+                      <SocialIcon platform="x" />
                     </div>
                   </div>
 
@@ -516,7 +517,7 @@ export default function EditProfile() {
                       className="text-sm px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 w-64"
                     />
                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 hover:text-blue-800 transition-all hover:shadow-md cursor-help" title="LinkedIn">
-                      <Linkedin className="h-5 w-5" />
+                      <SocialIcon platform="linkedin" />
                     </div>
                   </div>
 
@@ -530,7 +531,7 @@ export default function EditProfile() {
                       className="text-sm px-3 py-2 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 w-64"
                     />
                     <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-pink-50 to-rose-50 hover:from-pink-100 hover:to-rose-100 text-pink-600 hover:text-pink-700 transition-all hover:shadow-md cursor-help" title="Instagram">
-                      <Instagram className="h-5 w-5" />
+                      <SocialIcon platform="instagram" />
                     </div>
                   </div>
                 </div>

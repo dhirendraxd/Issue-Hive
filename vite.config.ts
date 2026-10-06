@@ -4,19 +4,23 @@ import path from "path";
 import { visualizer } from "rollup-plugin-visualizer";
 
 // https://vitejs.dev/config/
-export default defineConfig((_) => ({
+export default defineConfig(() => ({
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
     react(),
-    visualizer({
-      filename: "bundle-stats.html",
-      open: false,
-      gzipSize: true,
-      brotliSize: true,
-    }),
+    ...(process.env.ANALYZE === "true"
+      ? [
+          visualizer({
+            filename: "bundle-stats.html",
+            open: false,
+            gzipSize: true,
+            brotliSize: true,
+          }),
+        ]
+      : []),
   ],
   resolve: {
     alias: {
@@ -24,15 +28,6 @@ export default defineConfig((_) => ({
     },
   },
   build: {
-    // Improve build performance
-    target: 'es2020',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console.logs in production
-        drop_debugger: true,
-      },
-    },
     rollupOptions: {
       output: {
         // Manual chunk splitting for better caching
@@ -60,7 +55,7 @@ export default defineConfig((_) => ({
           // Data fetching
           'react-query': ['@tanstack/react-query'],
           // Firebase
-          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/database'],
+          'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           // Icons
           'lucide': ['lucide-react'],
           // Animation library (heavy)
@@ -68,7 +63,5 @@ export default defineConfig((_) => ({
         },
       },
     },
-    // Increase chunk size warning limit to 600kb (we've optimized)
-    chunkSizeWarningLimit: 600,
   },
 }));

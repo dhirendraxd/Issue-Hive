@@ -12,7 +12,20 @@ export type GA4Event =
   | 'college_page_viewed'
   | 'search_performed'
   | 'signup_completed'
-  | 'login_completed';
+  | 'login_completed'
+  | 'page_view';
+
+type GtagCommand =
+  | ['js', Date]
+  | ['config', string, Record<string, unknown>]
+  | ['event', GA4Event, Record<string, string | number | boolean>];
+
+declare global {
+  interface Window {
+    dataLayer?: unknown[];
+    gtag?: (...args: GtagCommand) => void;
+  }
+}
 
 // Initialize GA4
 export function initializeGA4() {
@@ -26,8 +39,8 @@ export function initializeGA4() {
 
   // Initialize gtag
   window.dataLayer = window.dataLayer || [];
-  function gtag(...args: any[]) {
-    window.dataLayer?.push(arguments);
+  function gtag(...args: GtagCommand) {
+    window.dataLayer?.push(args);
   }
   gtag('js', new Date());
   gtag('config', 'G-G0PB0KE0KL', {
@@ -35,14 +48,14 @@ export function initializeGA4() {
     page_title: document.title,
   });
 
-  (window as any).gtag = gtag;
+  window.gtag = gtag;
 }
 
 // Track custom events
 export function trackEvent(eventName: GA4Event, params?: Record<string, string | number | boolean>) {
-  if (typeof window === 'undefined' || !(window as any).gtag) return;
+  if (typeof window === 'undefined' || !window.gtag) return;
 
-  (window as any).gtag('event', eventName, {
+  window.gtag('event', eventName, {
     ...params,
     timestamp: new Date().toISOString(),
   });
@@ -50,9 +63,9 @@ export function trackEvent(eventName: GA4Event, params?: Record<string, string |
 
 // Track page views
 export function trackPageView(pageName: string, pagePath: string) {
-  trackEvent('page_view' as any, {
+  trackEvent('page_view', {
     page_title: pageName,
-    page_path: pageLocation,
+    page_path: pagePath,
   });
 }
 

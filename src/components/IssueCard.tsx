@@ -1,12 +1,11 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Issue } from '@/types/issue';
-import { ISSUE_VISIBILITIES, type IssueVisibility } from '@/types/issue';
+import { type IssueVisibility } from '@/types/issue';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { TrendingUp, Clock, MessageSquare, ThumbsUp, ThumbsDown, CheckCircle2, MoreHorizontal, Globe, Lock, FileText, Eye } from 'lucide-react';
-import { formatRelativeTime, formatDateWithRelative } from '@/lib/utils';
+import { TrendingUp, Clock, MessageSquare, ThumbsUp, ThumbsDown, CheckCircle2, Globe, Lock, FileText, Eye } from 'lucide-react';
+import { formatDateWithRelative } from '@/lib/utils';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { cn } from '@/lib/utils';
 

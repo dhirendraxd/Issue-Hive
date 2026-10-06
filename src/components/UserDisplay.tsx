@@ -10,7 +10,6 @@ interface UserDisplayProps {
   showLink?: boolean;
   className?: string;
   avatarClassName?: string;
-  nameClassName?: string;
   showAvatar?: boolean;
 }
 
@@ -26,7 +25,6 @@ export default function UserDisplay({
   showLink = true,
   className = '',
   avatarClassName = 'h-10 w-10',
-  nameClassName = 'text-sm font-medium truncate',
   showAvatar = true,
 }: UserDisplayProps) {
   const { data: userProfile } = useUserProfile(userId);

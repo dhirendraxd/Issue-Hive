@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle, Flag, MessageCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import type { Report } from "@/hooks/use-reports";
 
 interface ReportUserDialogProps {
   open: boolean;
@@ -206,7 +207,7 @@ export default function ReportUserDialog({
           updatedAt: new Date(),
         };
 
-        queryClient.setQueryData(['reviewable-reports'], (oldData: any[] | undefined) => {
+        queryClient.setQueryData(['reviewable-reports'], (oldData: Report[] | undefined) => {
           return oldData ? [newReport, ...oldData] : [newReport];
         });
 

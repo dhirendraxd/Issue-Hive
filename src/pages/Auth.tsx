@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { Loader2, Mail } from 'lucide-react';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Seo from "@/components/Seo";
-import { sanitizeEmail, limitLength } from '@/lib/sanitize';
+import { sanitizeEmail } from '@/lib/sanitize';
 
 interface FirebaseError {
   code?: string;

@@ -25,9 +25,14 @@ export function sanitizeHTML(input: string): string {
 export function sanitizeText(input: string): string {
   if (!input) return '';
   
-  return input
-    .replace(/\0/g, '') // Remove null bytes
-    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // Remove control characters
+  const withoutControlCharacters = Array.from(input)
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return (code > 0x1f && code !== 0x7f) || code === 0x09 || code === 0x0a || code === 0x0d;
+    })
+    .join('');
+
+  return withoutControlCharacters
     .replace(/\r\n/g, '\n') // Normalize line endings
     .trim();
 }

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, getDocs, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '@/integrations/firebase/config';
 import { COLLECTIONS } from '@/integrations/firebase/firestore';
 

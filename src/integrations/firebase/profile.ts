@@ -27,12 +27,13 @@ export async function uploadProfilePicture(file: File, userId: string): Promise<
 
   try {
     // Upload to Firebase Storage
-    const { storage } = await import('./config');
-    if (!storage) {
+    const { app } = await import('./config');
+    if (!app) {
       throw new Error('Firebase Storage is not configured');
     }
     
-    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const { getStorage, ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    const storage = getStorage(app);
     const storageRef = ref(storage, `profile-pictures/${userId}/avatar`);
     
     logger.debug('Uploading to Firebase Storage...');
@@ -92,7 +93,7 @@ export async function setDefaultAvatar(user: User, style: AvatarStyleId): Promis
  * @param photoURL - The URL of the photo to delete
  * Note: For base64 images stored in Firestore, this is a no-op
  */
-export async function deleteProfilePicture(photoURL: string): Promise<void> {
+export async function deleteProfilePicture(_photoURL: string): Promise<void> {
   // Base64 data URLs are stored in Firestore, nothing to delete from Storage
   // External URLs (like DiceBear) also don't need deletion
   logger.debug('Profile picture cleanup (no-op for base64/external URLs)');

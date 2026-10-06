@@ -2,18 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { getUserAvatarUrl } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
-import { LayoutDashboard, LogOut, Menu, X } from "lucide-react";
-import { signOut } from "@/integrations/firebase/auth";
+import { Menu, X } from "lucide-react";
 import { useState } from "react";
 
 interface NavbarProps {

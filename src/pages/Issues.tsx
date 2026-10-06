@@ -8,7 +8,7 @@ import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useIssueEngagement } from "@/hooks/use-issue-engagement";
 import { useAuth } from "@/hooks/use-auth";
 import { ISSUE_STATUSES, type IssueCategory, type IssueStatus, type Issue } from "@/types/issue";
-import { formatRelativeTime, formatDateWithRelative, formatDateShort } from "@/lib/utils";
+import { formatRelativeTime, formatDateShort } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -17,6 +17,8 @@ import IssueDetailDialog from "@/components/IssueDetailDialog";
 import ReportUserDialog from "@/components/ReportUserDialog";
 import UserDisplay, { UserDisplayName } from "@/components/UserDisplay";
 import { useUserProfile } from "@/hooks/use-user-profile";
+
+const EMPTY_ISSUES: Issue[] = [];
 
 function IssueCollegeProvider({ issue, children }: { issue: Issue; children: (collegeName?: string) => ReactNode }) {
   const { data: profile } = useUserProfile(issue.createdBy);
@@ -29,85 +31,8 @@ function IssueCollegeProvider({ issue, children }: { issue: Issue; children: (co
 
 export default function Issues() {
   const { user } = useAuth();
-  const { data: dataRaw, upvote, downvoteIssue } = useIssuesFirebase();
-
-  // Dummy college-related issues for testing
-  const dummyIssues: Issue[] = [
-    {
-      id: 'issue-1',
-      title: 'Improve campus WiFi coverage',
-      description: 'The WiFi signal is weak in many areas of the campus, especially in the outdoor spaces and some classrooms.',
-      category: 'Infrastructure' as IssueCategory,
-      priority: 'high',
-      status: 'open' as IssueStatus,
-      createdBy: 'user1',
-      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000),
-      votes: 89,
-      visibility: 'public' as const,
-    },
-    {
-      id: 'issue-2',
-      title: 'Extend library working hours',
-      description: 'Students need access to the library beyond 6 PM for study groups and preparation for exams.',
-      category: 'Facilities' as IssueCategory,
-      priority: 'medium',
-      status: 'in-progress' as IssueStatus,
-      createdBy: 'user2',
-      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-      votes: 156,
-      visibility: 'public' as const,
-    },
-    {
-      id: 'issue-3',
-      title: 'Better parking facilities needed',
-      description: 'Not enough parking spaces for students and staff. This causes traffic congestion during peak hours.',
-      category: 'Facilities' as IssueCategory,
-      priority: 'medium',
-      status: 'open' as IssueStatus,
-      createdBy: 'user3',
-      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-      votes: 73,
-      visibility: 'public' as const,
-    },
-    {
-      id: 'issue-4',
-      title: 'Add more food options in canteen',
-      description: 'The canteen has limited vegetarian and vegan options. Need to expand the menu to cater to diverse dietary preferences.',
-      category: 'Student Services' as IssueCategory,
-      priority: 'low',
-      status: 'open' as IssueStatus,
-      createdBy: 'user4',
-      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-      votes: 42,
-      visibility: 'public' as const,
-    },
-    {
-      id: 'issue-5',
-      title: 'Upgrade laboratory equipment',
-      description: 'Current lab equipment is outdated and needs replacement. We need modern tools for hands-on learning.',
-      category: 'Academic' as IssueCategory,
-      priority: 'high',
-      status: 'resolved' as IssueStatus,
-      createdBy: 'user5',
-      createdAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-      votes: 121,
-      visibility: 'public' as const,
-    },
-    {
-      id: 'issue-6',
-      title: 'Improve mental health support services',
-      description: 'Students need better access to counseling services and mental health support during exam season.',
-      category: 'Student Services' as IssueCategory,
-      priority: 'high',
-      status: 'open' as IssueStatus,
-      createdBy: 'user6',
-      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
-      votes: 98,
-      visibility: 'public' as const,
-    },
-  ];
-
-  const data = dataRaw && dataRaw.length > 0 ? dataRaw : dummyIssues;
+  const { data: dataRaw, isLoading, isError, refetch } = useIssuesFirebase();
+  const data = dataRaw ?? EMPTY_ISSUES;
 
   // Modal state
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
@@ -254,20 +179,34 @@ export default function Issues() {
               <div className="mt-8 grid gap-8 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {visibleIssues.length === 0 && (
                   <div className="col-span-full rounded-2xl border border-white/40 bg-white/60 backdrop-blur-lg p-8 text-center">
-                    <p className="text-muted-foreground">No matching issues.</p>
-                    <Button
-                      variant="ghost"
-                      className="mt-3 rounded-full flex items-center justify-center"
-                      aria-label="Reset filters"
-                      onClick={() => {
-                        setQ("");
-                        setCategories([]);
-                        setStatuses([]);
-                        setSort("new");
-                      }}
-                    >
-                      <RotateCcw className="h-5 w-5" />
-                    </Button>
+                    <p className="text-muted-foreground" role={isError ? "alert" : undefined}>
+                      {isLoading
+                        ? "Loading campus issues..."
+                        : isError
+                          ? "We couldn't load issues."
+                          : q.trim() || categories.length > 0 || statuses.length > 0
+                            ? "No matching issues."
+                            : "No issues have been reported yet."}
+                    </p>
+                    {!isLoading && (isError || q.trim() || categories.length > 0 || statuses.length > 0) && (
+                      <Button
+                        variant="ghost"
+                        className="mt-3 rounded-full"
+                        aria-label={isError ? "Retry loading issues" : "Reset filters"}
+                        onClick={() => {
+                          if (isError) {
+                            void refetch();
+                            return;
+                          }
+                          setQ("");
+                          setCategories([]);
+                          setStatuses([]);
+                          setSort("new");
+                        }}
+                      >
+                        {isError ? "Try again" : <><RotateCcw className="h-5 w-5" /> Clear filters</>}
+                      </Button>
+                    )}
                   </div>
                 )}
 

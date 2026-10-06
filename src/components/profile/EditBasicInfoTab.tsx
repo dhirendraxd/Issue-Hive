@@ -5,8 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Github, Twitter, Linkedin, Instagram, Edit2, Loader2, Check, X } from 'lucide-react';
-import { TabsContent } from '@/components/ui/tabs';
+import { Edit2, Loader2, Check, X } from 'lucide-react';
+import SocialIcon from '@/components/SocialIcon';
 
 interface SocialLinks {
   website?: string;
@@ -349,7 +349,7 @@ const EditBasicInfoTab: React.FC<EditBasicInfoTabProps> = (props) => {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Github className="h-4 w-4" />
+                <SocialIcon platform="github" />
                 GitHub
               </label>
               <Input
@@ -361,19 +361,19 @@ const EditBasicInfoTab: React.FC<EditBasicInfoTabProps> = (props) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Twitter className="h-4 w-4" />
-                Twitter/X
+                <SocialIcon platform="x" />
+                X (Twitter)
               </label>
               <Input
                 value={twitter}
                 onChange={(e) => setTwitter(e.target.value)}
-                placeholder="https://twitter.com/username"
+                placeholder="https://x.com/username"
                 type="url"
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Linkedin className="h-4 w-4" />
+                <SocialIcon platform="linkedin" />
                 LinkedIn
               </label>
               <Input
@@ -385,7 +385,7 @@ const EditBasicInfoTab: React.FC<EditBasicInfoTabProps> = (props) => {
             </div>
             <div className="space-y-1.5">
               <label className="text-sm font-medium flex items-center gap-2">
-                <Instagram className="h-4 w-4" />
+                <SocialIcon platform="instagram" />
                 Instagram
               </label>
               <Input

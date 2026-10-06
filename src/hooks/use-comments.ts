@@ -163,7 +163,7 @@ export function useComments(issueId: string | undefined) {
         return old.map((comment) => {
           if (comment.id === commentId) {
             if (comment.pinnedAt) {
-              const { pinnedAt, pinnedBy, ...rest } = comment;
+              const { pinnedAt: _pinnedAt, pinnedBy: _pinnedBy, ...rest } = comment;
               return rest as CommentDoc;
             } else {
               return { ...comment, pinnedAt: Timestamp.now(), pinnedBy: user!.uid };
