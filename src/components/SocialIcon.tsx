@@ -1,10 +1,11 @@
-type SocialPlatform = "github" | "x" | "linkedin" | "instagram";
+type SocialPlatform = "github" | "x" | "linkedin" | "instagram" | "google";
 
 const icons: Record<SocialPlatform, string> = {
   github: "https://svgl.app/library/github_light.svg",
   x: "https://svgl.app/library/x.svg",
   linkedin: "https://svgl.app/library/linkedin.svg",
   instagram: "https://svgl.app/library/instagram-icon.svg",
+  google: "https://svgl.app/library/google.svg",
 };
 
 interface SocialIconProps {
