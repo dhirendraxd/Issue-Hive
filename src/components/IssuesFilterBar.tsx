@@ -5,9 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ISSUE_CATEGORIES, ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
-import { ListFilter, Search, X, ChevronDown, SortDesc, Filter, Inbox, Clock, CheckCircle2, Lock } from "lucide-react";
+import { ListFilter, Search, X, ChevronDown, SortDesc, Filter, Inbox, Clock, CheckCircle2, Lock, CalendarClock, CalendarDays, ThumbsUp } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMemo } from "react";
 
 export type SortKey = "new" | "old" | "votes";
 
@@ -16,8 +15,8 @@ export function IssuesFilterBar({
   onQChange,
   categories,
   onCategoriesChange,
-  statuses,
-  onStatusesChange,
+  status,
+  onStatusChange,
   sort,
   onSortChange,
   className,
@@ -26,17 +25,14 @@ export function IssuesFilterBar({
   onQChange: (v: string) => void;
   categories: IssueCategory[];
   onCategoriesChange: (v: IssueCategory[]) => void;
-  statuses: IssueStatus[];
-  onStatusesChange: (v: IssueStatus[]) => void;
+  status: IssueStatus | undefined;
+  onStatusChange: (v: IssueStatus | undefined) => void;
   sort: SortKey;
   onSortChange: (v: SortKey) => void;
   className?: string;
 }) {
   const allSelected = categories.length === 0;
-  const hasActiveFilters = categories.length > 0 || statuses.length > 0;
-
-  // Include all statuses (users can explicitly include/exclude "Received")
-  const statusItems = useMemo(() => ISSUE_STATUSES, []);
+  const hasActiveFilters = categories.length > 0 || status !== undefined;
 
   return (
     <div className={cn("rounded-2xl border border-orange-200/50 bg-gradient-to-br from-white/90 to-orange-50/30 backdrop-blur-xl shadow-lg shadow-orange-500/5 p-5 md:p-6", className)}>
@@ -47,7 +43,7 @@ export function IssuesFilterBar({
           <h3 className="text-base font-semibold text-stone-800">Filter Issues</h3>
           {hasActiveFilters && (
             <Badge variant="secondary" className="ml-2 bg-orange-100 text-orange-700 border-orange-300">
-              {(categories.length + statuses.length)} active
+              {categories.length + Number(status !== undefined)} active
             </Badge>
           )}
         </div>
@@ -57,7 +53,7 @@ export function IssuesFilterBar({
             size="sm" 
             onClick={() => {
               onCategoriesChange([]);
-              onStatusesChange([]);
+              onStatusChange(undefined);
             }}
             className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
           >
@@ -146,12 +142,12 @@ export function IssuesFilterBar({
           <div className="flex-1">
             <div className="text-xs font-medium text-stone-600 mb-2"></div>
             <ToggleGroup 
-              type="multiple" 
-              value={statuses} 
-              onValueChange={(v) => onStatusesChange(v as IssueStatus[])} 
+              type="single"
+              value={status ?? ""}
+              onValueChange={(value) => onStatusChange(value ? (value as IssueStatus) : undefined)}
               className="justify-start gap-2 flex-wrap"
             >
-              {statusItems.map((s) => {
+              {ISSUE_STATUSES.map((s) => {
                 const statusConfig = {
                   received: { icon: Inbox },
                   "in-progress": { icon: Clock },
@@ -186,9 +182,15 @@ export function IssuesFilterBar({
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">🆕 Newest First</SelectItem>
-                <SelectItem value="old">📅 Oldest First</SelectItem>
-                <SelectItem value="votes">🔥 Most Supported</SelectItem>
+                <SelectItem value="new">
+                  <span className="flex items-center gap-2"><CalendarClock className="h-4 w-4" />Newest First</span>
+                </SelectItem>
+                <SelectItem value="old">
+                  <span className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />Oldest First</span>
+                </SelectItem>
+                <SelectItem value="votes">
+                  <span className="flex items-center gap-2"><ThumbsUp className="h-4 w-4" />Most Supported</span>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

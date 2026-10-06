@@ -67,8 +67,8 @@ export default function Issues() {
   // Filters
   const [q, setQ] = useState("");
   const [categories, setCategories] = useState<IssueCategory[]>([]);
-  // Show all statuses by default (empty means no filter)
-  const [statuses, setStatuses] = useState<IssueStatus[]>([]);
+  // Show all statuses by default; selecting a status filters to that one only.
+  const [status, setStatus] = useState<IssueStatus | undefined>();
   const [sort, setSort] = useState<SortKey>("new");
 
   const visibleIssues = useMemo(() => {
@@ -85,9 +85,8 @@ export default function Issues() {
       if (vis === "private") return i.createdBy === user?.uid;
       return true;
     });
-    // status filter (default in_progress + resolved)
-    if (statuses.length > 0) {
-      arr = arr.filter((i) => (statuses as IssueStatus[]).includes(i.status));
+    if (status) {
+      arr = arr.filter((i) => i.status === status);
     }
     if (categories.length > 0) {
       arr = arr.filter((i) => categories.includes(i.category));
@@ -108,7 +107,7 @@ export default function Issues() {
     else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
     else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
     return arr;
-  }, [data, categories, q, statuses, sort, user?.uid]);
+  }, [data, categories, q, status, sort, user?.uid]);
 
   // Fetch engagement metrics for visible issues
   const visibleIssueIds = useMemo(() => visibleIssues.map((i) => i.id), [visibleIssues]);
@@ -169,8 +168,8 @@ export default function Issues() {
                   onQChange={setQ}
                   categories={categories}
                   onCategoriesChange={setCategories}
-                  statuses={statuses}
-                  onStatusesChange={setStatuses}
+                  status={status}
+                  onStatusChange={setStatus}
                   sort={sort}
                   onSortChange={setSort}
                 />
@@ -184,11 +183,11 @@ export default function Issues() {
                         ? "Loading campus issues..."
                         : isError
                           ? "We couldn't load issues."
-                          : q.trim() || categories.length > 0 || statuses.length > 0
+                          : q.trim() || categories.length > 0 || status !== undefined
                             ? "No matching issues."
                             : "No issues have been reported yet."}
                     </p>
-                    {!isLoading && (isError || q.trim() || categories.length > 0 || statuses.length > 0) && (
+                    {!isLoading && (isError || q.trim() || categories.length > 0 || status !== undefined) && (
                       <Button
                         variant="ghost"
                         className="mt-3 rounded-full"
@@ -200,7 +199,7 @@ export default function Issues() {
                           }
                           setQ("");
                           setCategories([]);
-                          setStatuses([]);
+                          setStatus(undefined);
                           setSort("new");
                         }}
                       >

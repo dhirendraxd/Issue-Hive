@@ -133,8 +133,12 @@ export default function Auth() {
       </div>
 
       {/* Logo */}
-      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-10">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-lg sm:text-xl tracking-tight">
+      <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+        <Link
+          to="/"
+          aria-label="Go to the IssueHive homepage"
+          className="flex items-center gap-2 font-semibold text-lg sm:text-xl tracking-tight"
+        >
           <img src="/beehive-honey-svgrepo-com.svg" alt="IssueHive" className="h-8 w-8 sm:h-9 sm:w-9" />
           <span>Issue<span className="text-orange-500">Hive</span></span>
         </Link>

@@ -28,6 +28,7 @@ export default function Navbar({ hideProfileIcon = false }: NavbarProps) {
         {/* Logo */}
         <Link
           to="/"
+          aria-label="Go to the IssueHive homepage"
           className="flex items-center gap-2 font-display font-semibold text-lg md:text-xl tracking-tight select-none transition-opacity hover:opacity-90"
           onClick={() => setMobileMenuOpen(false)}
         >
