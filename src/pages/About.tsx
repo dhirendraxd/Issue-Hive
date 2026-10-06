@@ -1,6 +1,8 @@
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import Seo from "@/components/Seo";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { ISSUEHIVE_CREATOR } from "@/lib/seo";
 import { Megaphone, ThumbsUp, CheckCircle2, Mail, ShieldCheck } from "@/components/icons/IconifyIcons";
 
@@ -79,25 +81,53 @@ export default function About() {
             </section>
 
             <section className="mx-auto mt-12 max-w-3xl rounded-2xl border border-stone-200 bg-white p-6 sm:p-8">
-              <h2 className="text-xl font-display font-semibold tracking-tight">Creator</h2>
+              <h2 className="text-xl font-display font-semibold tracking-tight">
+                The creator: {ISSUEHIVE_CREATOR.name}
+              </h2>
               <p className="mt-3 text-stone-600 leading-relaxed">
-                IssueHive was designed and created by {ISSUEHIVE_CREATOR.name}, a designer focused on
-                building useful, community-centered digital experiences.
+                {ISSUEHIVE_CREATOR.description}
+              </p>
+              <p className="mt-3 text-stone-600 leading-relaxed">
+                His path from building interfaces as a frontend engineer into design, marketing, and
+                growth gives him a rare ability to connect how a product works with how it feels and
+                how people discover and use it. That cross-disciplinary perspective shaped IssueHive:
+                a civic-minded product designed to make campus concerns easier to express, understand,
+                and follow over time.
+              </p>
+              <p className="mt-3 text-stone-600 leading-relaxed">
+                Dhirendra also co-hosts Lovelace Talk, exploring technology, social issues, governance,
+                sustainability, and ideas shaping the future. His interests include internet governance,
+                climate justice, advocacy, public policy, community building, and social entrepreneurship.
+                He studies Information Management at Tribhuvan University and has contributed to Pulse AI,
+                a collaborative project for the FutureFront AI Innovator Program by Youth Innovation Lab
+                and the U.S. Embassy in Nepal.
               </p>
               <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
-                {ISSUEHIVE_CREATOR.sameAs.map((profile) => (
+                {ISSUEHIVE_CREATOR.profiles.map((profile) => (
                   <a
-                    key={profile}
-                    href={profile}
+                    key={profile.url}
+                    href={profile.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-orange-700 underline-offset-4 hover:underline"
                   >
-                    {profile.includes("behance.net") ? "Behance portfolio" : "LinkedIn profile"}
+                    {profile.label}
                   </a>
                 ))}
               </div>
             </section>
+
+            <nav
+              aria-label="Explore IssueHive"
+              className="mx-auto mt-8 flex max-w-3xl flex-wrap justify-center gap-3"
+            >
+              <Button asChild variant="outline" className="rounded-full">
+                <Link to="/issues">Browse campus issues</Link>
+              </Button>
+              <Button asChild className="rounded-full">
+                <Link to="/raise-issue">Report a campus issue</Link>
+              </Button>
+            </nav>
 
             {/* How it works - Simple, Clean Layout */}
             <section className="mx-auto max-w-3xl mt-24">

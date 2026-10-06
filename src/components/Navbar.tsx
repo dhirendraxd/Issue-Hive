@@ -63,6 +63,16 @@ export default function Navbar({ hideProfileIcon = false }: NavbarProps) {
             Issues
           </Link>
           <Link
+            to="/about"
+            className={`font-medium transition-colors ${
+              isActive('/about')
+                ? 'text-black border-b-2 border-orange-500'
+                : 'text-black/70 hover:text-black'
+            }`}
+          >
+            About
+          </Link>
+          <Link
             to="/raise-issue"
             className={`font-medium transition-colors ${
               isActive('/raise-issue')
@@ -129,6 +139,17 @@ export default function Navbar({ hideProfileIcon = false }: NavbarProps) {
               }`}
             >
               Issues
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`px-4 py-3 rounded-lg font-medium transition-colors ${
+                isActive('/about')
+                  ? 'bg-orange-500 text-white'
+                  : 'text-black/70 hover:bg-gray-100'
+              }`}
+            >
+              About IssueHive
             </Link>
             <Link
               to="/raise-issue"

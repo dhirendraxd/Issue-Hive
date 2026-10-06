@@ -1,4 +1,4 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import { ISSUEHIVE_CREATOR, SEO, buildTitle } from "@/lib/seo";
 
 type SeoProps = {
@@ -27,75 +27,111 @@ export default function Seo({
   const imageUrl = ogImage ? `${SEO.baseUrl}${ogImage}` : `${SEO.baseUrl}${SEO.ogImage}`;
 
   const jsonLdArray = Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : [];
+  const routeStructuredData = JSON.stringify({
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${pageUrl}#webpage`,
+        name: fullTitle,
+        url: pageUrl,
+        description: metaDescription,
+        inLanguage: "en-NP",
+        author: { "@id": `${SEO.baseUrl}/#creator` },
+        isPartOf: { "@id": `${SEO.baseUrl}/#website` },
+      },
+      ...jsonLdArray,
+    ],
+  });
 
-  return (
-    <Helmet>
-      <title>{fullTitle}</title>
-      <meta name="description" content={metaDescription} />
-      <meta name="keywords" content={keywordList} />
-      <meta name="author" content={ISSUEHIVE_CREATOR.name} />
-      <meta name="geo.region" content="NP" />
-      <meta name="geo.placename" content="Nepal" />
-      {noIndex ? (
-        <meta name="robots" content="noindex, nofollow" />
-      ) : (
-        <meta name="robots" content="index, follow" />
-      )}
-      <link rel="canonical" href={pageUrl} />
-      <meta property="og:title" content={fullTitle} />
-      <meta property="og:description" content={metaDescription} />
-      <meta property="og:type" content="website" />
-      <meta property="og:url" content={pageUrl} />
-      <meta property="og:image" content={imageUrl} />
-      <meta property="og:image:alt" content={`${SEO.siteName} — campus issue reporting for Nepal`} />
-      <meta property="og:site_name" content={SEO.siteName} />
-      <meta property="og:locale" content="en_NP" />
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={metaDescription} />
-      <meta name="twitter:image" content={imageUrl} />
-      <meta name="twitter:image:alt" content={`${SEO.siteName} — campus issue reporting for Nepal`} />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@graph": [
-            {
-              "@type": "WebSite",
-              "@id": `${SEO.baseUrl}/#website`,
-              name: SEO.siteName,
-              url: `${SEO.baseUrl}/`,
-              description: SEO.defaultDescription,
-              inLanguage: "en-NP",
-              publisher: { "@id": `${SEO.baseUrl}/#creator` },
-            },
-            {
-              "@type": "Person",
-              "@id": `${SEO.baseUrl}/#creator`,
-              name: ISSUEHIVE_CREATOR.name,
-              url: ISSUEHIVE_CREATOR.url,
-              sameAs: ISSUEHIVE_CREATOR.sameAs,
-              jobTitle: ISSUEHIVE_CREATOR.jobTitle,
-              description:
-                "Designer and creator of IssueHive, a student voice and campus issue reporting project for Nepal.",
-            },
-            {
-              "@type": "WebPage",
-              "@id": `${pageUrl}#webpage`,
-              name: fullTitle,
-              url: pageUrl,
-              description: metaDescription,
-              inLanguage: "en-NP",
-              author: { "@id": `${SEO.baseUrl}/#creator` },
-              isPartOf: { "@id": `${SEO.baseUrl}/#website` },
-            },
-          ],
-        })}
-      </script>
-      {jsonLdArray.map((entry, index) => (
-        <script key={`jsonld-${index}`} type="application/ld+json">
-          {JSON.stringify(entry)}
-        </script>
-      ))}
-    </Helmet>
-  );
+  useEffect(() => {
+    const previousTitle = document.title;
+    const previousValues: Array<() => void> = [];
+
+    const updateMeta = (attribute: "name" | "property", key: string, content: string) => {
+      const selector = `meta[${attribute}="${key}"]`;
+      let element = document.head.querySelector<HTMLMetaElement>(selector);
+      const existed = element !== null;
+      if (!element) {
+        element = document.createElement("meta");
+        element.setAttribute(attribute, key);
+        document.head.appendChild(element);
+      }
+      const previousContent = element.getAttribute("content");
+      element.setAttribute("content", content);
+      previousValues.push(() => {
+        if (existed && previousContent !== null) {
+          element?.setAttribute("content", previousContent);
+        } else {
+          element?.remove();
+        }
+      });
+    };
+
+    const updateCanonical = () => {
+      let element = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+      const existed = element !== null;
+      if (!element) {
+        element = document.createElement("link");
+        element.rel = "canonical";
+        document.head.appendChild(element);
+      }
+      const previousHref = element.href;
+      element.href = pageUrl;
+      previousValues.push(() => {
+        if (existed) {
+          element?.setAttribute("href", previousHref);
+        } else {
+          element?.remove();
+        }
+      });
+    };
+
+    document.title = fullTitle;
+    updateMeta("name", "description", metaDescription);
+    updateMeta("name", "keywords", keywordList);
+    updateMeta("name", "author", ISSUEHIVE_CREATOR.name);
+    updateMeta("name", "geo.region", "NP");
+    updateMeta("name", "geo.placename", "Nepal");
+    updateMeta("name", "robots", noIndex ? "noindex, nofollow" : "index, follow");
+    updateCanonical();
+
+    const socialMetadata: Array<[ "name" | "property", string, string ]> = [
+      ["property", "og:title", fullTitle],
+      ["property", "og:description", metaDescription],
+      ["property", "og:type", "website"],
+      ["property", "og:url", pageUrl],
+      ["property", "og:image", imageUrl],
+      ["property", "og:image:alt", `${SEO.siteName} — campus issue reporting for Nepal`],
+      ["property", "og:site_name", SEO.siteName],
+      ["property", "og:locale", "en_NP"],
+      ["name", "twitter:card", "summary_large_image"],
+      ["name", "twitter:title", fullTitle],
+      ["name", "twitter:description", metaDescription],
+      ["name", "twitter:image", imageUrl],
+      ["name", "twitter:image:alt", `${SEO.siteName} — campus issue reporting for Nepal`],
+    ];
+    socialMetadata.forEach(([attribute, key, value]) => updateMeta(attribute, key, value));
+
+    const existingStructuredData = document.getElementById("issuehive-route-jsonld");
+    const hadStructuredData = existingStructuredData !== null;
+    const previousStructuredData = existingStructuredData?.textContent;
+    const schemaElement = existingStructuredData ?? document.createElement("script");
+    schemaElement.id = "issuehive-route-jsonld";
+    schemaElement.type = "application/ld+json";
+    schemaElement.textContent = routeStructuredData;
+    if (!hadStructuredData) document.head.appendChild(schemaElement);
+
+    return () => {
+      document.title = previousTitle;
+      previousValues.reverse().forEach((restore) => restore());
+      if (hadStructuredData && previousStructuredData !== null) {
+        schemaElement.textContent = previousStructuredData;
+      } else {
+        schemaElement.remove();
+      }
+    };
+  }, [fullTitle, metaDescription, keywordList, pageUrl, imageUrl, noIndex, routeStructuredData]);
+
+  return null;
 }

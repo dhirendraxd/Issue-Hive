@@ -95,11 +95,18 @@ function Hero() {
           <span className="sr-only">{HERO_TAGLINES[0]}</span>
 
           <div className="mt-2 md:mt-4 flex gap-3">
-            <Link to={user ? "/raise-issue" : "/auth"}>
-              <Button size="lg" className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-display font-medium text-[13px]">
+            <Button
+              asChild
+              size="lg"
+              className="group rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-display font-medium text-[13px]"
+            >
+              <Link
+                to={user ? "/raise-issue" : "/auth"}
+                aria-label={user ? "Report a campus issue" : "Join IssueHive"}
+              >
                 Get Started <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </motion.div>
       </div>
@@ -309,12 +316,15 @@ const Index = () => {
             IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
           </p>
           <div className="mt-6 flex justify-center">
-            <Link to="/about">
-              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+            <Button
+              asChild
+              className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]"
+            >
+              <Link to="/about" aria-label="Learn how IssueHive works">
                 How It Works
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
@@ -337,12 +347,15 @@ const Index = () => {
             IssueHive is a college issue reporting system for Nepal built around student voice, campus voices, and community engagement.
           </p>
           <div className="mt-6 flex justify-center">
-            <Link to="/about">
-              <Button className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]">
+            <Button
+              asChild
+              className="rounded-full h-12 px-7 bg-black text-white hover:bg-orange-400/90 tracking-wide transition-colors uppercase font-medium text-[13px]"
+            >
+              <Link to="/about" aria-label="Learn how IssueHive works">
                 How It Works
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
