@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, RefreshCw, Coffee } from 'lucide-react';
+import { Home, RefreshCw, Coffee, Bug } from "@/components/icons/IconifyIcons";
 
 type State = { hasError: boolean; error?: Error | null; info?: React.ErrorInfo | null };
 
@@ -84,8 +84,9 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
           textAlign: 'center',
         }}>
-          {/* Sad Bee Emoji */}
-          <div style={{ fontSize: 72, marginBottom: 16 }}>🐝💥</div>
+          <div style={{ marginBottom: 16, color: '#f97316' }} aria-hidden="true">
+            <Bug size={64} />
+          </div>
           
           <h1 style={{ 
             fontSize: 32, 
@@ -191,7 +192,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               color: '#666',
               userSelect: 'none',
             }}>
-              🤓 Show me the gory details
+              Show technical details
             </summary>
             {info?.componentStack && (
               <pre style={{ 

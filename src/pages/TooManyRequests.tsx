@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Zap, Home, Timer, Coffee, TrendingDown } from "lucide-react";
+import { Zap, Home, Timer, Coffee, TrendingDown } from "@/components/icons/IconifyIcons";
 
 const RATE_LIMIT_QUIPS = [
   "Whoa there, speed racer.",
@@ -106,9 +106,9 @@ const TooManyRequests = () => {
                 "{suggestion}"
               </p>
               <div className="space-y-2 text-xs text-muted-foreground/80">
-                <p>💡 Pro tip: Refresh less, zen more</p>
-                <p>⏱️ Rate limits reset automatically</p>
-                <p>🧘 This is a sign to take a break</p>
+                <p>Pro tip: Refresh less, zen more</p>
+                <p>Rate limits reset automatically</p>
+                <p>This is a sign to take a break</p>
               </div>
             </div>
 

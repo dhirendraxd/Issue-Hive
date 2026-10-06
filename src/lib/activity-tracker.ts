@@ -78,7 +78,7 @@ export function logActivity(
     
     localStorage.setItem(STORAGE_KEY, JSON.stringify(trimmed));
     
-    logger.debug(`[ActivityTracker] ✅ Logged ${type}:`, data);
+    logger.debug(`[ActivityTracker] Logged ${type}:`, data);
   } catch (error) {
     logger.error('[ActivityTracker] Error logging activity:', error);
   }

@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag, MapPin } from "lucide-react";
+import { ArrowNarrowRight, ThumbsUp, ThumbsDown, MessageSquare, RotateCcw, Sparkles, MoreVertical, Flag, MapPin } from "@/components/icons/IconifyIcons";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
@@ -294,17 +294,17 @@ export default function Issues() {
                               </span>
                               {"visibility" in i && i.visibility === "private" && (
                                 <span className="inline-flex items-center rounded-full border border-purple-300 bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
-                                  🔒 Private
+                                  Private
                                 </span>
                               )}
                               {i.status === "resolved" && i.resolution && (
                                 <span className="inline-flex items-center rounded-full border border-green-300 bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
-                                  ✅ Resolution Posted
+                                  Resolution Posted
                                 </span>
                               )}
                               {i.progressUpdates && i.progressUpdates.length > 0 && (
                                 <span className="inline-flex items-center rounded-full border border-orange-300 bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700">
-                                  🔄 {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? "s" : ""}
+                                  {i.progressUpdates.length} Update{i.progressUpdates.length !== 1 ? "s" : ""}
                                 </span>
                               )}
                               {i.status === "in_progress" && !(i.progressUpdates && i.progressUpdates.length > 0) && !i.resolution && (
@@ -349,15 +349,7 @@ export default function Issues() {
                                   handleCardClick(i);
                                 }}
                               >
-                                <svg
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  className="h-5 w-5"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
+                                <ArrowNarrowRight className="h-5 w-5" aria-hidden="true" />
                               </Button>
                             </div>
 

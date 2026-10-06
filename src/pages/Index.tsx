@@ -1,5 +1,7 @@
 import { useEffect, useState, lazy, Suspense } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { collection, getCountFromServer } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { motion } from "framer-motion";
@@ -7,7 +9,9 @@ import Navbar from "@/components/Navbar";
 import Seo from "@/components/Seo";
 import { useIssuesFirebase } from "@/hooks/use-issues-firebase";
 import { useAuth } from "@/hooks/use-auth";
-import { ArrowRight } from "lucide-react";
+import { db, isFirebaseConfigured } from "@/integrations/firebase/config";
+import { ArrowRight } from "@/components/icons/IconifyIcons";
+import { SEO } from "@/lib/seo";
 import CommunityCTA from "@/components/CommunityCTA";
 import SiteFooter from "@/components/SiteFooter";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -21,8 +25,50 @@ const AmbientDust = lazy(() => import("@/components/AmbientDust"));
 const BubbleParticles = lazy(() => import("@/components/BubbleParticles"));
 const ParticlesBackground = lazy(() => import("@/components/ParticlesBackground"));
 
+const HERO_TAGLINES = [
+  "Campus voices in Nepal: report campus problems, share campus event posts, and grow community engagement.",
+  "Report campus problems, share campus events, and help your community move forward.",
+  "Make campus concerns visible and support solutions together.",
+  "Share campus issues and help build a more responsive community.",
+];
+
 function Hero() {
   const { user } = useAuth();
+  const [typedTagline, setTypedTagline] = useState("");
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setTypedTagline(HERO_TAGLINES[0]);
+      return;
+    }
+
+    let messageIndex = 0;
+    let characterIndex = 0;
+    let deleting = false;
+    let timeout: number;
+
+    const animate = () => {
+      const message = Array.from(HERO_TAGLINES[messageIndex]);
+      characterIndex += deleting ? -1 : 1;
+      setTypedTagline(message.slice(0, characterIndex).join(""));
+
+      if (!deleting && characterIndex === message.length) {
+        deleting = true;
+        timeout = window.setTimeout(animate, 2200);
+        return;
+      }
+
+      if (deleting && characterIndex === 0) {
+        deleting = false;
+        messageIndex = (messageIndex + 1) % HERO_TAGLINES.length;
+      }
+
+      timeout = window.setTimeout(animate, deleting ? 24 : 48);
+    };
+
+    timeout = window.setTimeout(animate, 500);
+    return () => window.clearTimeout(timeout);
+  }, []);
   
   return (
     <section className="relative overflow-hidden min-h-[100svh] flex items-center">
@@ -42,9 +88,11 @@ function Hero() {
             <br />
             Campus Issue Reporting
           </h1>
-          <p className="text-xs md:text-sm text-muted-foreground/90">
-            Campus voices in Nepal: report campus problems, share campus event posts, and grow community engagement.
+          <p className="flex h-16 max-w-2xl items-center justify-center text-xs leading-5 text-muted-foreground/90 md:text-sm md:leading-6">
+            <span aria-hidden="true">{typedTagline}</span>
+            <span className="ml-0.5 inline-block h-4 border-l border-orange-500 align-middle motion-safe:animate-pulse" aria-hidden="true" />
           </p>
+          <span className="sr-only">{HERO_TAGLINES[0]}</span>
 
           <div className="mt-2 md:mt-4 flex gap-3">
             <Link to={user ? "/raise-issue" : "/auth"}>
@@ -71,18 +119,20 @@ function Hero() {
   );
 }
 
-function StatCards({ total, open, votes }: { total: number; open: number; votes: number }) {
+function StatCards({ total, open, users }: { total: number; open: number; users?: number }) {
   const items = [
     { label: "Total Issues", value: total },
     { label: "Open Issues", value: open },
-    { label: "Total Supports", value: votes },
+    { label: "Registered Users", value: users },
   ];
 
   // Count animation: quickly 1 -> 100, then settle to actual value (up or down)
-  function CountUpNumber({ value, upDuration = 700, settleDuration = 500 }: { value: number; upDuration?: number; settleDuration?: number }) {
+  function CountUpNumber({ value, upDuration = 700, settleDuration = 500 }: { value?: number; upDuration?: number; settleDuration?: number }) {
     const [display, setDisplay] = useState(0);
 
     useEffect(() => {
+      if (value === undefined) return;
+
       let raf: number;
       const maxPhase = 100;
 
@@ -132,7 +182,7 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
           <Card className="rounded-2xl glass-card hover:shadow-lg hover:shadow-orange-400/20 hover:border-orange-200/40 transition-all duration-300">
             <CardContent className="py-8 text-center">
               <div className="text-3xl md:text-4xl font-display font-semibold text-orange-500">
-                <CountUpNumber value={i.value} />
+                {i.value === undefined ? "—" : <CountUpNumber value={i.value} />}
               </div>
               <div className="mt-2 text-sm text-muted-foreground">{i.label}</div>
             </CardContent>
@@ -145,26 +195,72 @@ function StatCards({ total, open, votes }: { total: number; open: number; votes:
 
 const Index = () => {
   const { stats } = useIssuesFirebase();
+  const { data: registeredUsers } = useQuery({
+    queryKey: ["registered-user-count"],
+    queryFn: async () => {
+      if (!db) {
+        throw new Error("Firebase is not configured; registered users cannot be counted.");
+      }
+
+      try {
+        const snapshot = await getCountFromServer(collection(db, "users"));
+        return snapshot.data().count;
+      } catch (error) {
+        console.error("Failed to load registered user count:", error);
+        throw error;
+      }
+    },
+    enabled: isFirebaseConfigured && !!db,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
   const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen bg-stone-50 relative animate-in fade-in duration-300">
       <Seo
-        title="Issue Reporting Nepal & Campus Voices"
-        description="College-focused platform that enables students to submit, support, and track campus-related issues simply and transparently. Designed with a minimal, student-first approach, the project emphasizes community moderation, voice, and clarity in how issues are visible."
+        title="Campus Issue Reporting in Nepal"
+        description="IssueHive helps Nepalese campus communities report problems, share context, gather student support, and track progress from report to resolution."
         path="/"
         keywords={[
           "issue reporting nepal",
           "college issue reporting system nepal",
-          "campus events posts nepal",
-          "report campus problems",
-          "student voice",
-          "campus voices",
-          "community engagement",
-          "nepalese college platform",
-          "student activism",
-          "campus improvement",
+          "report campus problems in Nepal",
+          "student voice platform",
+          "campus issue tracking",
+          "campus issue resolution",
+          "college community engagement",
+          "student-led campus improvement",
         ]}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          "@id": `${SEO.baseUrl}/#application`,
+          name: "IssueHive",
+          url: `${SEO.baseUrl}/`,
+          applicationCategory: "SocialNetworkingApplication",
+          operatingSystem: "Web browser",
+          description:
+            "A student voice platform for Nepalese campuses to report campus problems, gather community support, and track progress and resolutions.",
+          inLanguage: "en-NP",
+          creator: { "@id": `${SEO.baseUrl}/#creator` },
+          areaServed: {
+            "@type": "Country",
+            name: "Nepal",
+          },
+          featureList: [
+            "Structured campus issue reports with category and urgency",
+            "Public, private, and draft issue visibility",
+            "Optional anonymous display when submitting an issue",
+            "Community upvotes, downvotes, and threaded comments",
+            "Progress updates and issue status history",
+            "Resolution notes and issue tracking",
+            "Community reporting and moderation workflows",
+            "User profiles, notifications, and direct messaging",
+          ],
+          award: "Third place at KIST Hackfest",
+          educationalUse: "Semester project",
+        }}
       />
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 bg-black text-white rounded px-3 py-2">Skip to content</a>
   <Navbar />
@@ -202,7 +298,7 @@ const Index = () => {
     <ParticlesBackground longFade hexOpacity={0.16}>
       {/* Stats */}
       <div className="py-8">
-        <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
+        <StatCards total={stats.total} open={stats.open} users={registeredUsers} />
       </div>
 
       {/* Mid CTA (replaces form section) */}
@@ -230,7 +326,7 @@ const Index = () => {
     <>
       {/* Stats */}
       <div className="py-8 bg-stone-50">
-        <StatCards total={stats.total} open={stats.open} votes={stats.votes} />
+        <StatCards total={stats.total} open={stats.open} users={registeredUsers} />
       </div>
 
       {/* Mid CTA (replaces form section) */}

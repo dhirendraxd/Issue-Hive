@@ -3,7 +3,7 @@ import ParticlesBackground from "@/components/ParticlesBackground";
 import Seo from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Bug, Home, Route as RouteIcon, Search, Sparkles } from "lucide-react";
+import { Bug, Home, Route as RouteIcon, Search, Sparkles } from "@/components/icons/IconifyIcons";
 
 const QUIPS = [
   "404: This page took a gap year.",

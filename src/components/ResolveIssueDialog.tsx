@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { CheckCircle2, Upload, X } from "lucide-react";
+import { CheckCircle2, Upload, X } from "@/components/icons/IconifyIcons";
 
 interface ResolveIssueDialogProps {
   open: boolean;

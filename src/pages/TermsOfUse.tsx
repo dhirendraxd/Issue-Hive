@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from "@/components/icons/IconifyIcons";
 import Navbar from '@/components/Navbar';
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Seo from "@/components/Seo";

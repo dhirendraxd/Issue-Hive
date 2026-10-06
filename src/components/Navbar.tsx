@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getUserAvatarUrl } from '@/lib/avatar';
 import { useAvatarUrl } from '@/hooks/use-avatar-url';
-import { Menu, X } from "lucide-react";
+import { Menu, X } from "@/components/icons/IconifyIcons";
 import { useState } from "react";
 
 interface NavbarProps {

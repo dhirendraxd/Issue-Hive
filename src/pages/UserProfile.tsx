@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Edit2, Check, Settings, MapPin, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, AlertTriangle, Bell, CheckCircle } from 'lucide-react';
+import { Edit2, Check, Settings, MapPin, Link2, Calendar, ThumbsUp, ThumbsDown, MessageSquare, TrendingUp, Plus, LogOut, Mail, GraduationCap, Users, Inbox, MailPlus, Flag, AlertCircle, AlertTriangle, Bell, CheckCircle } from "@/components/icons/IconifyIcons";
 import SocialIcon from '@/components/SocialIcon';
 import ResolveIssueDialog from '@/components/ResolveIssueDialog';
 import AddProgressDialog from '@/components/AddProgressDialog';
@@ -339,7 +339,7 @@ export default function UserProfile() {
   // Show toast for vote success
   useEffect(() => {
     if (voteOnReport.isSuccess) {
-      toast.success('✓ Your vote was counted!', {
+      toast.success('Your vote was counted!', {
         description: 'Thanks for helping moderate the community',
         duration: 2000,
       });
@@ -1236,7 +1236,7 @@ export default function UserProfile() {
                                               </div>
                                               <p className="text-xs font-medium text-stone-600">
                                                 {report.reportCount > 10 
-                                                  ? '🚨 Comment exceeds threshold - will be removed' 
+                                                  ? 'Comment exceeds threshold - will be removed'
                                                   : `${10 - report.reportCount} more reports needed`}
                                               </p>
                                             </div>
@@ -1490,7 +1490,7 @@ export default function UserProfile() {
                             <div className="space-y-4">
                               <div>
                                 <h3 className="text-lg font-semibold mb-2">User Reports - Community Moderation</h3>
-                                <p className="text-sm text-muted-foreground mb-4">👥 Users reported by the community. Vote 👍 to agree report is valid or 👎 to dismiss.</p>
+                                <p className="text-sm text-muted-foreground mb-4">Users reported by the community. Vote to agree that a report is valid or to dismiss it.</p>
                               </div>
                               
                               {reviewableReports && reviewableReports.length > 0 ? (
@@ -1597,7 +1597,7 @@ export default function UserProfile() {
 
                                           {/* Report Timestamp */}
                                           <p className="text-xs font-medium text-stone-600">
-                                            📅 Reported {formatRelativeTime(
+                                            Reported {formatRelativeTime(
                                               report.createdAt?.toMillis?.() ||
                                               report.createdAt?.seconds * 1000 ||
                                               Date.now()
@@ -1613,7 +1613,8 @@ export default function UserProfile() {
                                               <div className="space-y-3">
                                                 <div className="bg-red-100 border border-red-300 rounded-lg p-3">
                                                   <p className="text-sm text-red-700">
-                                                    ⚠️ <span className="font-semibold">You are reported in this case</span> - You cannot vote, but you can provide clarification below.
+                                                    <AlertTriangle className="mr-1 inline h-4 w-4" aria-hidden="true" />
+                                                    <span className="font-semibold">You are reported in this case</span> - You cannot vote, but you can provide clarification below.
                                                   </p>
                                                 </div>
                                                 
@@ -1640,7 +1641,7 @@ export default function UserProfile() {
                                                     <p className="text-xs font-semibold text-stone-600 uppercase">Provide Your Clarification</p>
                                                     <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-2">
                                                       <p className="text-xs text-amber-800">
-                                                        <span className="font-semibold">⚠️ Important:</span> Once submitted, your clarification cannot be edited or deleted. Make sure your response is complete and accurate.
+                                                        <span className="font-semibold">Important:</span> Once submitted, your clarification cannot be edited or deleted. Make sure your response is complete and accurate.
                                                       </p>
                                                     </div>
                                                     <textarea
@@ -1751,7 +1752,10 @@ export default function UserProfile() {
                                         {/* Auto-dismiss indicator if downvotes > 25 */}
                                         {report.status === 'dismissed' && (
                                           <div className="bg-green-100 border border-green-300 rounded-lg p-3 text-center">
-                                            <p className="text-sm font-semibold text-green-700">✓ Community voted to dismiss this report</p>
+                                            <p className="text-sm font-semibold text-green-700">
+                                              <CheckCircle className="mr-1 inline h-4 w-4" aria-hidden="true" />
+                                              Community voted to dismiss this report
+                                            </p>
                                           </div>
                                         )}
                                       </CardContent>

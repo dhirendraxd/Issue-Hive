@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/use-auth';
 import { cn, formatRelativeTime } from '@/lib/utils';
 import { validateCommentData } from '@/lib/security';
-import { MessageSquare, Reply, ThumbsUp, Pin, Flag, MoreVertical } from 'lucide-react';
+import { MessageSquare, Reply, ThumbsUp, Pin, Flag, MoreVertical } from "@/components/icons/IconifyIcons";
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { toggleCommentLike, getUserCommentLike, type CommentDoc } from '@/integrations/firebase/firestore';
 import { logActivity } from '@/lib/activity-tracker';
@@ -390,7 +390,7 @@ export default function IssueComments({ issueId, issueTitle = "Unknown Issue", i
         }} className="space-y-2">
           <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mb-2">
             <p className="text-[10px] text-amber-800">
-              <span className="font-semibold">⚠️ Note:</span> Comments cannot be edited or deleted once posted.
+              <span className="font-semibold">Note:</span> Comments cannot be edited or deleted once posted.
             </p>
           </div>
           <Textarea

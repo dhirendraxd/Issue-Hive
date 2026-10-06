@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { X, Upload, TrendingUp } from 'lucide-react';
+import { X, Upload, TrendingUp } from "@/components/icons/IconifyIcons";
 import { toast } from 'sonner';
 
 interface AddProgressDialogProps {
@@ -93,7 +93,7 @@ export default function AddProgressDialog({
             Share an update on the progress of "{issueTitle}"
           </DialogDescription>          <div className="bg-amber-50 border border-amber-300 rounded-lg p-2 mt-2">
             <p className="text-xs text-amber-800">
-              <span className="font-semibold">⚠️ Note:</span> Progress updates cannot be edited or deleted once posted.
+              <span className="font-semibold">Note:</span> Progress updates cannot be edited or deleted once posted.
             </p>
           </div>        </DialogHeader>
 

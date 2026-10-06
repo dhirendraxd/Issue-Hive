@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertCircle, Image, X } from 'lucide-react';
+import { AlertCircle, Image, X } from "@/components/icons/IconifyIcons";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface StatusUpdateDialogProps {

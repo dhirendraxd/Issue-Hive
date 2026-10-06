@@ -15,23 +15,36 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { 
   AlertCircle, 
-  CheckCircle2, 
   Loader2, 
   AlertTriangle, 
   Zap, 
   Clock,
-  Info,
   MapPin,
   FileText,
   Tag,
-  Shield
-} from 'lucide-react';
+  Shield,
+  Building2,
+  BookOpen,
+  Landmark,
+  PartyPopper,
+  CursorClick,
+  UserShield,
+  Send2,
+} from "@/components/icons/IconifyIcons";
 import ParticlesBackground from '@/components/ParticlesBackground';
 import Navbar from '@/components/Navbar';
 import { cn } from '@/lib/utils';
 import { sanitizeText, limitLength } from '@/lib/sanitize';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import Seo from "@/components/Seo";
+
+const CATEGORY_ICONS: Record<IssueCategory, typeof Building2> = {
+  Facilities: Building2,
+  Academics: BookOpen,
+  Administration: Landmark,
+  Events: PartyPopper,
+  Other: FileText,
+};
 
 export default function RaiseIssuePage() {
   const { user, loading: authLoading } = useAuth();
@@ -49,6 +62,7 @@ export default function RaiseIssuePage() {
     category: '' as IssueCategory | '',
     urgency: 'low' as 'low' | 'medium' | 'high',
   });
+  const CategoryIcon = formData.category ? CATEGORY_ICONS[formData.category] : null;
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -200,6 +214,7 @@ export default function RaiseIssuePage() {
         title="Report Campus Problems"
         description="Report campus problems in Nepal with IssueHive. Add details, category, and urgency to help campus voices drive community engagement and faster resolutions."
         path="/raise-issue"
+        noIndex
         keywords={[
           "report campus problems",
           "report issues",
@@ -227,59 +242,52 @@ export default function RaiseIssuePage() {
       </div>
 
       {/* Main Content */}
-  <div className="relative z-10 pt-28 pb-20 px-4 sm:px-6 lg:px-8 scroll-mt-20">
+      <div className="relative z-10 pt-24 pb-14 px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="max-w-3xl mx-auto">
           {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 mb-4 shadow-xl ring-4 ring-orange-100">
-              <AlertCircle className="h-8 w-8 text-white" />
-            </div>
-            <h1 className="text-4xl font-display font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-display font-bold tracking-tight text-gray-900 sm:text-4xl mb-3">
               Report a <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">Campus Issue</span>
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
               Help improve our campus community by reporting facilities, infrastructure, or service issues
             </p>
-            <div className="mt-4 flex items-center justify-center gap-6 text-sm text-gray-500">
-              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
+              <div className="flex items-center gap-2">
+                <CursorClick className="h-4 w-4 text-green-600" aria-hidden="true" />
                 <span className="font-medium">Quick & Easy</span>
               </div>
-              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
-                <Shield className="h-4 w-4 text-blue-600" />
+              <div className="flex items-center gap-2">
+                <UserShield className="h-4 w-4 text-blue-600" aria-hidden="true" />
                 <span className="font-medium">Anonymous Option</span>
               </div>
-              <div className="flex items-center gap-2 glass-subtle px-3 py-2 rounded-full">
-                <Zap className="h-4 w-4 text-orange-600" />
+              <div className="flex items-center gap-2">
+                <Send2 className="h-4 w-4 text-orange-600" aria-hidden="true" />
                 <span className="font-medium">Instant Submission</span>
               </div>
             </div>
           </div>
 
           {/* Form Card */}
-          <Card className="glass-strong shadow-2xl border-t-4 border-t-orange-400">
-            <CardHeader className="border-b border-white/40 bg-gradient-to-r from-orange-50/50 to-amber-50/50">
-              <CardTitle className="flex items-center gap-2 text-2xl font-display">
-                <div className="p-2 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 shadow-md">
-                  <FileText className="h-5 w-5 text-white" />
-                </div>
+          <Card className="border border-stone-200 bg-white shadow-md">
+            <CardHeader className="border-b border-stone-100 px-6 py-5">
+              <CardTitle className="text-xl font-display">
                 Issue Details
               </CardTitle>
-              <CardDescription className="text-base">
+              <CardDescription className="text-sm">
                 Provide clear information to help us address the issue quickly
               </CardDescription>
             </CardHeader>
-            <CardContent className="pt-6">
-              <form onSubmit={handleSubmit} className="space-y-8">
+            <CardContent className="px-6 py-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Progress Indicator */}
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <Info className="h-4 w-4" />
+                <div className="text-sm text-gray-500">
                   <span>All fields marked with <span className="text-red-500">*</span> are required</span>
                 </div>
 
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title" className="text-base font-semibold flex items-center gap-2">
+                  <Label htmlFor="title" className="text-sm font-semibold flex items-center gap-2">
                     <FileText className="h-4 w-4 text-gray-500" />
                     Issue Title <span className="text-red-500">*</span>
                   </Label>
@@ -322,7 +330,7 @@ export default function RaiseIssuePage() {
 
                 {/* Category */}
                 <div className="space-y-2">
-                  <Label htmlFor="category" className="text-base font-semibold flex items-center gap-2">
+                  <Label htmlFor="category" className="text-sm font-semibold flex items-center gap-2">
                     <Tag className="h-4 w-4 text-gray-500" />
                     Category <span className="text-red-500">*</span>
                   </Label>
@@ -351,12 +359,13 @@ export default function RaiseIssuePage() {
                         formData.category && !formErrors.category && "border-green-300"
                       )}
                     >
+                      {CategoryIcon && <CategoryIcon className="h-4 w-4 text-muted-foreground" />}
                       <SelectValue placeholder="Choose the most relevant category" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Facilities">
                         <div className="flex items-center gap-2 py-1">
-                          <span className="text-lg">🏢</span>
+                          <Building2 className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Facilities</div>
                             <div className="text-xs text-gray-500">Classrooms, labs, restrooms, furniture</div>
@@ -365,7 +374,7 @@ export default function RaiseIssuePage() {
                       </SelectItem>
                       <SelectItem value="Academics">
                         <div className="flex items-center gap-2 py-1">
-                          <span className="text-lg">📚</span>
+                          <BookOpen className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Academics</div>
                             <div className="text-xs text-gray-500">Courses, schedules, library, exams</div>
@@ -374,7 +383,7 @@ export default function RaiseIssuePage() {
                       </SelectItem>
                       <SelectItem value="Administration">
                         <div className="flex items-center gap-2 py-1">
-                          <span className="text-lg">🏛️</span>
+                          <Landmark className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Administration</div>
                             <div className="text-xs text-gray-500">Offices, services, documentation</div>
@@ -383,7 +392,7 @@ export default function RaiseIssuePage() {
                       </SelectItem>
                       <SelectItem value="Events">
                         <div className="flex items-center gap-2 py-1">
-                          <span className="text-lg">🎉</span>
+                          <PartyPopper className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Events</div>
                             <div className="text-xs text-gray-500">Activities, clubs, announcements</div>
@@ -392,7 +401,7 @@ export default function RaiseIssuePage() {
                       </SelectItem>
                       <SelectItem value="Other">
                         <div className="flex items-center gap-2 py-1">
-                          <span className="text-lg">📝</span>
+                          <FileText className="h-5 w-5 text-muted-foreground" />
                           <div>
                             <div className="font-medium">Other</div>
                             <div className="text-xs text-gray-500">General campus concerns</div>
@@ -411,7 +420,7 @@ export default function RaiseIssuePage() {
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description" className="text-base font-semibold flex items-center gap-2">
+                  <Label htmlFor="description" className="text-sm font-semibold flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-500" />
                     Detailed Description <span className="text-red-500">*</span>
                   </Label>
@@ -422,7 +431,7 @@ export default function RaiseIssuePage() {
                     onChange={(e) => handleChange('description', e.target.value)}
                     onBlur={() => handleBlur('description')}
                     maxLength={2000}
-                    rows={10}
+                    rows={8}
                     className={cn(
                       "text-base transition-all duration-200 resize-none",
                       formErrors.description && touched.description
@@ -454,7 +463,7 @@ export default function RaiseIssuePage() {
 
                 {/* Urgency Level */}
                 <div className="space-y-3">
-                  <Label className="text-base font-semibold flex items-center gap-2">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
                     <Clock className="h-4 w-4 text-orange-600" />
                     Urgency Level
                   </Label>
@@ -465,7 +474,7 @@ export default function RaiseIssuePage() {
                       onClick={() => handleChange('urgency', 'low')}
                       disabled={isSubmitting}
                       className={cn(
-                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        'h-16 flex flex-col items-center justify-center gap-1.5 transition-all duration-200',
                         formData.urgency === 'low' 
                           ? 'bg-gradient-to-br from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-green-400 shadow-lg shadow-green-200' 
                           : 'hover:bg-green-50 hover:border-green-300 glass-subtle'
@@ -483,7 +492,7 @@ export default function RaiseIssuePage() {
                       onClick={() => handleChange('urgency', 'medium')}
                       disabled={isSubmitting}
                       className={cn(
-                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        'h-16 flex flex-col items-center justify-center gap-1.5 transition-all duration-200',
                         formData.urgency === 'medium'
                           ? 'bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white border-orange-400 shadow-lg shadow-orange-200'
                           : 'hover:bg-orange-50 hover:border-orange-300 glass-subtle'
@@ -501,7 +510,7 @@ export default function RaiseIssuePage() {
                       onClick={() => handleChange('urgency', 'high')}
                       disabled={isSubmitting}
                       className={cn(
-                        'h-20 flex flex-col items-center justify-center gap-2 transition-all duration-200',
+                        'h-16 flex flex-col items-center justify-center gap-1.5 transition-all duration-200',
                         formData.urgency === 'high'
                           ? 'bg-gradient-to-br from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 text-white border-red-400 shadow-lg shadow-red-200'
                           : 'hover:bg-red-50 hover:border-red-300 glass-subtle'
@@ -515,15 +524,15 @@ export default function RaiseIssuePage() {
                     </Button>
                   </div>
                   <p className="text-sm text-gray-500 text-center">
-                    {formData.urgency === 'low' && '✓ Normal maintenance or minor issues'}
-                    {formData.urgency === 'medium' && '⚠️ Affects daily activities or multiple people'}
-                    {formData.urgency === 'high' && '🚨 Safety concern or critical infrastructure'}
+                    {formData.urgency === 'low' && 'Normal maintenance or minor issues'}
+                    {formData.urgency === 'medium' && 'Affects daily activities or multiple people'}
+                    {formData.urgency === 'high' && 'Safety concern or critical infrastructure'}
                   </p>
                 </div>
 
                 {/* Anonymous Posting Option */}
                 <div className={cn(
-                  "flex items-start space-x-3 p-5 rounded-lg border-2 transition-all duration-200",
+                  "flex items-start space-x-3 p-4 rounded-lg border transition-colors",
                   isAnonymous 
                     ? "bg-blue-50 border-blue-300 shadow-sm" 
                     : "bg-gray-50 border-gray-200 hover:border-gray-300"
@@ -556,30 +565,27 @@ export default function RaiseIssuePage() {
                 </div>
 
                 {/* Info Box */}
-                <div className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-5 shadow-sm">
+                <div className="rounded-lg border border-stone-200 bg-stone-50 p-4">
                   <div className="flex gap-3">
-                    <div className="flex-shrink-0">
-                      <div className="p-2 rounded-full bg-orange-100">
-                        <Info className="h-5 w-5 text-orange-600" />
-                      </div>
-                    </div>
                     <div className="text-sm">
-                      <p className="font-semibold text-gray-900 mb-2">💡 Tips for effective reporting:</p>
-                      <ul className="space-y-1.5 text-gray-700">
+                      <p className="font-semibold text-gray-900 mb-2">
+                        Tips for effective reporting
+                      </p>
+                      <ul className="space-y-1.5 text-gray-600">
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="mt-2 h-1 w-1 rounded-full bg-orange-500 flex-shrink-0" />
                           <span>Include specific location details (building name, floor, room number)</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="mt-2 h-1 w-1 rounded-full bg-orange-500 flex-shrink-0" />
                           <span>Describe the problem clearly (what's broken, missing, or needs attention)</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="mt-2 h-1 w-1 rounded-full bg-orange-500 flex-shrink-0" />
                           <span>Mention any safety concerns or impact on students/staff</span>
                         </li>
                         <li className="flex items-start gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                          <span className="mt-2 h-1 w-1 rounded-full bg-orange-500 flex-shrink-0" />
                           <span>Add timeline information (when did it start, how often it occurs)</span>
                         </li>
                       </ul>
@@ -588,11 +594,11 @@ export default function RaiseIssuePage() {
                 </div>
 
                 {/* Submit Button */}
-                <div className="flex gap-4 pt-4 border-t border-gray-100">
+                <div className="flex gap-3 pt-4 border-t border-gray-100">
                   <Button
                     type="submit"
                     disabled={isSubmitting}
-                    className="flex-1 h-14 text-base bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                    className="flex-1 h-11 bg-orange-500 text-white font-semibold hover:bg-orange-600"
                   >
                     {isSubmitting ? (
                       <>
@@ -601,7 +607,7 @@ export default function RaiseIssuePage() {
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                        <Send2 className="mr-2 h-4 w-4" />
                         Submit Campus Issue
                       </>
                     )}
@@ -611,7 +617,7 @@ export default function RaiseIssuePage() {
                     variant="outline"
                     onClick={() => navigate('/issues')}
                     disabled={isSubmitting}
-                    className="h-14 px-8 text-base border-2 hover:bg-gray-50"
+                    className="h-11 px-6 hover:bg-gray-50"
                   >
                     Cancel
                   </Button>
@@ -621,29 +627,15 @@ export default function RaiseIssuePage() {
           </Card>
 
           {/* Footer Info */}
-          <div className="mt-8 space-y-4">
+          <div className="mt-4">
             <div className="text-center">
               <Button
                 variant="ghost"
                 onClick={() => navigate('/issues')}
-                className="text-gray-600 hover:text-orange-600 text-base"
+                className="text-sm text-gray-600 hover:text-orange-600"
               >
                 View all campus issues →
               </Button>
-            </div>
-            <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                <span>Real-time tracking</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>Community voting</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                <span>Fast resolution</span>
-              </div>
             </div>
           </div>
         </div>

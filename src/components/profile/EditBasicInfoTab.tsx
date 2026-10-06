@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
-import { Edit2, Loader2, Check, X } from 'lucide-react';
+import { Edit2, Loader2, Check, X } from "@/components/icons/IconifyIcons";
 import SocialIcon from '@/components/SocialIcon';
 
 interface SocialLinks {

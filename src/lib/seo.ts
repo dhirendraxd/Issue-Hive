@@ -1,20 +1,29 @@
 export const SEO = {
   siteName: "IssueHive",
   baseUrl: "https://issue-hive-nine.vercel.app",
-  defaultTitle: "IssueHive | Issue Reporting Nepal & Campus Voices",
+  defaultTitle: "Campus Issue Reporting in Nepal | IssueHive",
   defaultDescription:
-    "College-focused platform that enables students to submit, support, and track campus-related issues simply and transparently. Designed with a minimal, student-first approach, the project emphasizes community moderation, voice, and clarity in how issues are visible.",
+    "IssueHive is a student voice platform for Nepalese campuses. Report campus problems, choose public or private visibility, gather community support, and follow progress through resolution.",
   keywords: [
-    "issue reporting nepal",
-    "college issue reporting system nepal",
-    "campus events posts nepal",
+    "campus issue reporting Nepal",
+    "student voice platform Nepal",
+    "college issue reporting",
     "report campus problems",
-    "student voice",
-    "students voice",
-    "campus voices",
-    "community engagement",
+    "campus problem tracking",
+    "campus issue resolution",
+    "student community engagement",
   ],
   ogImage: "/og-image.png",
+};
+
+export const ISSUEHIVE_CREATOR = {
+  name: "Dhirendra Singh Dhami",
+  url: "https://www.linkedin.com/in/dhirendra-singh-dhami/?isSelfProfile=true",
+  sameAs: [
+    "https://www.linkedin.com/in/dhirendra-singh-dhami/?isSelfProfile=true",
+    "https://www.behance.net/dhirendraxd",
+  ],
+  jobTitle: "Designer and creator of IssueHive",
 };
 
 export function buildTitle(pageTitle?: string) {

@@ -24,10 +24,10 @@ if (!firebaseConfig.projectId) missingVars.push('VITE_FIREBASE_PROJECT_ID');
 if (!firebaseConfig.appId) missingVars.push('VITE_FIREBASE_APP_ID');
 
 if (missingVars.length > 0) {
-  console.error('[Firebase Config] ❌ Missing environment variables:', missingVars.join(', '));
+  console.error('[Firebase Config] Missing environment variables:', missingVars.join(', '));
   console.error('[Firebase Config] Please check your .env file or Vercel environment variables');
 } else {
-  console.log('[Firebase Config] ✅ All required environment variables are set');
+  console.log('[Firebase Config] All required environment variables are set');
   console.log('[Firebase Config] Project ID:', firebaseConfig.projectId);
 }
 
@@ -48,13 +48,13 @@ try {
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db = getFirestore(app);
-    console.log('[Firebase] ✅ Successfully initialized');
+    console.log('[Firebase] Successfully initialized');
   } else {
-    console.warn('[Firebase] ⚠️ Not configured - missing required environment variables');
+    console.warn('[Firebase] Not configured - missing required environment variables');
     logger.warn('[Issue-Hive] Firebase not configured. Set VITE_FIREBASE_* env vars to enable auth and database.');
   }
 } catch (e) {
-  console.error('[Firebase] ❌ Initialization failed:', e);
+  console.error('[Firebase] Initialization failed:', e);
   logger.warn('[Issue-Hive] Failed to initialize Firebase. The app will run without it.', e);
 }
 

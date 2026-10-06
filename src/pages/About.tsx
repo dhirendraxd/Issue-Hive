@@ -1,14 +1,15 @@
 import Navbar from "@/components/Navbar";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import Seo from "@/components/Seo";
-import { Megaphone, ThumbsUp, CheckCircle2, Mail, ShieldCheck } from "lucide-react";
+import { ISSUEHIVE_CREATOR } from "@/lib/seo";
+import { Megaphone, ThumbsUp, CheckCircle2, Mail, ShieldCheck } from "@/components/icons/IconifyIcons";
 
 export default function About() {
   return (
     <div className="min-h-screen bg-stone-50 animate-in fade-in duration-300">
       <Seo
         title="About IssueHive"
-        description="IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, rally support, and track resolutions with transparent community engagement."
+        description="Learn about IssueHive, a student voice platform for Nepalese campuses created by designer Dhirendra Singh Dhami and recognized at KIST Hackfest."
         path="/about"
         keywords={[
           "about issuehive",
@@ -18,7 +19,9 @@ export default function About() {
           "college issue reporting",
           "community engagement platform",
           "campus problem reporting",
-          "nepalese student platform",
+          "Dhirendra Singh Dhami",
+          "KIST Hackfest",
+          "campus issue reporting project",
           "transparent issue tracking",
         ]}
         jsonLd={{
@@ -35,18 +38,18 @@ export default function About() {
             },
             {
               "@type": "Question",
-              name: "How do students report campus problems?",
+              name: "How do students report campus issues?",
               acceptedAnswer: {
                 "@type": "Answer",
-                text: "Create a post with a title, description, and category. Campus voices can comment and upvote to drive community engagement.",
+                text: "Create a report with a title, description, category, and urgency. Depending on its visibility, a report can receive community votes and comments.",
               },
             },
             {
               "@type": "Question",
-              name: "Does IssueHive support campus events posts?",
+              name: "Can IssueHive be used for event-related campus issues?",
               acceptedAnswer: {
                 "@type": "Answer",
-                text: "Yes, campus events posts can be shared to keep the community informed and engaged.",
+                text: "Yes. Event-related concerns can be submitted using the Events category.",
               },
             },
           ],
@@ -66,12 +69,33 @@ export default function About() {
                 A student platform to report campus issues, rally support, and track resolutions.
               </p>
               <p className="mt-4 text-sm sm:text-base text-stone-600 leading-relaxed">
-                This project won <span className="font-semibold text-stone-800">3rd Prize at KIST IT Fair 2082</span> in February 2026. For the future, we are focused on improving IssueHive so it can win even more and create bigger impact for campus voices.
+                IssueHive won <span className="font-semibold text-stone-800">third place at KIST Hackfest</span> and was submitted as a semester project.
               </p>
               <div className="flex flex-wrap gap-2 mt-8">
                 <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Student‑first</span>
                 <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Transparent</span>
                 <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-white border border-stone-200 text-stone-700">Collaborative</span>
+              </div>
+            </section>
+
+            <section className="mx-auto mt-12 max-w-3xl rounded-2xl border border-stone-200 bg-white p-6 sm:p-8">
+              <h2 className="text-xl font-display font-semibold tracking-tight">Creator</h2>
+              <p className="mt-3 text-stone-600 leading-relaxed">
+                IssueHive was designed and created by {ISSUEHIVE_CREATOR.name}, a designer focused on
+                building useful, community-centered digital experiences.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium">
+                {ISSUEHIVE_CREATOR.sameAs.map((profile) => (
+                  <a
+                    key={profile}
+                    href={profile}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-orange-700 underline-offset-4 hover:underline"
+                  >
+                    {profile.includes("behance.net") ? "Behance portfolio" : "LinkedIn profile"}
+                  </a>
+                ))}
               </div>
             </section>
 
@@ -163,19 +187,19 @@ export default function About() {
                 <div>
                   <h3 className="font-semibold">What is IssueHive?</h3>
                   <p className="text-sm text-stone-600 mt-1">
-                    IssueHive is a student voice platform for issue reporting in Nepal. Campus voices report campus problems, gather support, and track resolutions.
+                    IssueHive is a student voice platform for issue reporting in Nepal. Students report campus problems, gather support, and track resolutions.
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-semibold">How do students report campus problems?</h3>
+                  <h3 className="font-semibold">How do students report campus issues?</h3>
                   <p className="text-sm text-stone-600 mt-1">
-                    Create a post with a title, description, and category. Community engagement grows through upvotes and comments.
+                    Create a report with a title, description, category, and urgency. Depending on its visibility, a report can receive community votes and comments.
                   </p>
                 </div>
                 <div>
-                  <h3 className="font-semibold">Does IssueHive support campus events posts?</h3>
+                  <h3 className="font-semibold">Can IssueHive be used for event-related campus issues?</h3>
                   <p className="text-sm text-stone-600 mt-1">
-                    Yes. Campus events posts help keep the community informed and active.
+                    Yes. Event-related concerns can be submitted using the Events category.
                   </p>
                 </div>
               </div>

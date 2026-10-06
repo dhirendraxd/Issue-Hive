@@ -37,14 +37,14 @@ export function useUserActivity() {
         const commentLikesReceived = activity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
         const totalEngagement = upvotes + downvotes + totalComments + commentsLiked;
         
-        logger.debug('[UserActivity] ✅ Activity Summary:');
-        logger.debug(`  📊 Total Engagement: ${totalEngagement}`);
-        logger.debug(`  👍 Upvotes Given: ${upvotes}`);
-        logger.debug(`  👎 Downvotes Given: ${downvotes}`);
-        logger.debug(`  💬 Comments Made: ${totalComments} (${topLevelComments} top-level, ${replies} replies)`);
-        logger.debug(`  ❤️  Comments Liked: ${commentsLiked}`);
+        logger.debug('[UserActivity] Activity Summary:');
+        logger.debug(`  Total Engagement: ${totalEngagement}`);
+        logger.debug(`  Upvotes Given: ${upvotes}`);
+        logger.debug(`  Downvotes Given: ${downvotes}`);
+        logger.debug(`  Comments Made: ${totalComments} (${topLevelComments} top-level, ${replies} replies)`);
+        logger.debug(`  Comments Liked: ${commentsLiked}`);
         logger.debug(`  ⭐ Comment Likes Received: ${commentLikesReceived}`);
-        logger.debug(`  🎯 Impact Score: ${commentLikesReceived}`);
+        logger.debug(`  Impact Score: ${commentLikesReceived}`);
         
         return activity;
       } catch (error) {

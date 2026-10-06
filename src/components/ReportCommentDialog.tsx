@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/components/icons/IconifyIcons";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -336,7 +336,7 @@ export default function ReportCommentDialog({
             <p className="text-sm font-semibold text-blue-900">How Community Moderation Works</p>
             <div className="space-y-2 text-sm text-blue-800">
               <div className="flex items-start gap-2">
-                <span className="font-bold text-red-600 flex-shrink-0">⚠</span>
+                <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
                 <p><span className="font-semibold">10+ Reports</span> → Comment automatically removed</p>
               </div>
             </div>

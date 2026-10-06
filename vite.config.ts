@@ -56,8 +56,6 @@ export default defineConfig(() => ({
           'react-query': ['@tanstack/react-query'],
           // Firebase
           'firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore'],
-          // Icons
-          'lucide': ['lucide-react'],
           // Animation library (heavy)
           'framer-motion': ['framer-motion'],
         },

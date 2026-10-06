@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ShieldOff, Home, LogIn, ArrowLeft, Lock } from "lucide-react";
+import { ShieldOff, Home, LogIn, ArrowLeft, Lock } from "@/components/icons/IconifyIcons";
 
 const UNAUTHORIZED_QUIPS = [
   "Nice try, hacker extraordinaire.",

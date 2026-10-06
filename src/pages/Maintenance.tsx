@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import ParticlesBackground from "@/components/ParticlesBackground";
 import { Button } from "@/components/ui/button";
-import { Wrench, Coffee, Sparkles, Home, AlertTriangle } from "lucide-react";
+import { Wrench, Coffee, Sparkles, Home, AlertTriangle, Bug, Laptop, Gamepad2, Smartphone } from "@/components/icons/IconifyIcons";
 
 const MAINTENANCE_QUIPS = [
   "We're not broken. We're just... in character development.",
@@ -80,23 +80,23 @@ const Maintenance = () => {
               </h2>
               <div className="space-y-3 text-sm text-muted-foreground text-left max-w-md mx-auto">
                 <div className="flex items-start gap-3">
-                  <span className="text-orange-500 font-bold">☕</span>
+                  <Coffee className="h-4 w-4 text-orange-500" />
                   <span>Grab a coffee. Or five. This might take a while.</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="text-orange-500 font-bold">🐝</span>
+                  <Bug className="h-4 w-4 text-orange-500" />
                   <span>Google "why are bees disappearing" and get existential.</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="text-orange-500 font-bold">💻</span>
+                  <Laptop className="h-4 w-4 text-orange-500" />
                   <span>Refresh this page obsessively. We get it.</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="text-orange-500 font-bold">🎮</span>
+                  <Gamepad2 className="h-4 w-4 text-orange-500" />
                   <span>Play tic-tac-toe on paper like it's 1999.</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="text-orange-500 font-bold">📱</span>
+                  <Smartphone className="h-4 w-4 text-orange-500" />
                   <span>Check Twitter to see if everyone else is also panicking.</span>
                 </div>
               </div>

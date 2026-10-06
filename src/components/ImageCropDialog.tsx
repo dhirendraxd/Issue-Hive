@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Label } from '@/components/ui/label';
-import { ZoomOut, RotateCw, Sun, Sliders, Palette, FlipHorizontal, FlipVertical, RotateCcw } from 'lucide-react';
+import { ZoomOut, RotateCw, Sun, Sliders, Palette, FlipHorizontal, FlipVertical, RotateCcw } from "@/components/icons/IconifyIcons";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ImageCropDialogProps {

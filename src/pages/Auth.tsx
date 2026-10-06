@@ -8,9 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { signIn, signInWithGoogle, signUp } from '@/integrations/firebase';
 import { isFirebaseConfigured } from '@/integrations/firebase/config';
 import { toast } from 'sonner';
-import { Loader2, Mail } from 'lucide-react';
+import { GoogleIcon, Loader2, Mail } from "@/components/icons/IconifyIcons";
 import ParticlesBackground from '@/components/ParticlesBackground';
-import SocialIcon from '@/components/SocialIcon';
 import Seo from "@/components/Seo";
 import { sanitizeEmail } from '@/lib/sanitize';
 
@@ -170,7 +169,7 @@ export default function Auth() {
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                    <SocialIcon platform="google" className="mr-2 h-5 w-5" />
+                    <GoogleIcon className="mr-2 h-5 w-5" />
                   Continue with Google
                 </>
               )}

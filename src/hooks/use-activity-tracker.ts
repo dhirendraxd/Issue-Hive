@@ -30,7 +30,7 @@ export function useActivityTracker() {
       }
       
       const summary = getActivitySummary(user.uid);
-      logger.debug('[ActivityTracker] 📊 Local Activity Summary:', summary);
+      logger.debug('[ActivityTracker] Local Activity Summary:', summary);
       return summary;
     },
     enabled: !!user,
@@ -53,7 +53,7 @@ export function useActivityTracker() {
         // Calculate metrics
         const commentLikesReceived = activity.comments.reduce((sum, c) => sum + (c.likes || 0), 0);
         
-        logger.debug('[ActivityTracker] ☁️  Firebase Activity:', {
+        logger.debug('[ActivityTracker] Firebase Activity:', {
           votedIssues: activity.votedIssues.length,
           comments: activity.comments.length,
           likedComments: activity.likedComments.length,

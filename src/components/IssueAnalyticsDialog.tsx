@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, CheckCircle2, Pin } from "lucide-react";
+import { ThumbsUp, MessageSquare, TrendingUp, Calendar, User, CheckCircle2, Pin } from "@/components/icons/IconifyIcons";
 import { formatRelativeTime } from "@/lib/utils";
 import type { Issue } from "@/types/issue";
 import { useIssueComments } from "@/hooks/use-issue-comments";

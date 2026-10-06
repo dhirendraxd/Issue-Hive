@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Calendar, Tag, AlertCircle, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown, Check, Trash2 } from "lucide-react";
+import { Calendar, Tag, AlertCircle, FileText, CheckCircle2, TrendingUp, Lock, ChevronDown, ChevronUp, MessageSquare, Eye, EyeOff, FileEdit, Flag, ThumbsUp, ThumbsDown, Check, Trash2 } from "@/components/icons/IconifyIcons";
 import { ISSUE_STATUSES } from "@/types/issue";
 import type { Issue } from "@/types/issue";
 import IssueComments from "./IssueComments";
@@ -70,7 +70,7 @@ export default function IssueDetailDialog({
     if (upvoteIssue.isSuccess && issue) {
       setShowUpvoteConfirm(true);
       const wasVoted = userVote?.vote === 1 && upvoteIssue.variables === issue.id;
-      toast.success(wasVoted ? '👍 Upvote removed' : '👍 Vote counted! Thanks for supporting this issue!', {
+      toast.success(wasVoted ? 'Upvote removed' : 'Vote counted! Thanks for supporting this issue!', {
         duration: 3000,
         icon: <Check className="h-4 w-4" />
       });
@@ -82,7 +82,7 @@ export default function IssueDetailDialog({
     if (downvoteIssue.isSuccess && issue) {
       setShowDownvoteConfirm(true);
       const wasVoted = userVote?.vote === -1 && downvoteIssue.variables === issue.id;
-      toast.success(wasVoted ? '👎 Downvote removed' : '👎 Vote counted! Thanks for your feedback!', {
+      toast.success(wasVoted ? 'Downvote removed' : 'Vote counted! Thanks for your feedback!', {
         duration: 3000,
         icon: <Check className="h-4 w-4" />
       });

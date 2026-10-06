@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
-import { Compass, Send, MessageCircle, Mail } from "lucide-react";
+import { Compass, Send, MessageCircle, Mail } from "@/components/icons/IconifyIcons";
 import type { ReactNode } from "react";
 import SocialIcon from "@/components/SocialIcon";
 

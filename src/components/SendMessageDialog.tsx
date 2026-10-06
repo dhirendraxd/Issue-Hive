@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, Send, Loader2 } from 'lucide-react';
+import { AlertCircle, Send, Loader2 } from "@/components/icons/IconifyIcons";
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/use-auth';
@@ -115,7 +115,7 @@ export default function SendMessageDialog({
         <Alert className="border-amber-300 bg-amber-50">
           <AlertCircle className="h-4 w-4 text-amber-600" />
           <AlertDescription className="text-xs text-amber-800">
-            <span className="font-semibold">⚠️ Note:</span> Messages cannot be edited or deleted once sent.
+            <span className="font-semibold">Note:</span> Messages cannot be edited or deleted once sent.
           </AlertDescription>
         </Alert>
 

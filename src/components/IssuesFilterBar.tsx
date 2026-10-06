@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ISSUE_CATEGORIES, ISSUE_STATUSES, type IssueCategory, type IssueStatus } from "@/types/issue";
-import { ListFilter, Search, X, ChevronDown, SortDesc, Filter, Inbox, Clock, CheckCircle2, Lock, CalendarClock, CalendarDays, ThumbsUp } from "lucide-react";
+import { ListFilter, Search, X, ChevronDown, SortDesc, Filter, Inbox, Clock, CheckCircle2, Lock, CalendarClock, CalendarDays, ThumbsUp } from "@/components/icons/IconifyIcons";
 import { cn } from "@/lib/utils";
 
 export type SortKey = "new" | "old" | "votes";
