@@ -13,11 +13,11 @@ type CommunityLink = {
 
 export default function CommunityCTA() {
   const items: CommunityLink[] = [
-    { icon: MessageCircle, label: "Browse issues", to: "/issues" },
-    { icon: Send, label: "Raise an issue", to: "/raise-issue" },
+    { icon: <MessageCircle className="h-6 w-6" />, label: "Browse issues", to: "/issues" },
+    { icon: <Send className="h-6 w-6" />, label: "Raise an issue", to: "/raise-issue" },
     { icon: <Compass className="h-6 w-6" />, label: "Learn more", to: "/about" },
     { icon: <SocialIcon platform="x" className="h-4 w-4" />, label: "Updates on X", href: "https://x.com" },
-    { icon: Mail, label: "Contact", href: "mailto:support@issue-hive.com" },
+    { icon: <Mail className="h-6 w-6" />, label: "Contact", href: "mailto:support@issue-hive.com" },
   ];
 
   const renderItem = (item: CommunityLink) => {
