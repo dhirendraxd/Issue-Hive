@@ -189,7 +189,7 @@ export function IssuesFilterBar({
                   <span className="flex items-center gap-2"><CalendarDays className="h-4 w-4" />Oldest First</span>
                 </SelectItem>
                 <SelectItem value="votes">
-                  <span className="flex items-center gap-2"><ThumbsUp className="h-4 w-4" />Most Supported</span>
+                  <span className="flex items-center gap-2"><ThumbsUp className="h-4 w-4" />Most Voted</span>
                 </SelectItem>
               </SelectContent>
             </Select>

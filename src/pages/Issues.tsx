@@ -69,9 +69,9 @@ export default function Issues() {
   const [categories, setCategories] = useState<IssueCategory[]>([]);
   // Show all statuses by default; selecting a status filters to that one only.
   const [status, setStatus] = useState<IssueStatus | undefined>();
-  const [sort, setSort] = useState<SortKey>("new");
+  const [sort, setSort] = useState<SortKey>("votes");
 
-  const visibleIssues = useMemo(() => {
+  const filteredIssues = useMemo(() => {
     const base = data ?? [];
     // Hide draft issues completely; hide private issues unless owned by current user
     type WithVisibility = { visibility?: "public" | "private" | "draft" };
@@ -101,17 +101,24 @@ export default function Issues() {
         return title.includes(n) || desc.includes(n) || name.includes(n) || college.includes(n);
       });
     }
-    // sorting
-    const byDate = (a: number, b: number) => a - b;
-    if (sort === "new") arr = [...arr].sort((a, b) => byDate(b.createdAt, a.createdAt));
-    else if (sort === "old") arr = [...arr].sort((a, b) => byDate(a.createdAt, b.createdAt));
-    else if (sort === "votes") arr = [...arr].sort((a, b) => b.votes - a.votes);
     return arr;
-  }, [data, categories, q, status, sort, user?.uid]);
+  }, [data, categories, q, status, user?.uid]);
 
   // Fetch engagement metrics for visible issues
-  const visibleIssueIds = useMemo(() => visibleIssues.map((i) => i.id), [visibleIssues]);
+  const visibleIssueIds = useMemo(() => filteredIssues.map((i) => i.id), [filteredIssues]);
   const { data: engagement } = useIssueEngagement(visibleIssueIds);
+  const visibleIssues = useMemo(() => {
+    const byDate = (a: Issue, b: Issue) => b.createdAt - a.createdAt;
+    if (sort === "new") return [...filteredIssues].sort(byDate);
+    if (sort === "old") return [...filteredIssues].sort((a, b) => a.createdAt - b.createdAt);
+    return [...filteredIssues].sort((a, b) => {
+      const aVotes = engagement?.[a.id];
+      const bVotes = engagement?.[b.id];
+      const aTotal = (aVotes?.upvotes ?? 0) + (aVotes?.downvotes ?? 0);
+      const bTotal = (bVotes?.upvotes ?? 0) + (bVotes?.downvotes ?? 0);
+      return bTotal - aTotal || (bVotes?.upvotes ?? 0) - (aVotes?.upvotes ?? 0) || byDate(a, b);
+    });
+  }, [filteredIssues, engagement, sort]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

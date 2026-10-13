@@ -65,43 +65,6 @@ export default function IssueDetailDialog({
     }
   }, [issue]);
 
-  // Show toast notifications for vote mutations
-  useEffect(() => {
-    if (upvoteIssue.isSuccess && issue) {
-      setShowUpvoteConfirm(true);
-      const wasVoted = userVote?.vote === 1 && upvoteIssue.variables === issue.id;
-      toast.success(wasVoted ? 'Upvote removed' : 'Vote counted! Thanks for supporting this issue!', {
-        duration: 3000,
-        icon: <Check className="h-4 w-4" />
-      });
-      setTimeout(() => setShowUpvoteConfirm(false), 2000);
-    }
-  }, [upvoteIssue.isSuccess, upvoteIssue.variables, userVote?.vote, issue]);
-
-  useEffect(() => {
-    if (downvoteIssue.isSuccess && issue) {
-      setShowDownvoteConfirm(true);
-      const wasVoted = userVote?.vote === -1 && downvoteIssue.variables === issue.id;
-      toast.success(wasVoted ? 'Downvote removed' : 'Vote counted! Thanks for your feedback!', {
-        duration: 3000,
-        icon: <Check className="h-4 w-4" />
-      });
-      setTimeout(() => setShowDownvoteConfirm(false), 2000);
-    }
-  }, [downvoteIssue.isSuccess, downvoteIssue.variables, userVote?.vote, issue]);
-
-  useEffect(() => {
-    if (upvoteIssue.isError) {
-      toast.error('Failed to upvote. Please try again.');
-    }
-  }, [upvoteIssue.isError]);
-
-  useEffect(() => {
-    if (downvoteIssue.isError) {
-      toast.error('Failed to downvote. Please try again.');
-    }
-  }, [downvoteIssue.isError]);
-
   if (!issue) return null;
 
   const isOwner = user?.uid === issue.createdBy;
@@ -112,6 +75,52 @@ export default function IssueDetailDialog({
   const disableComments = isPrivate && !isOwner;
   const hasUpvoted = userVote?.vote === 1;
   const hasDownvoted = userVote?.vote === -1;
+
+  const handleUpvote = async () => {
+    const previousVote = userVote?.vote;
+    try {
+      await upvoteIssue.mutateAsync(issue.id);
+      setShowUpvoteConfirm(true);
+      toast.success(
+        previousVote === 1
+          ? "Upvote removed"
+          : previousVote === -1
+            ? "Vote changed to upvote"
+            : "Issue upvoted",
+        {
+          duration: 3000,
+          icon: <Check className="h-4 w-4" />,
+        }
+      );
+      setTimeout(() => setShowUpvoteConfirm(false), 2000);
+    } catch (error) {
+      console.error("Failed to upvote issue:", error);
+      toast.error("Failed to upvote. Please try again.");
+    }
+  };
+
+  const handleDownvote = async () => {
+    const previousVote = userVote?.vote;
+    try {
+      await downvoteIssue.mutateAsync(issue.id);
+      setShowDownvoteConfirm(true);
+      toast.success(
+        previousVote === -1
+          ? "Downvote removed"
+          : previousVote === 1
+            ? "Vote changed to downvote"
+            : "Issue downvoted",
+        {
+          duration: 3000,
+          icon: <Check className="h-4 w-4" />,
+        }
+      );
+      setTimeout(() => setShowDownvoteConfirm(false), 2000);
+    } catch (error) {
+      console.error("Failed to downvote issue:", error);
+      toast.error("Failed to downvote. Please try again.");
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -527,7 +536,7 @@ export default function IssueDetailDialog({
                         : "hover:bg-green-50 hover:border-green-200",
                       upvoteIssue.isPending && "opacity-75"
                     )}
-                    onClick={() => upvoteIssue.mutate(issue.id)}
+                    onClick={handleUpvote}
                     disabled={upvoteIssue.isPending}
                     title={hasUpvoted ? "Remove upvote" : "Upvote this issue"}
                   >
@@ -553,7 +562,7 @@ export default function IssueDetailDialog({
                         : "hover:bg-red-50 hover:border-red-200",
                       downvoteIssue.isPending && "opacity-75"
                     )}
-                    onClick={() => downvoteIssue.mutate(issue.id)}
+                    onClick={handleDownvote}
                     disabled={downvoteIssue.isPending}
                     title={hasDownvoted ? "Remove downvote" : "Downvote this issue"}
                   >

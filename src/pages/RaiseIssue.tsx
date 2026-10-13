@@ -37,6 +37,14 @@ import { cn } from '@/lib/utils';
 import { sanitizeText, limitLength } from '@/lib/sanitize';
 import { rateLimits, formatResetTime } from '@/lib/rate-limit';
 import Seo from "@/components/Seo";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const CATEGORY_ICONS: Record<IssueCategory, typeof Building2> = {
   Facilities: Building2,
@@ -52,6 +60,7 @@ export default function RaiseIssuePage() {
   const { data: profile } = useUserProfile(user?.uid || '');
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmSubmission, setConfirmSubmission] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -128,7 +137,7 @@ export default function RaiseIssuePage() {
     return null;
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate all fields
@@ -145,9 +154,10 @@ export default function RaiseIssuePage() {
       return;
     }
 
-    const confirmed = window.confirm('Submit this issue now?');
-    if (!confirmed) return;
+    setConfirmSubmission(true);
+  };
 
+  const submitIssue = async () => {
     setIsSubmitting(true);
 
     try {
@@ -197,6 +207,7 @@ export default function RaiseIssuePage() {
       setIsAnonymous(false);
       setFormErrors({});
       setTouched({});
+      setConfirmSubmission(false);
       setTimeout(() => {
         navigate('/issues');
       }, 1000);
@@ -640,6 +651,30 @@ export default function RaiseIssuePage() {
           </div>
         </div>
       </div>
+      <Dialog open={confirmSubmission} onOpenChange={setConfirmSubmission}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Submit this campus issue?</DialogTitle>
+            <DialogDescription>
+              Your report will be shared with the campus community. You can track its status and
+              updates from the Issues page.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setConfirmSubmission(false)}
+              disabled={isSubmitting}
+            >
+              Review report
+            </Button>
+            <Button type="button" onClick={submitIssue} disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit issue"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
